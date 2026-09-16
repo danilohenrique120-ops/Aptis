@@ -94,11 +94,17 @@ export default function KaizenManagerModule() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
-  // Load from localStorage on mount (clean default [])
+  // Load from localStorage on mount (clean default [], but auto-fills with demo when ?demo=true)
   React.useEffect(() => {
     try {
+      const isDemoRequested = typeof window !== 'undefined' && 
+        (new URLSearchParams(window.location.search).get('demo') === 'true' || 
+         new URLSearchParams(window.location.search).get('demo') === '1');
+
       const saved = localStorage.getItem('aptis_kaizen_ideas');
-      if (saved) {
+      if (isDemoRequested) {
+        setKaizens(INITIAL_KAIZENS);
+      } else if (saved) {
         setKaizens(JSON.parse(saved));
       } else {
         setKaizens([]);

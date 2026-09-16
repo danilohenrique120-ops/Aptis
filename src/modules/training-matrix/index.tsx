@@ -273,14 +273,23 @@ export default function TrainingMatrixModule() {
   const [documents, setDocuments] = useState<DocumentAttachment[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount (clean default [])
+  // Load from localStorage on mount (clean default [], but auto-fills with demo when ?demo=true)
   React.useEffect(() => {
     try {
+      const isDemoRequested = typeof window !== 'undefined' && 
+        (new URLSearchParams(window.location.search).get('demo') === 'true' || 
+         new URLSearchParams(window.location.search).get('demo') === '1');
+
       const savedTrainings = localStorage.getItem('aptis_compliance_trainings');
       const savedDocs = localStorage.getItem('aptis_compliance_docs');
 
-      if (savedTrainings) setTrainings(JSON.parse(savedTrainings));
-      if (savedDocs) setDocuments(JSON.parse(savedDocs));
+      if (isDemoRequested) {
+        setTrainings(INITIAL_TRAININGS);
+        setDocuments(INITIAL_DOCUMENTS);
+      } else {
+        if (savedTrainings) setTrainings(JSON.parse(savedTrainings));
+        if (savedDocs) setDocuments(JSON.parse(savedDocs));
+      }
     } catch (e) {
       console.error('Erro ao carregar dados de conformidade:', e);
     } finally {

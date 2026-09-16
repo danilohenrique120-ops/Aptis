@@ -379,20 +379,33 @@ export default function SkillsMatrixModule() {
   const [successionPlans, setSuccessionPlans] = useState<SuccessionPlan[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount (clean default [])
+  // Load from localStorage on mount (clean default [], but auto-fills with demo when ?demo=true)
   React.useEffect(() => {
     try {
+      const isDemoRequested = typeof window !== 'undefined' && 
+        (new URLSearchParams(window.location.search).get('demo') === 'true' || 
+         new URLSearchParams(window.location.search).get('demo') === '1');
+
       const savedStations = localStorage.getItem('aptis_skills_stations');
       const savedEmployees = localStorage.getItem('aptis_skills_employees');
       const savedActions = localStorage.getItem('aptis_skills_actions');
       const savedSectors = localStorage.getItem('aptis_skills_sectors');
       const savedSuccession = localStorage.getItem('aptis_skills_succession');
 
-      if (savedStations) setStations(JSON.parse(savedStations));
-      if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-      if (savedActions) setTrainingActions(JSON.parse(savedActions));
-      if (savedSectors) setSectors(JSON.parse(savedSectors));
-      if (savedSuccession) setSuccessionPlans(JSON.parse(savedSuccession));
+      if (isDemoRequested) {
+        // Carrega automaticamente todos os exemplos industriais no localhost pelo link ?demo=true
+        setStations(INITIAL_STATIONS);
+        setEmployees(INITIAL_EMPLOYEES);
+        setTrainingActions(INITIAL_ACTIONS);
+        setSectors(INITIAL_SECTORS);
+        setSuccessionPlans(INITIAL_SUCCESSION_PLANS);
+      } else {
+        if (savedStations) setStations(JSON.parse(savedStations));
+        if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
+        if (savedActions) setTrainingActions(JSON.parse(savedActions));
+        if (savedSectors) setSectors(JSON.parse(savedSectors));
+        if (savedSuccession) setSuccessionPlans(JSON.parse(savedSuccession));
+      }
     } catch (e) {
       console.error('Erro ao carregar dados da matriz de habilidades:', e);
     } finally {
@@ -556,8 +569,51 @@ export default function SkillsMatrixModule() {
     document.body.removeChild(link);
   };
 
+  const isDemoActive = Boolean(typeof window !== 'undefined' && 
+    (new URLSearchParams(window.location.search).get('demo') === 'true' || 
+     new URLSearchParams(window.location.search).get('demo') === '1'));
+
   return (
     <div className={`space-y-6 ${activeTab === 'gestao_a_vista' ? 'bg-slate-900 text-white p-6 rounded-2xl' : ''}`}>
+      {/* Banner Informativo de Demonstração (Ativo apenas no Localhost via ?demo=true) */}
+      {isDemoActive && (
+        <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-3.5 rounded-2xl border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-cyan-300 uppercase tracking-wider">
+                  Modo Demonstração Ativo no Localhost
+                </span>
+                <span className="text-[10px] font-bold bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30">
+                  Exemplos Preenchidos
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Os dados industriais de teste estão salvos exclusivamente neste navegador local. A sua versão online em produção permanece 100% limpa para uso real.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setStations([]);
+              setEmployees([]);
+              setTrainingActions([]);
+              setSuccessionPlans([]);
+              window.history.replaceState({}, '', window.location.pathname);
+            }}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
+            title="Limpar todos os dados e visualizar o modo em branco de produção"
+          >
+            Ver Modo em Branco
+          </button>
+        </div>
+      )}
+
       {/* 1. SELETOR DE SETOR FABRIL & SIMULADOR DE ACESSO */}
       <div className={`rounded-2xl p-4 border transition-all ${
         activeTab === 'gestao_a_vista' ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-slate-200 shadow-xs'
