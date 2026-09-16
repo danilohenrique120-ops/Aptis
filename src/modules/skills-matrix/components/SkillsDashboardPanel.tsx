@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { 
@@ -10,6 +10,8 @@ import {
   TrainingAction 
 } from '../types';
 import { IluoCircle } from './IluoCircle';
+import { SkillsRadarChart } from './SkillsRadarChart';
+import { SkillsDonutAndParetoCharts } from './SkillsDonutAndParetoCharts';
 import { 
   Users, 
   Award, 
@@ -440,106 +442,46 @@ export function SkillsDashboardPanel({
         </div>
       </div>
 
-      {/* 3. DIAGNÓSTICO ILUO & GARGALOS OPERACIONAIS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Distribuição ILUO */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* 3. RADAR CHART DINÂMICO DE COMPETÊNCIAS & HABILIDADES */}
+      <SkillsRadarChart
+        stations={baseStations}
+        employees={filteredEmployees}
+      />
+
+      {/* 4. GRÁFICO DE PIZZA/DONUT ILUO & DIAGRAMA DE PARETO (80/20) */}
+      <SkillsDonutAndParetoCharts
+        stations={baseStations}
+        employees={baseEmployees}
+        iluoDistribution={iluoDistribution}
+      />
+
+      {/* 5. GARGALOS OPERACIONAIS & AÇÕES DE SUPORTE */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                Distribuição da Força de Trabalho (ILUO)
+                Detalhamento dos Gargalos de Linha & Postos Abaixo do Mínimo
               </h4>
-              <span className="text-[11px] text-slate-500">Mapeamento em {iluoDistribution.total} avaliações</span>
-            </div>
-            <Layers className="w-4 h-4 text-slate-400" />
-          </div>
-
-          <div className="space-y-3">
-            {/* N4 Multiplicador */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-emerald-800 flex items-center gap-1.5">
-                  <IluoCircle level={4} size={16} />
-                  N4 - Multiplicador (Especialista Lean)
-                </span>
-                <span className="font-bold text-emerald-700">{iluoDistribution.n4.count} ({iluoDistribution.n4.pct}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${iluoDistribution.n4.pct}%` }} />
-              </div>
-            </div>
-
-            {/* N3 Autônomo */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-blue-800 flex items-center gap-1.5">
-                  <IluoCircle level={3} size={16} />
-                  N3 - Autônomo (Pleno / Apto a Rodar)
-                </span>
-                <span className="font-bold text-blue-700">{iluoDistribution.n3.count} ({iluoDistribution.n3.pct}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-blue-500 h-full rounded-full" style={{ width: `${iluoDistribution.n3.pct}%` }} />
-              </div>
-            </div>
-
-            {/* N2 Praticante */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-amber-800 flex items-center gap-1.5">
-                  <IluoCircle level={2} size={16} />
-                  N2 - Praticante (Sob Supervisão)
-                </span>
-                <span className="font-bold text-amber-700">{iluoDistribution.n2.count} ({iluoDistribution.n2.pct}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${iluoDistribution.n2.pct}%` }} />
-              </div>
-            </div>
-
-            {/* N1 Aprendiz */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                  <IluoCircle level={1} size={16} />
-                  N1 - Aprendiz (Teoria / Em Integração)
-                </span>
-                <span className="font-bold text-slate-600">{iluoDistribution.n1.count} ({iluoDistribution.n1.pct}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-slate-400 h-full rounded-full" style={{ width: `${iluoDistribution.n1.pct}%` }} />
-              </div>
+              <span className="text-[11px] text-slate-500">
+                Postos sem operadores autônomos suficientes para garantir o plano de produção
+              </span>
             </div>
           </div>
+
+          <button
+            onClick={() => onNavigateTab('gap_analysis')}
+            className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Abrir Diagnóstico Completo</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        {/* Postos em Alerta / Gargalos de Operação */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3 lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  Gargalos de Linha & Postos Abaixo do Mínimo
-                </h4>
-                <span className="text-[11px] text-slate-500">
-                  Postos sem operadores autônomos suficientes para garantir o plano de produção
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onNavigateTab('gap_analysis')}
-              className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <span>Abrir Plano de Ação</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
             {stationAnalysis.filter(s => s.isUnderStaffed).length === 0 ? (
               <div className="p-6 text-center bg-emerald-50/50 rounded-xl border border-emerald-200 text-emerald-800">
                 <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-1.5" />
@@ -575,7 +517,6 @@ export function SkillsDashboardPanel({
             )}
           </div>
         </div>
-      </div>
 
       {/* 4. RESUMO DINÂMICO DOS OPERADORES FILTRADOS */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">

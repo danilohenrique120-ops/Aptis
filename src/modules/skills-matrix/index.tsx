@@ -812,44 +812,6 @@ export default function SkillsMatrixModule() {
             </div>
           </div>
 
-          {/* KPI Cards do Setor */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-                <span>Operadores do Setor</span>
-                <Users className="w-4 h-4 text-slate-400" />
-              </div>
-              <p className="text-2xl font-bold text-slate-900 mt-2">{totalSectorEmployees}</p>
-              <span className="text-[11px] text-slate-500">Quadro ativo exclusivo</span>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <div className="flex items-center justify-between text-emerald-600 text-xs font-medium">
-                <span>Taxa de Polivalência</span>
-                <Award className="w-4 h-4 text-emerald-500" />
-              </div>
-              <p className="text-2xl font-bold text-emerald-600 mt-2">{polyvalentRate}%</p>
-              <span className="text-[11px] text-slate-500">{polyvalentCount} operadores multifuncionais</span>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-                <span>Postos Mapeados</span>
-                <Layers className="w-4 h-4 text-blue-500" />
-              </div>
-              <p className="text-2xl font-bold text-slate-900 mt-2">{sectorStations.length}</p>
-              <span className="text-[11px] text-slate-500">Células desta linha</span>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <div className="flex items-center justify-between text-rose-600 text-xs font-medium">
-                <span>Gargalos / Alertas</span>
-                <AlertTriangle className="w-4 h-4 text-rose-500" />
-              </div>
-              <p className="text-2xl font-bold text-rose-600 mt-2">{criticalStationsCount}</p>
-              <span className="text-[11px] text-rose-600">Abaixo do mínimo exigido</span>
-            </div>
-          </div>
 
           {/* NAVEGAÇÃO DE ABAS & CONTROLES VISUAIS */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
