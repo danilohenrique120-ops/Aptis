@@ -519,22 +519,22 @@ export default function SkillsMatrixModule() {
         </div>
       ) : (
         <>
-          {/* HEADER DO SETOR ATIVO & AÇÕES */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          {/* HEADER DO SETOR ATIVO & AÇÕES APTIS SKILLS */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/90 pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">
-                  Setor Ativo: {activeSector.code}
+                <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-md">
+                  Aptis Skills • Pilar de Polivalência Técnica ILUO
                 </span>
                 <span className="text-xs text-slate-500">
-                  Líder: <strong>{activeSector.managerName}</strong> ({activeSector.managerRole})
+                  Setor: <strong>{activeSector.name}</strong> ({activeSector.code})
                 </span>
               </div>
-              <h1 className="text-2xl font-bold text-slate-900 mt-1">
-                Matriz de Habilidades: {activeSector.name}
+              <h1 className="text-2xl font-black text-slate-900 mt-1.5">
+                Aptis Skills: Mapeamento de Competências & Backups
               </h1>
               <p className="text-xs text-slate-600">
-                {activeSector.description}
+                {activeSector.description} • Supervisor: <strong>{activeSector.managerName}</strong>
               </p>
             </div>
 
@@ -548,9 +548,9 @@ export default function SkillsMatrixModule() {
                     setTrainingActions(INITIAL_ACTIONS);
                   }}
                   title="Carregar dados de demonstração para teste"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-colors cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
                   Carregar Exemplos
                 </button>
               ) : (
@@ -571,7 +571,7 @@ export default function SkillsMatrixModule() {
               )}
               <button
                 onClick={() => setIsOperatorModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 Adicionar Operador
@@ -579,7 +579,7 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setIsStationModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Adicionar Posto
@@ -587,10 +587,10 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={handleExportCSV}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer border border-slate-200"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer border border-slate-200"
                 title="Exportar dados da matriz em CSV / Excel"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 text-cyan-600" />
                 CSV
               </button>
             </div>

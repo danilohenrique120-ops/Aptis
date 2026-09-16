@@ -342,19 +342,21 @@ export default function ManagerTasksModule() {
   const doneTasks = tasks.filter(t => t.status === 'done').length;
 
   return (
-    <div className="space-y-6 w-full">
-      {/* Header do Módulo */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+    <div className="space-y-6">
+      {/* Header do Módulo Aptis Routine */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200/90 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded">
-              Módulo Operacional de Liderança
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-md">
+              Aptis Routine • Pilar de Rotina & Governança
             </span>
-            <span className="text-xs text-slate-500">Tenant: {currentTenant.name}</span>
+            <span className="text-xs text-slate-500">Unidade: {currentTenant.name}</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">Gerenciador de Tarefas do Gestor</h1>
+          <h1 className="text-2xl font-black text-slate-900 mt-1.5 flex items-center gap-2">
+            Aptis Routine: Gestão de Turnos & Rotinas de Liderança
+          </h1>
           <p className="text-sm text-slate-600">
-            Governança industrial de rotinas (Kamishibai), priorização matricial (Eisenhower) e controle de SLA.
+            Quadro Kamishibai, priorização matricial Eisenhower e passagem de turno estruturada sem gargalos no WhatsApp.
           </p>
         </div>
 
@@ -363,9 +365,9 @@ export default function ManagerTasksModule() {
             <button
               onClick={() => setTasks(INITIAL_TASKS)}
               title="Carregar tarefas de demonstração para teste"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-colors cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
               Carregar Exemplos
             </button>
           ) : (
@@ -385,15 +387,15 @@ export default function ManagerTasksModule() {
 
           <button
             onClick={() => setIsShiftHandoverOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 shadow-xs transition-colors cursor-pointer"
           >
-            <Repeat className="w-4 h-4 text-blue-600" />
+            <Repeat className="w-4 h-4 text-cyan-600" />
             Passagem de Turno
           </button>
 
           <button
             onClick={openNewTaskModal}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Nova Tarefa

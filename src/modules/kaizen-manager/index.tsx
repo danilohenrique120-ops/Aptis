@@ -194,18 +194,20 @@ export default function KaizenManagerModule() {
 
   return (
     <div className="space-y-6">
-      {/* Header do Módulo */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+      {/* Header do Módulo Aptis Kaizen */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/90 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded">
-              Melhoria Contínua & Lean
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-md">
+              Aptis Kaizen • Pilar de Melhoria Contínua & Lean
             </span>
-            <span className="text-xs text-slate-500">Tenant: {currentTenant.name}</span>
+            <span className="text-xs text-slate-500">Unidade: {currentTenant.name}</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">Gerenciador de Kaizens e Melhorias</h1>
+          <h1 className="text-2xl font-black text-slate-900 mt-1.5 flex items-center gap-2">
+            Aptis Kaizen: Ideias de Chão de Fábrica & Projetos A3
+          </h1>
           <p className="text-sm text-slate-600">
-            Funil de ideias de chão de fábrica, planos A3 e mensuração de ganhos operacionais e financeiros.
+            Funil de melhorias contínuas com cálculo de economia financeira anual (R$) e horas recuperadas para a fábrica.
           </p>
         </div>
 
@@ -214,9 +216,9 @@ export default function KaizenManagerModule() {
             <button
               onClick={() => setKaizens(INITIAL_KAIZENS)}
               title="Carregar ideias de exemplo para teste"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-colors cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
               Carregar Exemplos
             </button>
           ) : (
@@ -236,7 +238,7 @@ export default function KaizenManagerModule() {
 
           <button
             onClick={() => setIsNewModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Propor Nova Melhoria (Kaizen)
