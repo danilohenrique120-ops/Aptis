@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ToolDefinition } from '@/types';
 import { ToolIcon } from '@/components/ui/tool-icon';
-import { Check, ArrowRight, Sparkles, Building2, ShieldCheck, Mail } from 'lucide-react';
+import { Check, ArrowRight, Mail } from 'lucide-react';
 
 interface ToolCardProps {
   tool: ToolDefinition;
@@ -13,7 +13,7 @@ interface ToolCardProps {
 
 export function ToolCard({ tool, onRequestDemo }: ToolCardProps) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden group hover:-translate-y-1">
+    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-cyan-500/40 transition-all duration-300 flex flex-col justify-between overflow-hidden group hover:-translate-y-1">
       <div className="p-6 sm:p-7">
         {/* Header do Card */}
         <div className="flex items-start justify-between gap-3 mb-4">
@@ -23,7 +23,7 @@ export function ToolCard({ tool, onRequestDemo }: ToolCardProps) {
 
           <div className="flex items-center gap-1.5">
             {tool.badge && (
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-900 text-white shadow-2xs">
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-950 text-cyan-300 border border-slate-800 shadow-2xs font-mono">
                 {tool.badge}
               </span>
             )}
@@ -34,10 +34,10 @@ export function ToolCard({ tool, onRequestDemo }: ToolCardProps) {
         </div>
 
         {/* Categoria e Título */}
-        <div className="text-[11px] font-bold uppercase tracking-wider text-blue-600 mb-1">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-700 mb-1">
           {tool.category}
         </div>
-        <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-2 leading-snug">
+        <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-700 transition-colors mb-2 leading-snug">
           {tool.name}
         </h3>
         <p className="text-xs text-slate-600 leading-relaxed mb-6">
@@ -51,7 +51,7 @@ export function ToolCard({ tool, onRequestDemo }: ToolCardProps) {
           </div>
           {tool.keyFeatures.slice(0, 3).map((feat, idx) => (
             <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
-              <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+              <Check className="w-3.5 h-3.5 text-cyan-600 shrink-0 mt-0.5" />
               <span className="line-clamp-1">{feat}</span>
             </div>
           ))}
@@ -59,22 +59,22 @@ export function ToolCard({ tool, onRequestDemo }: ToolCardProps) {
       </div>
 
       {/* Ações */}
-      <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
+      <div className="p-4 sm:p-5 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
         <button
           onClick={() => onRequestDemo(tool)}
-          className="w-full sm:flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+          className="w-full sm:flex-1 py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
         >
-          <Mail className="w-3.5 h-3.5" />
-          Solicitar Demonstração / Licença
+          <Mail className="w-3.5 h-3.5 text-cyan-400" />
+          Solicitar Demonstração
         </button>
 
         <Link
           href={`/dashboard/tools/${tool.id}`}
-          className="w-full sm:w-auto py-2.5 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1"
+          className="w-full sm:w-auto py-2.5 px-3.5 bg-white hover:bg-cyan-50 text-slate-800 hover:text-cyan-800 border border-slate-200 hover:border-cyan-300 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1"
           title="Ver no Hub Operacional"
         >
           Testar
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight className="w-3.5 h-3.5 text-cyan-600" />
         </Link>
       </div>
     </div>

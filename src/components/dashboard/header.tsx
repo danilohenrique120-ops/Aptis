@@ -6,27 +6,23 @@ import { useTenant } from '@/context/tenant-context';
 import { UserRole } from '@/types';
 import { 
   Building2, 
-  User, 
   ShieldCheck, 
-  ChevronDown, 
-  Layers, 
   ExternalLink,
-  Store,
-  Sparkles
+  Activity
 } from 'lucide-react';
 
 export function DashboardHeader() {
   const { currentTenant, currentUser, tenants, switchTenant, switchUserRole } = useTenant();
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
-      {/* Lado Esquerdo: Simulador Multi-Tenant */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
-          <Building2 className="w-4 h-4 text-slate-500 shrink-0" />
+    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+      {/* Lado Esquerdo: Seletor Multi-Tenant & Status da Planta */}
+      <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl px-3 py-1.5 transition-colors">
+          <Building2 className="w-4 h-4 text-cyan-600 shrink-0" />
           <div className="flex flex-col">
             <span className="text-[9px] uppercase font-bold text-slate-400 leading-none">
-              Empresa Selecionada (Multi-Tenant)
+              Planta / Empresa
             </span>
             <select
               value={currentTenant.id}
@@ -42,21 +38,25 @@ export function DashboardHeader() {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-xs text-slate-500">
-          <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-mono font-medium border border-blue-100">
+        <div className="hidden md:flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Planta 100% Operacional
+          </span>
+          <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-medium border border-slate-200">
             CNPJ: {currentTenant.document}
           </span>
         </div>
       </div>
 
-      {/* Lado Direito: Seletor de Perfil do Usuário + Atalhos */}
+      {/* Lado Direito: Seletor de Perfil + Ações */}
       <div className="flex items-center gap-3">
         {/* Seletor de Papel / Role Simulator */}
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
-          <ShieldCheck className="w-4 h-4 text-indigo-500" />
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+          <ShieldCheck className="w-4 h-4 text-indigo-600" />
           <div className="flex flex-col">
             <span className="text-[9px] uppercase font-bold text-slate-400 leading-none">
-              Papel do Usuário
+              Perfil de Acesso
             </span>
             <select
               value={currentUser.role}
@@ -64,8 +64,8 @@ export function DashboardHeader() {
               className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
             >
               <option value="superadmin">👑 SuperAdmin Global</option>
-              <option value="tenant_admin">👔 Gestor da Empresa (Admin)</option>
-              <option value="member">👤 Membro / Supervisor</option>
+              <option value="tenant_admin">👔 Gestor da Planta (Admin)</option>
+              <option value="member">👤 Supervisor / Operador</option>
             </select>
           </div>
         </div>
@@ -74,24 +74,24 @@ export function DashboardHeader() {
         <Link
           href="/"
           target="_blank"
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
           title="Abrir Vitrine Pública em nova aba"
         >
-          <ExternalLink className="w-3.5 h-3.5" />
+          <ExternalLink className="w-3.5 h-3.5 text-cyan-600" />
           Vitrine
         </Link>
 
         {/* Avatar e Perfil */}
         <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-          <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-900 to-indigo-950 text-white flex items-center justify-center font-black text-xs shadow-xs border border-slate-700">
             {currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
           </div>
           <div className="hidden lg:block text-left">
             <div className="text-xs font-bold text-slate-800 leading-tight">
               {currentUser.name}
             </div>
-            <div className="text-[10px] text-slate-400 leading-tight">
-              {currentUser.department || 'Gestor'}
+            <div className="text-[10px] text-slate-400 leading-tight font-medium">
+              {currentUser.department || 'Liderança'}
             </div>
           </div>
         </div>

@@ -2,44 +2,36 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { AptisLogo } from '@/components/ui/aptis-logo';
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-40 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white">
+    <header className="sticky top-0 z-40 w-full bg-slate-950/85 backdrop-blur-xl border-b border-slate-800/80 text-white transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        {/* Logo */}
+        {/* Logo Oficial Aptis */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-black text-lg shadow-md group-hover:scale-105 transition-transform">
-            A
-          </div>
-          <div>
-            <div className="font-extrabold text-lg tracking-tight text-white flex items-center gap-1.5">
-              Aptis
-              <span className="text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded">
-                SUITE B2B
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium tracking-wide">
-              A fábrica sempre apta.
-            </div>
-          </div>
+          <AptisLogo size="md" showTagline={true} glow={true} />
         </Link>
 
         {/* Navegação Desktop */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-          <a href="#catalogo" className="hover:text-white transition-colors">
-            Suíte de Módulos
+        <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <a href="#catalogo" className="hover:text-cyan-400 transition-colors">
+            Módulos da Suíte
           </a>
-          <a href="#aptis-score" className="hover:text-white transition-colors">
+          <a href="#score" className="hover:text-cyan-400 transition-colors flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             The Aptis Score
           </a>
-          <a href="#diferenciais" className="hover:text-white transition-colors">
-            Metodologia Fabril
+          <a href="#diferenciais" className="hover:text-cyan-400 transition-colors">
+            4 Pilares
+          </a>
+          <a href="#arquitetura" className="hover:text-cyan-400 transition-colors">
+            Arquitetura
           </a>
           <Link href="/admin" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 text-xs font-semibold">
             <ShieldCheck className="w-3.5 h-3.5" />
-            SuperAdmin
+            Admin
           </Link>
         </nav>
 
@@ -47,10 +39,10 @@ export function PublicHeader() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-md shadow-blue-600/20 transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            className="relative group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-cyan-500/20 transition-all hover:shadow-cyan-500/30 hover:scale-[1.02] active:scale-[0.98]"
           >
-            Acessar Aptis Suite
-            <ArrowRight className="w-4 h-4" />
+            <span>Acessar Plataforma</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
       </div>

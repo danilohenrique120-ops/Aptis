@@ -84,34 +84,35 @@ export default function DashboardHomePage() {
 
   return (
     <div className="space-y-8 w-full">
-      {/* Banner de Boas-Vindas & Status da Organização */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden border border-slate-800">
-        <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Banner de Boas-Vindas & Status da Organização - Cockpit Industrial */}
+      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
+        <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 bottom-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              <Building2 className="w-3.5 h-3.5" />
+          <div className="flex flex-wrap items-center gap-2.5 mb-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              <Building2 className="w-3.5 h-3.5 text-cyan-400" />
               Planta: {currentTenant.name}
             </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Aptis Suite • Plano {currentTenant.plan.toUpperCase()}
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
-            Olá, {currentUser.name}!
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2 text-white">
+            Centro de Comando da Planta
           </h1>
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl font-normal leading-relaxed">
-            Bem-vindo ao centro de comando da sua fábrica. Garanta que todo operador, máquina e turno estejam 100% aptos a produzir com segurança, alta polivalência e sem paradas de linha.
+            Olá, <strong>{currentUser.name}</strong>. Monitore a prontidão operacional em tempo real: operadores capacitados, conformidade regulatória sem risco de interdição e passagens de turno sem falhas.
           </p>
 
           {/* Mini Estatísticas da Planta */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800/80">
             <div>
               <span className="text-xs text-slate-400 block">Módulos Aptis Ativos</span>
-              <span className="text-xl sm:text-2xl font-bold text-white mt-0.5 block">
+              <span className="text-xl sm:text-2xl font-bold text-white mt-0.5 block font-mono">
                 {activeTools.length} de {allTools.length}
               </span>
             </div>
@@ -122,16 +123,16 @@ export default function DashboardHomePage() {
               </span>
             </div>
             <div>
-              <span className="text-xs text-slate-400 block">Efetivo no Chão de Fábrica</span>
-              <span className="text-xl sm:text-2xl font-bold text-white mt-0.5 block">
-                {currentTenant.employeeCount || 120} operadores
+              <span className="text-xs text-slate-400 block">Efetivo Operacional</span>
+              <span className="text-xl sm:text-2xl font-bold text-cyan-300 mt-0.5 block font-mono">
+                {stats.totalEmployees > 0 ? stats.totalEmployees : (currentTenant.employeeCount || 120)} operadores
               </span>
             </div>
             <div>
               <span className="text-xs text-slate-400 block">Status de Prontidão</span>
               <span className="text-sm font-semibold text-emerald-400 mt-0.5 block flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Fábrica 100% Apta
+                Fábrica Sempre Apta
               </span>
             </div>
           </div>
@@ -139,17 +140,17 @@ export default function DashboardHomePage() {
       </div>
 
       {/* O CONCEITO DE OURO: THE APTIS SCORE (ÍNDICE DE APTIDÃO DA PLANTA) */}
-      <section className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-6">
+      <section className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200/90 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded">
+              <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-md">
                 Métrica Proprietária • Aptis Index
               </span>
               <span className="text-xs text-slate-500">Unidade: {currentTenant.name}</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mt-1 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-black text-slate-900 mt-1.5 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-cyan-600" />
               The Aptis Score (Índice Global de Aptidão da Planta)
             </h2>
             <p className="text-xs text-slate-500">
@@ -158,15 +159,15 @@ export default function DashboardHomePage() {
           </div>
 
           {/* Placar Central do Aptis Score */}
-          <div className="bg-gradient-to-tr from-slate-900 to-indigo-950 text-white rounded-2xl p-4 px-6 flex items-center gap-4 shrink-0 shadow-md border border-slate-800">
+          <div className="bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 text-white rounded-2xl p-4 px-6 flex items-center gap-5 shrink-0 shadow-lg border border-slate-800">
             <div>
               <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Aptis Score Geral</div>
-              <div className="text-3xl font-black text-white mt-0.5">{aptisScore}%</div>
+              <div className="text-3xl font-black text-cyan-300 mt-0.5 font-mono">{aptisScore}%</div>
               <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
-                <TrendingUp className="w-3.5 h-3.5" /> +2.4% vs mês anterior
+                <TrendingUp className="w-3.5 h-3.5" /> Planta Conforme
               </div>
             </div>
-            <div className="w-14 h-14 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-400 text-lg shadow-inner">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-tr from-cyan-950 to-emerald-950 border border-cyan-500/40 flex items-center justify-center font-black text-cyan-300 text-lg shadow-inner">
               APTO
             </div>
           </div>
