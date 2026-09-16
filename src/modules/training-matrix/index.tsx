@@ -438,20 +438,20 @@ export default function TrainingMatrixModule() {
 
   return (
     <div className="space-y-6 w-full">
-      {/* Header do Módulo Aptis Compliance */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200/90 pb-5">
+      {/* Header do Módulo */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-md">
-              Aptis Compliance • Pilar de Conformidade Legal & SST
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-1 rounded">
+              Conformidade Legal & Qualidade (SST / EHS & POPs)
             </span>
-            <span className="text-xs text-slate-500">Unidade: {currentTenant.name}</span>
+            <span className="text-xs text-slate-500">Tenant: {currentTenant.name}</span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 mt-1.5 flex items-center gap-2">
-            Aptis Compliance: Matriz de NRs, POPs & Gestão Documental
+          <h1 className="text-2xl font-bold text-slate-900 mt-1">
+            Matriz de Treinamentos de NRs & POPs
           </h1>
           <p className="text-sm text-slate-600">
-            Validade legal de Normas Regulamentadoras, Procedimentos Operacionais e busca profunda com OCR em certificados e POPs.
+            Governança de Normas Regulamentadoras do MTE, Procedimentos Operacionais Padrão e acervo documental com busca inteligente profunda.
           </p>
         </div>
 
@@ -464,9 +464,9 @@ export default function TrainingMatrixModule() {
                 setDocuments(INITIAL_DOCUMENTS);
               }}
               title="Carregar registros e documentos de exemplo para teste"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 transition-colors cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
               Carregar Exemplos
             </button>
           ) : (
@@ -484,26 +484,25 @@ export default function TrainingMatrixModule() {
               Limpar Registros
             </button>
           )}
-
           <button
             onClick={() => setIsDeepSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-cyan-300 text-xs font-bold rounded-xl border border-slate-800 shadow-sm transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-cyan-400" />
-            Busca Inteligente OCR
+            <Sparkles className="w-4 h-4" />
+            Busca Inteligente nos Documentos
           </button>
 
           <button
             onClick={() => setIsDocManagerOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 shadow-xs transition-colors cursor-pointer"
           >
-            <FolderOpen className="w-4 h-4 text-cyan-600" />
+            <FolderOpen className="w-4 h-4 text-amber-600" />
             Acervo de Arquivos ({documents.length})
           </button>
 
           <button
             onClick={() => setIsBatchModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-xl border border-slate-300 shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 shadow-xs transition-colors cursor-pointer"
           >
             <Users className="w-4 h-4 text-blue-600" />
             Montar Turma
@@ -511,7 +510,7 @@ export default function TrainingMatrixModule() {
 
           <button
             onClick={() => setIsNewModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Nova Capacitação

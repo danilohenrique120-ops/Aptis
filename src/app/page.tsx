@@ -66,17 +66,17 @@ export default function HomePage() {
           <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[400px] h-[300px] bg-blue-600/10 blur-[130px] rounded-full pointer-events-none" />
 
           <div className="relative max-w-5xl mx-auto text-center space-y-8">
-            {/* Logotipo Monumental que Preenche o Frame */}
+            {/* Logotipo Monumental com Efeito de Luz */}
             <div className="flex flex-col items-center justify-center pt-2">
-              <div className="relative group w-full max-w-xl p-1.5 rounded-3xl bg-gradient-to-b from-slate-700/80 via-slate-800/60 to-slate-950 border border-slate-700/90 shadow-2xl shadow-cyan-950/40 backdrop-blur-2xl">
-                <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/35 via-blue-500/25 to-cyan-500/35 rounded-3xl blur-2xl opacity-75 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-[22px] overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 p-6 sm:p-8 flex items-center justify-center border border-slate-800/80">
+              <div className="relative group inline-flex p-1 rounded-3xl bg-gradient-to-b from-slate-700/60 via-slate-800/40 to-slate-900/80 border border-slate-700/80 shadow-2xl shadow-black/80 backdrop-blur-xl">
+                <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 to-blue-600/30 rounded-3xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity" />
+                <div className="relative rounded-[22px] overflow-hidden bg-slate-950 px-8 py-6 flex items-center justify-center">
                   <Image
-                    src="/brand/aptis-logo-full.png"
-                    alt="Aptis - A fábrica sempre apta"
-                    width={727}
-                    height={263}
-                    className="w-full h-auto max-h-36 sm:max-h-44 object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.9)] scale-105 group-hover:scale-110 transition-transform duration-300"
+                    src="/brand/aptis-logo.png"
+                    alt="Aptis - Logotipo Oficial"
+                    width={280}
+                    height={100}
+                    className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
                     priority
                   />
                 </div>

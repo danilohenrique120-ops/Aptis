@@ -4,8 +4,8 @@ import React from 'react';
 import Image from 'next/image';
 
 export interface AptisLogoProps {
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'hero';
-  variant?: 'full' | 'symbol' | 'horizontal' | 'badge';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'full' | 'symbol' | 'image' | 'horizontal';
   showTagline?: boolean;
   className?: string;
   glow?: boolean;
@@ -18,32 +18,29 @@ export function AptisLogo({
   className = '',
   glow = false
 }: AptisLogoProps) {
+  // Dimensions per size
   const dimensions = {
-    xs: { img: 24, font: 'text-sm', badge: 'text-[8px]', gap: 'gap-1.5' },
-    sm: { img: 32, font: 'text-base', badge: 'text-[9px]', gap: 'gap-2' },
+    xs: { img: 24, font: 'text-sm', badge: 'text-[9px]', gap: 'gap-1.5' },
+    sm: { img: 32, font: 'text-base', badge: 'text-[10px]', gap: 'gap-2' },
     md: { img: 40, font: 'text-lg', badge: 'text-[10px]', gap: 'gap-2.5' },
     lg: { img: 52, font: 'text-2xl', badge: 'text-xs', gap: 'gap-3' },
-    xl: { img: 72, font: 'text-4xl', badge: 'text-xs', gap: 'gap-4' },
-    hero: { img: 110, font: 'text-5xl', badge: 'text-sm', gap: 'gap-5' }
+    xl: { img: 72, font: 'text-4xl', badge: 'text-xs', gap: 'gap-4' }
   }[size];
 
-  // Symbol only: Contains ONLY the letter 'A' monogram with cyan checkmark
-  if (variant === 'symbol') {
+  // If using the official image directly
+  if (variant === 'image') {
     return (
-      <div 
-        className={`relative inline-flex items-center justify-center shrink-0 ${glow ? 'group' : ''} ${className}`}
-        style={{ width: dimensions.img, height: dimensions.img }}
-      >
+      <div className={`relative inline-flex items-center shrink-0 ${glow ? 'group' : ''} ${className}`}>
         {glow && (
-          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/40 to-blue-600/40 rounded-2xl blur-md" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/30 to-blue-600/30 rounded-2xl blur-md opacity-70 group-hover:opacity-100 transition-opacity" />
         )}
-        <div className="relative w-full h-full rounded-xl overflow-hidden shadow-md shadow-black/50 border border-cyan-500/30 bg-slate-950 flex items-center justify-center">
+        <div className="relative overflow-hidden rounded-xl border border-slate-700/60 bg-slate-900/90 shadow-lg shadow-black/40">
           <Image
-            src="/brand/aptis-icon.png"
-            alt="Aptis"
+            src="/brand/aptis-logo.png"
+            alt="Aptis Logo"
             width={dimensions.img}
             height={dimensions.img}
-            className="w-full h-full object-contain p-0.5"
+            className="object-cover"
             priority
           />
         </div>
@@ -51,23 +48,47 @@ export function AptisLogo({
     );
   }
 
-  // Full lockup: Icon ('A' Monogram only) + Typographic "APTIS" Wordmark + SUITE badge
+  // Symbol only: vector monogram of the stylized 'A' with cyan checkmark
+  if (variant === 'symbol') {
+    return (
+      <div 
+        className={`relative inline-flex items-center justify-center shrink-0 ${glow ? 'group' : ''} ${className}`}
+        style={{ width: dimensions.img, height: dimensions.img }}
+      >
+        {glow && (
+          <div className="absolute -inset-1 bg-cyan-400/30 rounded-xl blur-sm" />
+        )}
+        <div className="relative w-full h-full rounded-xl overflow-hidden shadow-md shadow-slate-950/50 border border-cyan-500/30 bg-slate-950 flex items-center justify-center">
+          <Image
+            src="/brand/aptis-logo.png"
+            alt="Aptis"
+            width={dimensions.img}
+            height={dimensions.img}
+            className="w-full h-full object-cover scale-110"
+            priority
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Full variant: Official logo emblem + High-Contrast Geometric "APTIS" typography
   return (
     <div className={`inline-flex items-center ${dimensions.gap} ${className}`}>
-      {/* Icon Frame (ONLY the letter A monogram) */}
+      {/* Icon Frame */}
       <div 
-        className="relative shrink-0 rounded-xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-md shadow-black/40 flex items-center justify-center group"
+        className="relative shrink-0 rounded-xl overflow-hidden border border-slate-700/70 bg-slate-950 shadow-md shadow-black/40 flex items-center justify-center group"
         style={{ width: dimensions.img, height: dimensions.img }}
       >
         {glow && (
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl blur-sm opacity-40 group-hover:opacity-75 transition-opacity" />
         )}
         <Image
-          src="/brand/aptis-icon.png"
-          alt="Aptis Monograma A"
+          src="/brand/aptis-logo.png"
+          alt="Aptis Monogram"
           width={dimensions.img}
           height={dimensions.img}
-          className="w-full h-full object-contain p-1"
+          className="w-full h-full object-cover"
           priority
         />
       </div>
