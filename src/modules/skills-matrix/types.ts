@@ -58,5 +58,28 @@ export interface TrainingAction {
   notes?: string;
 }
 
-export type ViewTab = 'matrix' | 'gap_analysis' | 'gestao_a_vista';
+export type SuccessionReadiness = 'ready_now' | 'ready_medium' | 'in_development' | 'none';
+export type VacancyRisk = 'low' | 'medium' | 'high' | 'critical';
+export type PositionCategory = 'leadership' | 'technical_specialist' | 'critical_operator';
+
+export interface SuccessionPlan {
+  id: string;
+  sectorId: string;
+  keyPosition: string;
+  positionCategory: PositionCategory;
+  currentIncumbent: string;
+  currentIncumbentRole: string;
+  successorId?: string;
+  successorName: string;
+  readiness: SuccessionReadiness;
+  readinessScore: number; // 0 - 100%
+  vacancyRisk: VacancyRisk;
+  developmentPlan: string;
+  competencyGaps: string[];
+  targetDate: string;
+  mentorName?: string;
+  notes?: string;
+}
+
+export type ViewTab = 'dashboard' | 'matrix' | 'succession' | 'gap_analysis' | 'gestao_a_vista';
 export type DisplayFormat = 'iluo_circles' | 'badges';

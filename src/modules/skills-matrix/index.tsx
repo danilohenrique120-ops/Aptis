@@ -9,6 +9,7 @@ import {
   SkillLevelInfo, 
   Sector, 
   TrainingAction, 
+  SuccessionPlan,
   ViewTab, 
   DisplayFormat 
 } from './types';
@@ -17,6 +18,9 @@ import { SectorManagerModal } from './components/SectorManagerModal';
 import { AddOperatorModal } from './components/AddOperatorModal';
 import { AddStationModal } from './components/AddStationModal';
 import { GapAnalysisPanel } from './components/GapAnalysisPanel';
+import { SuccessionMatrixPanel } from './components/SuccessionMatrixPanel';
+import { AddSuccessionModal } from './components/AddSuccessionModal';
+import { SkillsDashboardPanel } from './components/SkillsDashboardPanel';
 import { 
   Users, 
   Award, 
@@ -39,7 +43,9 @@ import {
   ArrowRight,
   TrendingUp,
   GraduationCap,
-  Trash2
+  Trash2,
+  LayoutDashboard,
+  UserCheck
 } from 'lucide-react';
 
 export const SKILL_LEVEL_DEFINITIONS: Record<SkillLevel, SkillLevelInfo> = {
@@ -237,6 +243,130 @@ const INITIAL_ACTIONS: TrainingAction[] = [
   }
 ];
 
+const INITIAL_SUCCESSION_PLANS: SuccessionPlan[] = [
+  // Usinagem
+  {
+    id: 'succ-1',
+    sectorId: 'sec-usinagem',
+    keyPosition: 'Supervisor de Usinagem CNC & Precisão',
+    positionCategory: 'leadership',
+    currentIncumbent: 'Carlos Silveira',
+    currentIncumbentRole: 'Supervisor de Usinagem',
+    successorId: 'emp-1',
+    successorName: 'Marcos Vinicius',
+    readiness: 'ready_now',
+    readinessScore: 92,
+    vacancyRisk: 'low',
+    developmentPlan: 'Mentoria semanal em gestão de indicadores OEE, gestão de conflitos de equipe e alinhamento orçamentário.',
+    competencyGaps: ['Orçamento Fabril', 'Gestão de Pessoas', 'Planejamento PCP'],
+    targetDate: '2026-11-30',
+    mentorName: 'Carlos Silveira'
+  },
+  {
+    id: 'succ-2',
+    sectorId: 'sec-usinagem',
+    keyPosition: 'Especialista em Torneamento 4 Eixos (N4)',
+    positionCategory: 'technical_specialist',
+    currentIncumbent: 'Marcos Vinicius',
+    currentIncumbentRole: 'Operador Especialista CNC',
+    successorId: 'emp-2',
+    successorName: 'Aline Ferreira',
+    readiness: 'ready_medium',
+    readinessScore: 75,
+    vacancyRisk: 'medium',
+    developmentPlan: 'Capacitação prática em programação CAM Mastercam e parametrização de ferramentas de corte de titânio.',
+    competencyGaps: ['Programação CAM Avançada', 'Setup Rápido SMED'],
+    targetDate: '2027-03-31',
+    mentorName: 'Marcos Vinicius'
+  },
+  {
+    id: 'succ-3',
+    sectorId: 'sec-usinagem',
+    keyPosition: 'Líder Operacional de Turno B',
+    positionCategory: 'leadership',
+    currentIncumbent: 'Carlos Silveira',
+    currentIncumbentRole: 'Supervisor Geral Interino',
+    successorId: 'emp-3',
+    successorName: 'Felipe Alencar',
+    readiness: 'in_development',
+    readinessScore: 50,
+    vacancyRisk: 'high',
+    developmentPlan: 'Job rotation de 30 dias no Turno A para vivência das rotinas de passagem de turno estruturada e Kamishibai.',
+    competencyGaps: ['Passagem de Turno', 'Matriz de Escalabilidade', 'Segurança do Trabalho'],
+    targetDate: '2027-08-30',
+    mentorName: 'Carlos Silveira'
+  },
+  // Estamparia
+  {
+    id: 'succ-4',
+    sectorId: 'sec-estampagem',
+    keyPosition: 'Supervisora de Linha de Prensas',
+    positionCategory: 'leadership',
+    currentIncumbent: 'Mariana Souza',
+    currentIncumbentRole: 'Supervisora de Estamparia',
+    successorId: 'emp-5',
+    successorName: 'Beatriz Lima',
+    readiness: 'ready_now',
+    readinessScore: 90,
+    vacancyRisk: 'low',
+    developmentPlan: 'Imersão em auditorias de processo da NR-12 e coordenação de reuniões diárias de melhoria contínua.',
+    competencyGaps: ['Auditoria NR-12', 'Relatórios Gerenciais'],
+    targetDate: '2026-10-31',
+    mentorName: 'Mariana Souza'
+  },
+  {
+    id: 'succ-5',
+    sectorId: 'sec-estampagem',
+    keyPosition: 'Especialista em Prensas Excêntricas 500T',
+    positionCategory: 'technical_specialist',
+    currentIncumbent: 'Beatriz Lima',
+    currentIncumbentRole: 'Operadora Líder',
+    successorId: 'emp-6',
+    successorName: 'Rodrigo Santoro',
+    readiness: 'ready_medium',
+    readinessScore: 65,
+    vacancyRisk: 'medium',
+    developmentPlan: 'Treinamento intensivo de manutenção autônoma nível 2 e troca rápida de ferramentas (TRF).',
+    competencyGaps: ['Troca Rápida de Matriz', 'Setup Seguro'],
+    targetDate: '2027-04-30',
+    mentorName: 'Beatriz Lima'
+  },
+  // Montagem
+  {
+    id: 'succ-6',
+    sectorId: 'sec-montagem',
+    keyPosition: 'Coordenador de Montagem & Robótica',
+    positionCategory: 'leadership',
+    currentIncumbent: 'Rodrigo Santoro',
+    currentIncumbentRole: 'Coordenador de Montagem',
+    successorId: 'emp-8',
+    successorName: 'Daniel Silveira',
+    readiness: 'ready_medium',
+    readinessScore: 78,
+    vacancyRisk: 'medium',
+    developmentPlan: 'Desenvolvimento em gestão de balanceamento de linha e ciclo takt time.',
+    competencyGaps: ['Takt Time & Balanceamento', 'Gestão de Pessoas'],
+    targetDate: '2027-02-28',
+    mentorName: 'Rodrigo Santoro'
+  },
+  {
+    id: 'succ-7',
+    sectorId: 'sec-montagem',
+    keyPosition: 'Programador de Solda Robotizada MIG',
+    positionCategory: 'technical_specialist',
+    currentIncumbent: 'Daniel Silveira',
+    currentIncumbentRole: 'Soldador Especialista',
+    successorName: 'Nenhum Sucessor Mapeado',
+    readiness: 'none',
+    readinessScore: 0,
+    vacancyRisk: 'critical',
+    developmentPlan: 'Urgente: Recrutar ou selecionar operador interno para iniciar formação imediata como backup.',
+    competencyGaps: ['Programação Robótica Fanuc/Kuka', 'Parâmetros de Penetração MIG'],
+    targetDate: '2027-06-30',
+    mentorName: 'Daniel Silveira'
+  }
+];
+
 export default function SkillsMatrixModule() {
   const { currentTenant, currentUser } = useTenant();
 
@@ -246,6 +376,7 @@ export default function SkillsMatrixModule() {
   const [stations, setStations] = useState<SkillStation[]>([]);
   const [employees, setEmployees] = useState<EmployeeSkillRecord[]>([]);
   const [trainingActions, setTrainingActions] = useState<TrainingAction[]>([]);
+  const [successionPlans, setSuccessionPlans] = useState<SuccessionPlan[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load from localStorage on mount (clean default [])
@@ -255,11 +386,13 @@ export default function SkillsMatrixModule() {
       const savedEmployees = localStorage.getItem('aptis_skills_employees');
       const savedActions = localStorage.getItem('aptis_skills_actions');
       const savedSectors = localStorage.getItem('aptis_skills_sectors');
+      const savedSuccession = localStorage.getItem('aptis_skills_succession');
 
       if (savedStations) setStations(JSON.parse(savedStations));
       if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
       if (savedActions) setTrainingActions(JSON.parse(savedActions));
       if (savedSectors) setSectors(JSON.parse(savedSectors));
+      if (savedSuccession) setSuccessionPlans(JSON.parse(savedSuccession));
     } catch (e) {
       console.error('Erro ao carregar dados da matriz de habilidades:', e);
     } finally {
@@ -274,11 +407,12 @@ export default function SkillsMatrixModule() {
       localStorage.setItem('aptis_skills_employees', JSON.stringify(employees));
       localStorage.setItem('aptis_skills_actions', JSON.stringify(trainingActions));
       localStorage.setItem('aptis_skills_sectors', JSON.stringify(sectors));
+      localStorage.setItem('aptis_skills_succession', JSON.stringify(successionPlans));
     }
-  }, [stations, employees, trainingActions, sectors, isLoaded]);
+  }, [stations, employees, trainingActions, sectors, successionPlans, isLoaded]);
 
-  // View & Presentation State
-  const [activeTab, setActiveTab] = useState<ViewTab>('matrix');
+  // View & Presentation State - Default to 'dashboard' for dynamic management overview
+  const [activeTab, setActiveTab] = useState<ViewTab>('dashboard');
   const [displayFormat, setDisplayFormat] = useState<DisplayFormat>('iluo_circles');
   const [highlightGaps, setHighlightGaps] = useState<boolean>(false);
   const [search, setSearch] = useState('');
@@ -340,6 +474,21 @@ export default function SkillsMatrixModule() {
       }
       return emp;
     }));
+  };
+
+  const [isSuccessionModalOpen, setIsSuccessionModalOpen] = useState(false);
+
+  // Handlers da Matriz de Sucessão
+  const handleAddSuccession = (newPlan: SuccessionPlan) => {
+    setSuccessionPlans(prev => [newPlan, ...prev]);
+  };
+
+  const handleUpdateSuccession = (updatedPlan: SuccessionPlan) => {
+    setSuccessionPlans(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
+  };
+
+  const handleDeleteSuccession = (id: string) => {
+    setSuccessionPlans(prev => prev.filter(p => p.id !== id));
   };
 
   // Criação Dinâmica
@@ -546,6 +695,7 @@ export default function SkillsMatrixModule() {
                     setStations(INITIAL_STATIONS);
                     setEmployees(INITIAL_EMPLOYEES);
                     setTrainingActions(INITIAL_ACTIONS);
+                    setSuccessionPlans(INITIAL_SUCCESSION_PLANS);
                   }}
                   title="Carregar dados de demonstração para teste"
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-colors cursor-pointer"
@@ -556,19 +706,29 @@ export default function SkillsMatrixModule() {
               ) : (
                 <button
                   onClick={() => {
-                    if (window.confirm('Tem certeza que deseja zerar a matriz de habilidades e operadores?')) {
+                    if (window.confirm('Tem certeza que deseja zerar a matriz de habilidades, operadores e plano de sucessão?')) {
                       setStations([]);
                       setEmployees([]);
                       setTrainingActions([]);
+                      setSuccessionPlans([]);
                     }
                   }}
-                  title="Limpar matriz de competências"
+                  title="Limpar matriz de competências e sucessão"
                   className="inline-flex items-center gap-1 px-2.5 py-2 text-slate-400 hover:text-rose-600 text-xs transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Limpar Matriz
                 </button>
               )}
+              <button
+                onClick={() => setIsSuccessionModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+                title="Mapear plano de sucessão de liderança"
+              >
+                <UserCheck className="w-4 h-4" />
+                Mapear Sucessor
+              </button>
+
               <button
                 onClick={() => setIsOperatorModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
@@ -638,28 +798,57 @@ export default function SkillsMatrixModule() {
           {/* NAVEGAÇÃO DE ABAS & CONTROLES VISUAIS */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
             {/* Abas Principais */}
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'dashboard'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
+                Dashboard Executivo
+              </button>
+
               <button
                 onClick={() => setActiveTab('matrix')}
                 className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'matrix'
-                    ? 'bg-slate-900 text-white'
+                    ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                Matriz Operacional
+                Matriz Operacional ILUO
+              </button>
+
+              <button
+                onClick={() => setActiveTab('succession')}
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'succession'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5 text-indigo-300" />
+                Matriz de Sucessão
+                {successionPlans.filter(p => p.sectorId === activeSector.id && p.readiness === 'none').length > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center font-black" title="Posições sem sucessor">
+                    !
+                  </span>
+                )}
               </button>
 
               <button
                 onClick={() => setActiveTab('gap_analysis')}
                 className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'gap_analysis'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                Diagnóstico de Gaps & Ações
+                Diagnóstico de Gaps
                 {criticalStationsCount > 0 && (
                   <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center font-black">
                     {criticalStationsCount}
@@ -671,12 +860,12 @@ export default function SkillsMatrixModule() {
                 onClick={() => setActiveTab('gestao_a_vista')}
                 className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'gestao_a_vista'
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-slate-800 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
-                Modo Gestão à Vista (Quadro)
+                Modo TV Chão de Fábrica
               </button>
             </div>
 
@@ -931,6 +1120,32 @@ export default function SkillsMatrixModule() {
             </div>
           )}
 
+          {/* CONTEÚDO DA ABA 0: DASHBOARD EXECUTIVO DINÂMICO */}
+          {activeTab === 'dashboard' && (
+            <SkillsDashboardPanel
+              sectors={sectors}
+              activeSector={activeSector}
+              stations={stations}
+              employees={employees}
+              successionPlans={successionPlans}
+              trainingActions={trainingActions}
+              onSelectSector={(sectorId) => setSelectedSectorId(sectorId)}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {/* CONTEÚDO DA ABA: MATRIZ DE SUCESSÃO */}
+          {activeTab === 'succession' && (
+            <SuccessionMatrixPanel
+              sector={activeSector}
+              employees={sectorEmployees}
+              successionPlans={successionPlans}
+              onAddSuccessionClick={() => setIsSuccessionModalOpen(true)}
+              onUpdateSuccession={handleUpdateSuccession}
+              onDeleteSuccession={handleDeleteSuccession}
+            />
+          )}
+
           {/* CONTEÚDO DA ABA 2: DIAGNÓSTICO DE GAPS & PLANO DE AÇÃO */}
           {activeTab === 'gap_analysis' && (
             <GapAnalysisPanel
@@ -968,6 +1183,14 @@ export default function SkillsMatrixModule() {
         onClose={() => setIsStationModalOpen(false)}
         sector={activeSector}
         onAddStation={handleAddStation}
+      />
+
+      <AddSuccessionModal
+        isOpen={isSuccessionModalOpen}
+        onClose={() => setIsSuccessionModalOpen(false)}
+        sector={activeSector}
+        employees={sectorEmployees}
+        onAddSuccession={handleAddSuccession}
       />
     </div>
   );
