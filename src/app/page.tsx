@@ -35,6 +35,7 @@ export default function HomePage() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedToolForLead, setSelectedToolForLead] = useState<ToolDefinition | null>(null);
+  const [selectedPlanForLead, setSelectedPlanForLead] = useState<string | undefined>(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const allTools = getAllTools();
@@ -47,8 +48,9 @@ export default function HomePage() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleOpenDemoModal = (tool: ToolDefinition) => {
-    setSelectedToolForLead(tool);
+  const handleOpenDemoModal = (tool?: ToolDefinition, plan?: string) => {
+    setSelectedToolForLead(tool || null);
+    setSelectedPlanForLead(plan);
     setIsModalOpen(true);
   };
 
@@ -383,6 +385,252 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* SEÇÃO DE PLANOS & VALORES DE ASSINATURA */}
+        <section id="planos" className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+          {/* Background Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-cyan-500/10 blur-[150px] rounded-full pointer-events-none" />
+
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-3 relative z-10">
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/70 border border-cyan-800/60 px-3 py-1 rounded-full inline-flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> Planos Transparentes & Modulares
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+              Investimento em Prontidão Industrial
+            </h2>
+            <p className="text-sm sm:text-base text-slate-400">
+              Contrate os módulos essenciais para o momento da sua fábrica ou adote a Suíte Completa 360º com ROI imediato e implantação guiada.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+            {/* PLANO 1: MÓDULO INDIVIDUAL */}
+            <div className="bg-slate-900/80 rounded-3xl border border-slate-800 p-7 flex flex-col justify-between hover:border-slate-700 transition-all hover:-translate-y-1">
+              <div className="space-y-4">
+                <div className="inline-block px-3 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-bold uppercase tracking-wider">
+                  Entrada Lean
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">Módulo Individual</h3>
+                  <p className="text-xs text-slate-400 mt-1">Para plantas que precisam resolver um gargalo crítico imediato.</p>
+                </div>
+
+                <div className="pt-2 pb-4 border-b border-slate-800">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xs text-slate-400 font-semibold">R$</span>
+                    <span className="text-4xl font-black text-white">490</span>
+                    <span className="text-xs text-slate-400 font-semibold">/mês</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block mt-1">por planta • 1 ferramenta à escolha</span>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>1 Módulo Aptis</strong> à sua escolha (Routine, Skills, Compliance ou Kaizen)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Usuários e operadores ilimitados</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Exportação de relatórios em Excel/PDF</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Suporte via e-mail e comunidade</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-6">
+                <button
+                  onClick={() => handleOpenDemoModal(undefined, 'Módulo Individual (R$ 490/mês)')}
+                  className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:text-white"
+                >
+                  Solicitar Demonstração
+                </button>
+              </div>
+            </div>
+
+            {/* PLANO 2: APTIS SUITE OPERACIONAL (DESTAQUE) */}
+            <div className="bg-gradient-to-b from-slate-900 via-cyan-950/20 to-slate-900 rounded-3xl border-2 border-cyan-500 p-7 flex flex-col justify-between shadow-2xl shadow-cyan-500/15 relative hover:-translate-y-1 transition-all">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 font-black text-[10px] tracking-wider uppercase px-3 py-1 rounded-full shadow-md">
+                Mais Escolhido pelas Indústrias ⭐
+              </div>
+
+              <div className="space-y-4">
+                <div className="inline-block px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[11px] font-bold uppercase tracking-wider border border-cyan-500/30">
+                  Operação & Pessoas
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">Aptis Suite Operacional</h3>
+                  <p className="text-xs text-slate-400 mt-1">O pacote central para garantir a estabilidade do chão de fábrica.</p>
+                </div>
+
+                <div className="pt-2 pb-4 border-b border-slate-800">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xs text-slate-400 font-semibold">R$</span>
+                    <span className="text-4xl font-black text-cyan-400">1.190</span>
+                    <span className="text-xs text-slate-400 font-semibold">/mês</span>
+                  </div>
+                  <span className="text-[11px] text-cyan-300/80 block mt-1">por planta • Economia de 25%</span>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-slate-200">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>Aptis Routine</strong> (Kamishibai & Turnos)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>Aptis Skills</strong> (Matriz ILUO & Sucessor)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>Aptis Compliance</strong> (NRs & POPs)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Painel Executivo <strong>The Aptis Score</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Treinamento de Onboarding com a Equipe</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-6">
+                <button
+                  onClick={() => handleOpenDemoModal(undefined, 'Aptis Suite Operacional (R$ 1.190/mês)')}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/25 cursor-pointer"
+                >
+                  Solicitar Demonstração & Orçamento
+                </button>
+              </div>
+            </div>
+
+            {/* PLANO 3: FÁBRICA SEMPRE APTA 360º */}
+            <div className="bg-slate-900/80 rounded-3xl border border-slate-800 p-7 flex flex-col justify-between hover:border-slate-700 transition-all hover:-translate-y-1">
+              <div className="space-y-4">
+                <div className="inline-block px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider border border-indigo-500/30">
+                  Suíte Completa 360º
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">Fábrica Sempre Apta</h3>
+                  <p className="text-xs text-slate-400 mt-1">Governança total: rotina, pessoas, conformidade e melhoria contínua.</p>
+                </div>
+
+                <div className="pt-2 pb-4 border-b border-slate-800">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xs text-slate-400 font-semibold">R$</span>
+                    <span className="text-4xl font-black text-white">1.590</span>
+                    <span className="text-xs text-slate-400 font-semibold">/mês</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block mt-1">por planta • Acesso irrestrito a todos módulos</span>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>Todos os 4 Módulos Aptis Integrados</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>Aptis Kaizen</strong> com Gestor de Ideias & ROI Lean</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>The Aptis Score Completo com Radar Chart</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Auditoria e OCR de POPs & Documentos</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Gerente de Contas & Suporte Prioritário VIP</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-6">
+                <button
+                  onClick={() => handleOpenDemoModal(undefined, 'Fábrica Sempre Apta 360º (R$ 1.590/mês)')}
+                  className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:text-white"
+                >
+                  Solicitar Demonstração
+                </button>
+              </div>
+            </div>
+
+            {/* PLANO 4: ENTERPRISE MULTI-PLANTAS */}
+            <div className="bg-slate-900/80 rounded-3xl border border-slate-800 p-7 flex flex-col justify-between hover:border-slate-700 transition-all hover:-translate-y-1">
+              <div className="space-y-4">
+                <div className="inline-block px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider border border-amber-500/30">
+                  Corporativo
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white">Enterprise & Multi-Plantas</h3>
+                  <p className="text-xs text-slate-400 mt-1">Para grupos industriais com 2 ou mais fábricas e integrações dedicadas.</p>
+                </div>
+
+                <div className="pt-2 pb-4 border-b border-slate-800">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-black text-white">Sob Consulta</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block mt-1">descontos progressivos por volume de plantas</span>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Visão consolidada Multi-Plantas corporativa</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Integração ERP / MES / SAP / TOTVS</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>Single Sign-On (SSO SAML / Azure AD)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>SLA de 99.9% e Consultoria Técnica Dedicada</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-6">
+                <button
+                  onClick={() => handleOpenDemoModal(undefined, 'Enterprise Multi-Plantas (Sob Consulta)')}
+                  className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:text-white"
+                >
+                  Falar com Especialista
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Banner de Garantia & Confiança */}
+          <div className="mt-12 p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+            <div className="flex items-center gap-3 text-center sm:text-left">
+              <ShieldCheck className="w-6 h-6 text-cyan-400 shrink-0" />
+              <span>
+                <strong>Sem taxa oculta de implantação:</strong> Todas as assinaturas incluem onboarding assistido, importação das planilhas legadas da sua fábrica e suporte direto aos supervisores.
+              </span>
+            </div>
+            <button
+              onClick={() => handleOpenDemoModal()}
+              className="shrink-0 px-4 py-2 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 font-bold hover:bg-cyan-500/25 transition-colors cursor-pointer"
+            >
+              Tirar Dúvidas Comerciais
+            </button>
+          </div>
+        </section>
+
         {/* SEÇÃO 4: ARQUITETURA MODULAR REGISTRY PATTERN */}
         <section id="arquitetura" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-slate-900/90 rounded-3xl border border-slate-800 p-8 sm:p-12 shadow-2xl">
@@ -497,6 +745,7 @@ export default function HomePage() {
       {/* Modal de Lead */}
       <LeadModal
         tool={selectedToolForLead}
+        defaultPlan={selectedPlanForLead}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

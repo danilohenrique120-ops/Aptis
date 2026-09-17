@@ -58,24 +58,21 @@ export function ToolCard({ tool, onRequestDemo }: ToolCardProps) {
         </div>
       </div>
 
-      {/* Ações */}
-      <div className="p-4 sm:p-5 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2">
+      {/* Ações Comerciais */}
+      <div className="p-4 sm:p-5 bg-slate-50/80 border-t border-slate-100 flex flex-col items-center gap-2">
         <button
           onClick={() => onRequestDemo(tool)}
-          className="w-full sm:flex-1 py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+          className="w-full py-3 px-4 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 hover:from-cyan-950 hover:to-slate-900 text-white font-bold text-xs rounded-xl shadow-md border border-slate-800 hover:border-cyan-500/50 transition-all flex items-center justify-center gap-2 group/btn cursor-pointer"
         >
-          <Mail className="w-3.5 h-3.5 text-cyan-400" />
-          Solicitar Demonstração
+          <Mail className="w-3.5 h-3.5 text-cyan-400 group-hover/btn:scale-110 transition-transform" />
+          <span>Solicitar Demonstração & Orçamento</span>
+          <ArrowRight className="w-3.5 h-3.5 text-cyan-400 group-hover/btn:translate-x-0.5 transition-transform" />
         </button>
 
-        <Link
-          href={`/dashboard/tools/${tool.id}`}
-          className="w-full sm:w-auto py-2.5 px-3.5 bg-white hover:bg-cyan-50 text-slate-800 hover:text-cyan-800 border border-slate-200 hover:border-cyan-300 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1"
-          title="Ver no Hub Operacional"
-        >
-          Testar
-          <ArrowRight className="w-3.5 h-3.5 text-cyan-600" />
-        </Link>
+        <div className="flex items-center justify-between w-full text-[10px] text-slate-500 px-1">
+          <span>Licenciamento modular por planta</span>
+          <span className="font-semibold text-cyan-700">Implantação guiada inclusa</span>
+        </div>
       </div>
     </div>
   );

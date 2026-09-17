@@ -26,6 +26,9 @@ export function PublicHeader() {
           <a href="#diferenciais" className="hover:text-cyan-400 transition-colors">
             4 Pilares
           </a>
+          <a href="#planos" className="hover:text-cyan-400 transition-colors text-cyan-300 font-bold">
+            Planos & Valores
+          </a>
           <a href="#arquitetura" className="hover:text-cyan-400 transition-colors">
             Arquitetura
           </a>
