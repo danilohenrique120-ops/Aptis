@@ -17,7 +17,11 @@ import {
   Phone, 
   ShieldCheck, 
   CheckCircle2, 
-  AlertCircle
+  AlertCircle,
+  Share2,
+  Copy,
+  Send,
+  ExternalLink
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
@@ -36,6 +40,8 @@ export default function SuperAdminPage() {
 
   // Modal / Form para nova empresa
   const [isNewTenantOpen, setIsNewTenantOpen] = useState(false);
+  const [onboardingTenant, setOnboardingTenant] = useState<Tenant | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [companyDoc, setCompanyDoc] = useState('');
   const [companyPlan, setCompanyPlan] = useState<TenantPlan>('pro');
@@ -209,13 +215,23 @@ export default function SuperAdminPage() {
                       })}
 
                       <td className="py-4 px-4 text-right border-l border-slate-800">
-                        <button
-                          onClick={() => switchTenant(tenant.id)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                          title="Simular visualização como este tenant no Hub"
-                        >
-                          Entrar no Hub
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setOnboardingTenant(tenant)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black rounded-lg transition-all shadow-sm cursor-pointer"
+                            title="Gerar link de acesso e convite pronto para WhatsApp/E-mail"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            Gerar Acesso
+                          </button>
+                          <button
+                            onClick={() => switchTenant(tenant.id)}
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                            title="Acessar o Hub simulando este cliente"
+                          >
+                            Hub
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -399,6 +415,108 @@ export default function SuperAdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Gerador de Convite & Acesso de Onboarding */}
+      {onboardingTenant && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 text-slate-100 rounded-2xl shadow-2xl max-w-xl w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                  <Share2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Liberação de Acesso • {onboardingTenant.name}
+                  </h3>
+                  <span className="text-xs text-slate-400">
+                    Plano {onboardingTenant.plan.toUpperCase()} • CNPJ: {onboardingTenant.document}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setOnboardingTenant(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Módulos Liberados para este cliente */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300 block">
+                Módulos Ativos na Planta:
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {allTools.filter(t => isToolActiveForTenant(onboardingTenant.id, t.id)).length === 0 ? (
+                  <span className="text-xs text-amber-400">⚠️ Nenhum módulo ativado. Ative ao menos 1 na matriz.</span>
+                ) : (
+                  allTools
+                    .filter(t => isToolActiveForTenant(onboardingTenant.id, t.id))
+                    .map(t => (
+                      <span
+                        key={t.id}
+                        className="px-2.5 py-1 rounded-md bg-emerald-950/80 border border-emerald-700/80 text-emerald-300 text-xs font-semibold flex items-center gap-1.5"
+                      >
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        {t.name}
+                      </span>
+                    ))
+                )}
+              </div>
+            </div>
+
+            {/* Mensagem Pronta de Boas-Vindas */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-300 block">
+                Mensagem Oficial de Liberação (Pronta para Enviar):
+              </label>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 leading-relaxed whitespace-pre-wrap select-all">
+{`Olá! É um prazer confirmar que a unidade *${onboardingTenant.name}* foi ativada com sucesso na plataforma *Aptis: A fábrica sempre apta*.
+
+🏭 *Organização:* ${onboardingTenant.name}
+📋 *Plano:* ${onboardingTenant.plan.toUpperCase()}
+⚙️ *Módulos Liberados:* ${allTools.filter(t => isToolActiveForTenant(onboardingTenant.id, t.id)).map(t => t.name).join(', ') || 'Nenhum'}
+
+🔗 *Link de Acesso da sua Planta:*
+https://${typeof window !== 'undefined' ? window.location.host : 'aptis.io'}/dashboard
+
+Para o primeiro acesso da sua liderança e supervisores, a plataforma já inicializou o ambiente com isolamento total dos dados da sua planta.`}
+              </div>
+            </div>
+
+            {/* Ações de Envio */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <button
+                onClick={() => {
+                  const msg = `Olá! É um prazer confirmar que a unidade *${onboardingTenant.name}* foi ativada com sucesso na plataforma *Aptis: A fábrica sempre apta*.\n\n🏭 *Organização:* ${onboardingTenant.name}\n📋 *Plano:* ${onboardingTenant.plan.toUpperCase()}\n⚙️ *Módulos Liberados:* ${allTools.filter(t => isToolActiveForTenant(onboardingTenant.id, t.id)).map(t => t.name).join(', ') || 'Nenhum'}\n\n🔗 *Link de Acesso da sua Planta:*\nhttps://${window.location.host}/dashboard`;
+                  navigator.clipboard.writeText(msg);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2500);
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-colors cursor-pointer"
+              >
+                <Copy className="w-4 h-4" />
+                {copiedLink ? 'Copiado para a Área de Transferência! ✅' : 'Copiar Mensagem'}
+              </button>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(
+                    `Olá! A unidade *${onboardingTenant.name}* já está liberada na plataforma Aptis com os módulos: ${allTools.filter(t => isToolActiveForTenant(onboardingTenant.id, t.id)).map(t => t.name).join(', ')}.\n\nAcesse: https://${typeof window !== 'undefined' ? window.location.host : 'aptis.io'}/dashboard`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  Enviar no WhatsApp do Cliente
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}
