@@ -11,29 +11,26 @@ import {
 } from 'lucide-react';
 
 export function DashboardHeader() {
-  const { currentTenant, currentUser, tenants, switchTenant } = useTenant();
+  const { currentTenant, currentUser } = useTenant();
 
   return (
     <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
       {/* Lado Esquerdo: Seletor Multi-Tenant & Status da Planta */}
       <div className="flex items-center gap-3.5">
-        <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl px-3 py-1.5 transition-colors">
+        <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
           <Building2 className="w-4 h-4 text-cyan-600 shrink-0" />
-          <div className="flex flex-col">
+          <div className="flex flex-col text-left">
             <span className="text-[9px] uppercase font-bold text-slate-400 leading-none">
-              Planta / Empresa
+              Unidade Fabril
             </span>
-            <select
-              value={currentTenant.id}
-              onChange={(e) => switchTenant(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
-            >
-              {tenants.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.plan.toUpperCase()})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs font-black text-slate-900 leading-none">
+                {currentTenant.name}
+              </span>
+              <span className="text-[10px] font-bold bg-cyan-100 text-cyan-800 px-1.5 py-0.2 rounded border border-cyan-200 leading-tight">
+                {currentTenant.plan.toUpperCase()}
+              </span>
+            </div>
           </div>
         </div>
 
