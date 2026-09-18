@@ -32,10 +32,6 @@ export function PublicHeader() {
           <a href="#arquitetura" className="hover:text-cyan-400 transition-colors">
             Arquitetura
           </a>
-          <Link href="/admin" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 text-xs font-semibold">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Admin
-          </Link>
         </nav>
 
         {/* CTA Principal */}

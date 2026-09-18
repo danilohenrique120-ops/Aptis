@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/context/tenant-context';
@@ -70,42 +70,79 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
       notes: `${notes ? `Obs: ${notes} | ` : ''}Plano de Interesse: ${defaultPlan || 'Personalizado'} | Módulos: ${toolNames}`
     });
 
+    // Dispara notificação via API interna
+    fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        companyName,
+        contactName,
+        email,
+        phone,
+        teamSize,
+        toolName: toolNames || (tool ? tool.name : 'Suíte Aptis'),
+        notes: `Plano: ${defaultPlan || 'Personalizado'} | ${notes}`
+      })
+    }).catch(err => console.warn('Notificação de lead disparada em background:', err));
+
     setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      onClose();
-      setCompanyName('');
-      setContactName('');
-      setEmail('');
-      setPhone('');
-      setNotes('');
-    }, 3000);
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200 my-8">
         <button
-          onClick={onClose}
+          onClick={() => { setIsSubmitted(false); onClose(); }}
           className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
         {isSubmitted ? (
-          <div className="py-12 text-center space-y-4">
+          <div className="py-8 text-center space-y-5">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
               <CheckCircle2 className="w-9 h-9" />
             </div>
             <div className="space-y-1.5">
-              <h3 className="text-2xl font-black text-slate-900">Solicitação Recebida com Sucesso!</h3>
+              <h3 className="text-2xl font-black text-slate-900">Solicitação Enviada!</h3>
               <p className="text-sm text-slate-600 max-w-sm mx-auto leading-relaxed">
-                Nossa equipe de consultoria entrará em contato via <strong>WhatsApp e Telefone</strong> em até <strong>2 horas úteis</strong> para apresentar a proposta e agendar a demonstração da sua planta.
+                Registramos seu pedido para a <strong>{companyName}</strong>. Entraremos em contato com <strong>{contactName}</strong> via WhatsApp e E-mail em até 2 horas úteis.
               </p>
             </div>
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 max-w-xs mx-auto">
-              Empresa registrada: <strong>{companyName}</strong>
+
+            {/* Ação rápida de WhatsApp direto com o Danilo */}
+            <div className="pt-2">
+              <a
+                href={`https://wa.me/5519991284152?text=${encodeURIComponent(
+                  `Olá Danilo, acabei de solicitar uma demonstração da Suíte Aptis para a empresa *${companyName}*. Meu nome é ${contactName} e gostaria de agilizar nosso alinhamento.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/25 transition-all"
+              >
+                <Phone className="w-4 h-4" />
+                Falar Agora no WhatsApp do Diretor de Contas
+              </a>
+              <span className="text-[11px] text-slate-400 block mt-2">
+                Atendimento direto: (19) 99128-4152 • Danilo Henrique
+              </span>
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsSubmitted(false);
+                onClose();
+                setCompanyName('');
+                setContactName('');
+                setEmail('');
+                setPhone('');
+                setNotes('');
+              }}
+              className="text-xs text-slate-400 hover:text-slate-700 font-medium underline cursor-pointer pt-2"
+            >
+              Fechar janela
+            </button>
           </div>
         ) : (
           <>

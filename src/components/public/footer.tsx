@@ -51,8 +51,8 @@ export function PublicFooter() {
             <ul className="space-y-2.5">
               <li><Link href="/dashboard" className="hover:text-cyan-400 transition-colors font-medium text-slate-300">Hub Operacional da Planta</Link></li>
               <li><Link href="/dashboard/marketplace" className="hover:text-cyan-400 transition-colors">Catálogo de Ferramentas</Link></li>
-              <li><Link href="/admin" className="text-amber-400 hover:text-amber-300 transition-colors font-semibold">Console SuperAdmin</Link></li>
               <li><a href="#score" className="hover:text-cyan-400 transition-colors">Conhecer o Aptis Score</a></li>
+              <li><Link href="/admin" className="text-slate-600 hover:text-slate-400 transition-colors text-[11px] flex items-center gap-1 mt-4">Console Corporativo (Acesso Restrito)</Link></li>
             </ul>
           </div>
         </div>

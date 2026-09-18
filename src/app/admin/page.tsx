@@ -227,15 +227,17 @@ export default function SuperAdminPage() {
       </section>
 
       {/* Caixa de Entrada de Leads Comerciais */}
-      <section className="space-y-4 pt-4 border-t border-slate-800">
-        <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Mail className="w-5 h-5 text-purple-400" />
-            Solicitações de Demonstração & Leads da Vitrine
-          </h2>
-          <p className="text-xs text-slate-400">
-            Contatos gerados diretamente através dos cards do catálogo público.
-          </p>
+      <section id="leads-section" className="space-y-4 pt-4 border-t border-slate-800 scroll-mt-20">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <Mail className="w-5 h-5 text-purple-400" />
+              Solicitações de Demonstração & Orçamento Recebidas
+            </h2>
+            <p className="text-xs text-slate-400">
+              Notificações de indústrias interessadas na Suíte Aptis para contato comercial imediato.
+            </p>
+          </div>
         </div>
 
         <div className="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
@@ -270,7 +272,22 @@ export default function SuperAdminPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
+                    {lead.phone && (
+                      <a
+                        href={`https://wa.me/55${lead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                          `Olá ${lead.contactName}, sou Danilo da Aptis Tecnologia. Recebi sua solicitação de demonstração da Suíte Aptis para a ${lead.companyName}. Como podemos agendar nossa conversa?`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 rounded-lg text-xs font-bold transition-colors"
+                        title="Iniciar conversa no WhatsApp"
+                      >
+                        <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                        Chamar no WhatsApp
+                      </a>
+                    )}
+
                     <select
                       value={lead.status}
                       onChange={(e) => updateLeadStatus(lead.id, e.target.value as any)}
