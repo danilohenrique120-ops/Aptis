@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { useTenant } from '@/context/tenant-context';
-import { UserRole } from '@/types';
 import { 
   Building2, 
   ShieldCheck, 
@@ -12,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export function DashboardHeader() {
-  const { currentTenant, currentUser, tenants, switchTenant, switchUserRole } = useTenant();
+  const { currentTenant, currentUser, tenants, switchTenant } = useTenant();
 
   return (
     <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
@@ -49,24 +48,18 @@ export function DashboardHeader() {
         </div>
       </div>
 
-      {/* Lado Direito: Seletor de Perfil + Ações */}
+      {/* Lado Direito: Perfil do Gestor & Ações */}
       <div className="flex items-center gap-3">
-        {/* Seletor de Papel / Role Simulator */}
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-          <ShieldCheck className="w-4 h-4 text-indigo-600" />
-          <div className="flex flex-col">
+        {/* Badge Corporativo de Função */}
+        <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
+          <ShieldCheck className="w-4 h-4 text-cyan-600" />
+          <div className="flex flex-col text-left">
             <span className="text-[9px] uppercase font-bold text-slate-400 leading-none">
-              Perfil de Acesso
+              Nível Operacional
             </span>
-            <select
-              value={currentUser.role}
-              onChange={(e) => switchUserRole(e.target.value as UserRole)}
-              className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none cursor-pointer"
-            >
-              <option value="superadmin">👑 SuperAdmin Global</option>
-              <option value="tenant_admin">👔 Gestor da Planta (Admin)</option>
-              <option value="member">👤 Supervisor / Operador</option>
-            </select>
+            <span className="text-xs font-bold text-slate-800">
+              Gestor Industrial (Admin)
+            </span>
           </div>
         </div>
 

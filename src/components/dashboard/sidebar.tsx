@@ -10,7 +10,6 @@ import { AptisLogo } from '@/components/ui/aptis-logo';
 import { 
   LayoutDashboard, 
   Store, 
-  ShieldAlert, 
   Lock, 
   ChevronRight,
   ExternalLink,
@@ -156,27 +155,6 @@ export function DashboardSidebar() {
                 </Link>
               );
             })}
-          </div>
-        )}
-
-        {/* Seção SuperAdmin */}
-        {currentUser.role === 'superadmin' && (
-          <div className="pt-2 border-t border-slate-800/80 space-y-1">
-            <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-1 flex items-center gap-1">
-              <ShieldAlert className="w-3 h-3" />
-              Gestão Global
-            </div>
-            <Link
-              href="/admin"
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                isCurrentRoute('/admin')
-                  ? 'bg-amber-600 text-white'
-                  : 'text-amber-300 bg-amber-950/30 hover:bg-amber-900/50 border border-amber-800/40'
-              }`}
-            >
-              <ShieldAlert className="w-4 h-4" />
-              Painel SuperAdmin (Licenças)
-            </Link>
           </div>
         )}
       </div>
