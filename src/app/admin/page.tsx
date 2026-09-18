@@ -49,11 +49,11 @@ export default function SuperAdminPage() {
   const [companyEmployees, setCompanyEmployees] = useState('200');
   const [companyEmail, setCompanyEmail] = useState('');
 
-  const handleCreateTenant = (e: React.FormEvent) => {
+  const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyName.trim() || !companyDoc.trim()) return;
 
-    const newTenant = addTenant({
+    const newTenant = await addTenant({
       name: companyName,
       document: companyDoc,
       plan: companyPlan,

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Tenant, User, License, LeadRequest, UserRole } from '@/types';
 import { INITIAL_TENANTS, INITIAL_USERS, INITIAL_LICENSES, INITIAL_LEADS } from '@/lib/mock-data';
+import { supabase } from '@/lib/supabase';
 
 interface TenantContextType {
   currentTenant: Tenant;
@@ -16,9 +17,9 @@ interface TenantContextType {
   toggleLicense: (tenantId: string, toolId: string, forceActive?: boolean) => void;
   hasLicense: (toolId: string) => boolean;
   getActiveLicensesForTenant: (tenantId?: string) => string[];
-  addTenant: (tenant: Omit<Tenant, 'id' | 'createdAt'>) => Tenant;
-  submitLead: (lead: Omit<LeadRequest, 'id' | 'createdAt' | 'status'>) => void;
-  updateLeadStatus: (leadId: string, status: LeadRequest['status']) => void;
+  addTenant: (tenant: Omit<Tenant, 'id' | 'createdAt'>) => Promise<Tenant>;
+  submitLead: (lead: Omit<LeadRequest, 'id' | 'createdAt' | 'status'>) => Promise<void>;
+  updateLeadStatus: (leadId: string, status: LeadRequest['status']) => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -41,27 +42,67 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [licenses, setLicenses] = useState<License[]>(INITIAL_LICENSES);
   const [leads, setLeads] = useState<LeadRequest[]>(INITIAL_LEADS);
 
-  // Hydrate from localStorage on mount
+  // 1. Carrega dados do Supabase e sincroniza com LocalStorage
   useEffect(() => {
-    try {
-      const savedTenants = localStorage.getItem(STORAGE_KEYS.TENANTS);
-      const savedCurrentTenantId = localStorage.getItem(STORAGE_KEYS.CURRENT_TENANT_ID);
-      const savedLicenses = localStorage.getItem(STORAGE_KEYS.LICENSES);
-      const savedUsers = localStorage.getItem(STORAGE_KEYS.USERS);
-      const savedCurrentUserId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-      const savedLeads = localStorage.getItem(STORAGE_KEYS.LEADS);
+    async function loadCloudData() {
+      try {
+        // Carregar Tenants do Supabase
+        const { data: cloudTenants } = await supabase.from('tenants').select('*');
+        if (cloudTenants && cloudTenants.length > 0) {
+          const mappedTenants: Tenant[] = cloudTenants.map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            document: t.document,
+            plan: t.plan,
+            status: t.status,
+            segment: t.segment,
+            employeeCount: t.employee_count,
+            contactEmail: t.contact_email,
+            createdAt: t.created_at ? t.created_at.split('T')[0] : '2026-01-01'
+          }));
+          setTenants(mappedTenants);
+        }
 
-      if (savedTenants) setTenants(JSON.parse(savedTenants));
-      if (savedCurrentTenantId) setCurrentTenantId(savedCurrentTenantId);
-      if (savedLicenses) setLicenses(JSON.parse(savedLicenses));
-      if (savedUsers) setUsers(JSON.parse(savedUsers));
-      if (savedCurrentUserId) setCurrentUserId(savedCurrentUserId);
-      if (savedLeads) setLeads(JSON.parse(savedLeads));
-    } catch (e) {
-      console.warn('Erro ao carregar dados salvos do localStorage:', e);
-    } finally {
-      setIsHydrated(true);
+        // Carregar Licenças do Supabase
+        const { data: cloudLicenses } = await supabase.from('licenses').select('*');
+        if (cloudLicenses && cloudLicenses.length > 0) {
+          const mappedLicenses: License[] = cloudLicenses.map((l: any) => ({
+            id: l.id,
+            tenantId: l.tenant_id,
+            toolId: l.tool_id,
+            isActive: l.is_active,
+            validUntil: l.valid_until,
+            assignedAt: l.assigned_at ? l.assigned_at.split('T')[0] : '2026-01-01'
+          }));
+          setLicenses(mappedLicenses);
+        }
+
+        // Carregar Leads do Supabase
+        const { data: cloudLeads } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+        if (cloudLeads && cloudLeads.length > 0) {
+          const mappedLeads: LeadRequest[] = cloudLeads.map((ld: any) => ({
+            id: ld.id,
+            companyName: ld.company_name,
+            contactName: ld.contact_name,
+            email: ld.email,
+            phone: ld.phone,
+            teamSize: ld.team_size,
+            toolId: ld.tool_id,
+            toolName: ld.tool_name,
+            notes: ld.notes,
+            status: ld.status,
+            createdAt: ld.created_at ? ld.created_at.split('T')[0] : '2026-01-01'
+          }));
+          setLeads(mappedLeads);
+        }
+      } catch (err) {
+        console.warn('Supabase offline ou sem conexão, utilizando fallback local:', err);
+      } finally {
+        setIsHydrated(true);
+      }
     }
+
+    loadCloudData();
   }, []);
 
   // Save to localStorage on updates
@@ -98,32 +139,43 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const toggleLicense = (tenantId: string, toolId: string, forceActive?: boolean) => {
+  const toggleLicense = async (tenantId: string, toolId: string, forceActive?: boolean) => {
+    let nextState = true;
+    let targetLicenseId = '';
+
     setLicenses(prev => {
       const existing = prev.find(l => l.tenantId === tenantId && l.toolId === toolId);
       if (existing) {
-        const nextState = forceActive !== undefined ? forceActive : !existing.isActive;
+        nextState = forceActive !== undefined ? forceActive : !existing.isActive;
+        targetLicenseId = existing.id;
         return prev.map(l => l.id === existing.id ? { ...l, isActive: nextState } : l);
       } else {
+        targetLicenseId = `lic-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`;
         const newLicense: License = {
-          id: `lic-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+          id: targetLicenseId,
           tenantId,
           toolId,
           isActive: forceActive !== undefined ? forceActive : true,
-          validUntil: '2027-12-31',
+          validUntil: '2028-12-31',
           assignedAt: new Date().toISOString().split('T')[0]
         };
         return [...prev, newLicense];
       }
     });
+
+    try {
+      await supabase.from('licenses').upsert({
+        id: targetLicenseId,
+        tenant_id: tenantId,
+        tool_id: toolId,
+        is_active: nextState
+      });
+    } catch (e) {
+      console.warn('Erro ao persistir licença no Supabase:', e);
+    }
   };
 
   const hasLicense = (toolId: string): boolean => {
-    // Superadmin has access or check currentTenant license
-    if (currentUser.role === 'superadmin') {
-      // Still show license state accurately, or allow superadmin bypass
-      // To properly demonstrate the license guard, let's respect license unless bypass mode
-    }
     const lic = licenses.find(l => l.tenantId === currentTenant.id && l.toolId === toolId);
     return !!lic && lic.isActive;
   };
@@ -135,17 +187,33 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       .map(l => l.toolId);
   };
 
-  const addTenant = (tenantData: Omit<Tenant, 'id' | 'createdAt'>): Tenant => {
+  const addTenant = async (tenantData: Omit<Tenant, 'id' | 'createdAt'>): Promise<Tenant> => {
     const newTenant: Tenant = {
       ...tenantData,
       id: `tenant-${Date.now()}`,
       createdAt: new Date().toISOString().split('T')[0]
     };
     setTenants(prev => [...prev, newTenant]);
+
+    try {
+      await supabase.from('tenants').insert({
+        id: newTenant.id,
+        name: newTenant.name,
+        document: newTenant.document,
+        plan: newTenant.plan,
+        status: newTenant.status,
+        segment: newTenant.segment,
+        employee_count: newTenant.employeeCount,
+        contact_email: newTenant.contactEmail
+      });
+    } catch (e) {
+      console.warn('Erro ao salvar tenant no Supabase:', e);
+    }
+
     return newTenant;
   };
 
-  const submitLead = (leadData: Omit<LeadRequest, 'id' | 'createdAt' | 'status'>) => {
+  const submitLead = async (leadData: Omit<LeadRequest, 'id' | 'createdAt' | 'status'>) => {
     const newLead: LeadRequest = {
       ...leadData,
       id: `lead-${Date.now()}`,
@@ -153,10 +221,33 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       status: 'pending'
     };
     setLeads(prev => [newLead, ...prev]);
+
+    try {
+      await supabase.from('leads').insert({
+        id: newLead.id,
+        company_name: newLead.companyName,
+        contact_name: newLead.contactName,
+        email: newLead.email,
+        phone: newLead.phone,
+        team_size: newLead.teamSize,
+        tool_id: newLead.toolId,
+        tool_name: newLead.toolName,
+        notes: newLead.notes,
+        status: 'pending'
+      });
+    } catch (e) {
+      console.warn('Erro ao salvar lead no Supabase:', e);
+    }
   };
 
-  const updateLeadStatus = (leadId: string, status: LeadRequest['status']) => {
+  const updateLeadStatus = async (leadId: string, status: LeadRequest['status']) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
+
+    try {
+      await supabase.from('leads').update({ status }).eq('id', leadId);
+    } catch (e) {
+      console.warn('Erro ao atualizar status do lead no Supabase:', e);
+    }
   };
 
   return (
