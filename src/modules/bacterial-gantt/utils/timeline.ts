@@ -1,4 +1,9 @@
-import { ProductRecipe, ScheduledStep, Batch, Preventative, ScaleType, Asset, ShiftConfig, PlanningErrorLog, getAssetsPool, normalizeAssetId } from '../types';
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { ProductRecipe, ScheduledStep, ASSETS_POOL, Batch, Preventative, ScaleType, Asset, ShiftConfig, PlanningErrorLog, getAssetsPool, normalizeAssetId } from '../types';
 
 /**
  * Checks if two date range intervals overlap
@@ -30,12 +35,56 @@ export function findFirstAvailableAsset(
   preventatives: Preventative[],
   ignoreBatchId?: string,
   setupTimes?: Record<ScaleType, number>,
-  envaseLinesCount?: number
+  envaseLinesCount?: number,
+  customAssets?: Asset[]
 ): { asset: Asset; hasConflict: boolean } {
   const envaseCount = envaseLinesCount || 3;
-  const compatibleAssets = getAssetsPool(envaseCount).filter(a => a.scaleType === scaleType);
+  const pool = (customAssets && customAssets.length > 0) ? customAssets : getAssetsPool(envaseCount);
+
+  let compatibleAssets = pool.filter(a => {
+    if (a.scaleType === scaleType) return true;
+    if (scaleType === '3000L') return a.scaleType === '3000_5000L' && a.capacityLiters === 3000;
+    if (scaleType === '5000L') return a.scaleType === '3000_5000L' && (a.capacityLiters === 5000 || !a.capacityLiters);
+    if (scaleType === '3000_5000L') return a.scaleType === '3000_5000L';
+
+    // Flexible matching for custom scale types or equipment names (e.g. "Biorreator 200L" vs "200L")
+    const sClean = scaleType.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const aTypeClean = a.scaleType.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const aNameClean = a.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    if (aTypeClean === sClean) return true;
+    if (sClean && (aNameClean.includes(sClean) || sClean.includes(aNameClean))) return true;
+    if (sClean && (aTypeClean.includes(sClean) || sClean.includes(aTypeClean))) return true;
+
+    return false;
+  });
+
   if (compatibleAssets.length === 0) {
-    throw new Error(`Nenhum ativo configurado para a escala: ${scaleType}`);
+    compatibleAssets = [{
+      id: `custom-${scaleType.toLowerCase().replace(/[^a-z0-9]/g, '-')}-0`,
+      name: `${scaleType} 01`,
+      scaleType: scaleType,
+      categoryLabel: scaleType
+    }];
+  }
+
+  // For Envase (and scales with multiple machines), sort assets by current workload (least used first)
+  // to distribute production across all mapped machines in parallel (Envase 1, 2, 3...)
+  if (compatibleAssets.length > 1) {
+    const usageMap: Record<string, number> = {};
+    compatibleAssets.forEach(a => { usageMap[a.id] = 0; });
+
+    for (const b of existingBatches) {
+      if (b.id === ignoreBatchId) continue;
+      for (const st of b.steps) {
+        const normId = normalizeAssetId(st.assetId, envaseCount);
+        if (usageMap[normId] !== undefined) {
+          usageMap[normId]++;
+        }
+      }
+    }
+
+    compatibleAssets.sort((a, b) => (usageMap[a.id] || 0) - (usageMap[b.id] || 0));
   }
 
   const s1 = new Date(start).getTime();
@@ -56,7 +105,6 @@ export function findFirstAvailableAsset(
           const setup2 = setupTimes ? (setupTimes[step.scaleType] || 0) : 0;
           const e2Setup = e2 + setup2 * 60 * 60 * 1000;
 
-          // Symmetrical overlap check incorporating execution and setup times
           if (s1 < e2Setup && s2 < e1Setup) {
             hasOverlap = true;
             break;
@@ -67,8 +115,7 @@ export function findFirstAvailableAsset(
     }
 
     if (!hasOverlap) {
-      // Check overlaps with preventatives (preventatives don't have secondary setups,
-      // but they cannot overlap with the step execution or step setup)
+      // Check overlaps with preventatives
       for (const prev of preventatives) {
         if (normalizeAssetId(prev.assetId, envaseCount) === asset.id) {
           const pStart = new Date(prev.startDateTime).getTime();
@@ -83,12 +130,10 @@ export function findFirstAvailableAsset(
     }
 
     if (!hasOverlap) {
-      // Found a completely free asset
       return { asset, hasConflict: false };
     }
   }
 
-  // Fallback: search was unsuccessful, return the first one but with conflict flag true
   return { asset: compatibleAssets[0], hasConflict: true };
 }
 
@@ -106,7 +151,8 @@ export function calculateProductionTimeline(
   manualAllocations?: Record<string, string>, // stepIndex -> assetId
   ignoreBatchId?: string,
   setupTimes?: Record<ScaleType, number>,
-  envaseLinesCount?: number
+  envaseLinesCount?: number,
+  customAssets?: Asset[]
 ): ScheduledStep[] {
   const envaseCount = envaseLinesCount || 3;
   const steps: ScheduledStep[] = [];
@@ -133,7 +179,8 @@ export function calculateProductionTimeline(
         preventatives,
         ignoreBatchId,
         setupTimes,
-        envaseCount
+        envaseCount,
+        customAssets
       );
       finalAssetId = asset.id;
     }
@@ -154,30 +201,92 @@ export function calculateProductionTimeline(
 }
 
 /**
+ * Recalculates the inoculation start date given a target date for any anchored scale
+ */
+export function getInoculationDateForAnchoredScale(
+  recipe: ProductRecipe,
+  scaleType: ScaleType,
+  targetDate: Date,
+  transferIntervalHours: number = 0
+): Date {
+  const stepsDef = recipe.steps;
+  const targetStepIndex = stepsDef.findIndex(s => s.scaleType === scaleType);
+  
+  if (targetStepIndex <= 0) {
+    return new Date(targetDate);
+  }
+
+  let priorHours = 0;
+  for (let i = 0; i < targetStepIndex; i++) {
+    priorHours += stepsDef[i].durationHours;
+    priorHours += transferIntervalHours;
+  }
+
+  const inoculationMs = targetDate.getTime() - priorHours * 60 * 60 * 1000;
+  return new Date(inoculationMs);
+}
+
+/**
+ * Computes the real volume yielded by a batch based on its allocated bioreactor asset capacity (e.g. 5000L vs 3000L vs custom).
+ * If the recipe defines specific yields per scale (e.g. yield3kL), it uses the custom recipe yield.
+ * Otherwise, it scales proportionally based on asset capacity relative to 5000L.
+ */
+export function getBatchYield(batch: Batch, recipe?: ProductRecipe, assetsOrEnvaseCount?: Asset[] | number): number {
+  if (!recipe) return 5000;
+  if (!batch || !batch.steps || batch.steps.length === 0) {
+    return recipe.yieldPerBatch || 5000;
+  }
+
+  const fermentsStep = batch.steps.find(s => s.scaleType === '3000_5000L') || batch.steps.find(s => s.scaleType === '500L');
+  if (fermentsStep && fermentsStep.assetId) {
+    const envaseCount = typeof assetsOrEnvaseCount === 'number' ? assetsOrEnvaseCount : 3;
+    const assets = Array.isArray(assetsOrEnvaseCount) ? assetsOrEnvaseCount : getAssetsPool(envaseCount);
+    const asset = assets.find(a => normalizeAssetId(a.id, envaseCount) === normalizeAssetId(fermentsStep.assetId, envaseCount));
+    
+    if (asset && asset.capacityLiters) {
+      if (asset.capacityLiters === 3000 && recipe.yield3kL !== undefined && recipe.yield3kL > 0) {
+        return recipe.yield3kL;
+      }
+      if (asset.capacityLiters === 500 && recipe.yield500L !== undefined && recipe.yield500L > 0) {
+        return recipe.yield500L;
+      }
+      if (asset.capacityLiters === 100 && recipe.yield100L !== undefined && recipe.yield100L > 0) {
+        return recipe.yield100L;
+      }
+      if (asset.capacityLiters === 5000) {
+        return recipe.yieldPerBatch;
+      }
+      return Math.round((recipe.yieldPerBatch || 5000) * (asset.capacityLiters / 5000));
+    }
+  }
+
+  return recipe.yieldPerBatch || 5000;
+}
+
+/**
  * Parses and formats dates for display
  */
 export function formatFullDate(isoString: string): string {
   if (!isoString) return '';
   const date = new Date(isoString);
-  return date.toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  if (isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hour}:${minute}`;
 }
 
 export function formatShortDate(isoString: string): string {
   if (!isoString) return '';
   const date = new Date(isoString);
-  return date.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit'
-  }) + ' ' + date.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  if (isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  const minute = String(date.getMinutes()).padStart(2, '0');
+  return `${day}/${month} ${hour}:${minute}`;
 }
 
 /**
@@ -209,12 +318,18 @@ export function isDateTimeInWorkingHours(dateTime: Date | string, config: ShiftC
   }
   
   return shifts.some(sh => {
-    if (!sh.workDays.includes(day)) {
+    if (!sh.workDays || !sh.workDays.includes(day)) {
       return false;
     }
     const startMin = parseTimeToMinutes(sh.startHour);
     const endMin = parseTimeToMinutes(sh.endHour);
-    return minutes >= startMin && minutes <= endMin;
+    
+    if (startMin <= endMin) {
+      return minutes >= startMin && minutes <= endMin;
+    } else {
+      // Overnight shift (e.g. 22:00 to 06:00)
+      return minutes >= startMin || minutes <= endMin;
+    }
   });
 }
 
@@ -223,36 +338,66 @@ export function getDayName(day: number): string {
   return days[day] || '';
 }
 
+export interface ShiftValidationResult {
+  isValid: boolean;
+  hasIndustrialViolation: boolean;
+  hasInoculumViolation: boolean;
+  reason?: string;
+  failedStep?: string;
+  failedTime?: string;
+}
+
 export function validateBatchShifts(
   steps: ScheduledStep[],
   shiftConfig: ShiftConfig
-): { isValid: boolean; reason?: string; failedStep?: string; failedTime?: string } {
-  for (let i = 0; i < steps.length; i++) {
-    const step = steps[i];
-    
-    // Inoculação / Scale transfer start
-    if (!isDateTimeInWorkingHours(step.startDateTime, shiftConfig)) {
-      const operationName = i === 0 ? "Inoculação" : `Trf. para ${step.scaleType}`;
+): ShiftValidationResult {
+  if (!steps || steps.length === 0) {
+    return { isValid: true, hasIndustrialViolation: false, hasInoculumViolation: false };
+  }
+
+  // 1. Validação do Início da Inoculação (Primeira etapa)
+  const firstStep = steps[0];
+  if (!isDateTimeInWorkingHours(firstStep.startDateTime, shiftConfig)) {
+    return {
+      isValid: false,
+      hasIndustrialViolation: false,
+      hasInoculumViolation: true,
+      failedStep: firstStep.scaleType,
+      failedTime: firstStep.startDateTime,
+      reason: `Inoculação (${firstStep.scaleType}) em ${formatFullDate(firstStep.startDateTime)} (${getDayName(new Date(firstStep.startDateTime).getDay())}) caiu fora de todos os turnos de trabalho ativos.`
+    };
+  }
+
+  // 2. Validação do Início e Término do Envase (Etapa final)
+  const lastStep = steps[steps.length - 1];
+  if (lastStep.scaleType === 'Envase') {
+    if (!isDateTimeInWorkingHours(lastStep.startDateTime, shiftConfig)) {
       return {
         isValid: false,
-        failedStep: step.scaleType,
-        failedTime: step.startDateTime,
-        reason: `${operationName} em ${formatFullDate(step.startDateTime)} (${getDayName(new Date(step.startDateTime).getDay())}) caiu fora de todos os turnos de trabalho ativos.`
+        hasIndustrialViolation: true,
+        hasInoculumViolation: false,
+        failedStep: 'Envase',
+        failedTime: lastStep.startDateTime,
+        reason: `Início do Envase em ${formatFullDate(lastStep.startDateTime)} (${getDayName(new Date(lastStep.startDateTime).getDay())}) caiu fora de todos os turnos de trabalho ativos.`
       };
     }
-    
-    // Transfer / Envase (scale end)
-    if (!isDateTimeInWorkingHours(step.endDateTime, shiftConfig)) {
-      const operationName = i === steps.length - 1 ? "Envase (Quality)" : `Trf. de ${step.scaleType}`;
+    if (!isDateTimeInWorkingHours(lastStep.endDateTime, shiftConfig)) {
       return {
         isValid: false,
-        failedStep: step.scaleType,
-        failedTime: step.endDateTime,
-        reason: `${operationName} em ${formatFullDate(step.endDateTime)} (${getDayName(new Date(step.endDateTime).getDay())}) caiu fora de todos os turnos de trabalho ativos.`
+        hasIndustrialViolation: true,
+        hasInoculumViolation: false,
+        failedStep: 'Envase',
+        failedTime: lastStep.endDateTime,
+        reason: `Término do Envase em ${formatFullDate(lastStep.endDateTime)} (${getDayName(new Date(lastStep.endDateTime).getDay())}) caiu fora de todos os turnos de trabalho ativos.`
       };
     }
   }
-  return { isValid: true };
+
+  return {
+    isValid: true,
+    hasIndustrialViolation: false,
+    hasInoculumViolation: false
+  };
 }
 
 export interface ScheduleAttemptResult {
@@ -260,6 +405,7 @@ export interface ScheduleAttemptResult {
   steps: ScheduledStep[];
   startDateTime: string;
   errorReason?: string;
+  shiftedHours?: number;
 }
 
 /**
@@ -271,7 +417,8 @@ export function checkStepsOverlap(
   preventatives: Preventative[],
   ignoreBatchId?: string,
   setupTimes?: Record<ScaleType, number>,
-  envaseLinesCount?: number
+  envaseLinesCount?: number,
+  customAssets?: Asset[]
 ): boolean {
   const envaseCount = envaseLinesCount || 3;
   for (const step of steps) {
@@ -321,125 +468,183 @@ export function tryScheduleBatchBackward(
   manualAllocations?: Record<string, string>,
   ignoreBatchId?: string,
   setupTimes?: Record<ScaleType, number>,
-  envaseLinesCount?: number
+  envaseLinesCount?: number,
+  customAssets?: Asset[]
 ): ScheduleAttemptResult {
   const envaseCount = envaseLinesCount || 3;
   const preferredStart = new Date(preferredStartStr);
+  let bestFallback: ScheduleAttemptResult | null = null;
   let initialErrorReason = '';
 
+  const testCandidate = (startDate: Date): { success: boolean; isPerfect: boolean; steps: ScheduledStep[]; reason?: string } => {
+    try {
+      const steps = calculateProductionTimeline(
+        recipe,
+        startDate.toISOString(),
+        transferIntervalHours,
+        existingBatches,
+        preventatives,
+        manualAllocations,
+        ignoreBatchId,
+        setupTimes,
+        envaseCount,
+        customAssets
+      );
+
+      const shiftVal = validateBatchShifts(steps, shiftConfig);
+      const hasOverlap = checkStepsOverlap(steps, existingBatches, preventatives, ignoreBatchId, setupTimes, envaseCount, customAssets);
+
+      if (hasOverlap) {
+        return { success: false, isPerfect: false, steps: [], reason: 'Conflito com outro lote ou preventiva.' };
+      }
+
+      if (shiftVal.hasIndustrialViolation) {
+        return { success: false, isPerfect: false, steps: [], reason: shiftVal.reason };
+      }
+
+      return {
+        success: true,
+        isPerfect: !shiftVal.hasInoculumViolation,
+        steps,
+        reason: shiftVal.reason
+      };
+    } catch (err: any) {
+      return { success: false, isPerfect: false, steps: [], reason: err.message };
+    }
+  };
+
   // 1. Initial direct forward check
-  let initialSteps: ScheduledStep[] = [];
-  try {
-    initialSteps = calculateProductionTimeline(
-      recipe,
-      preferredStartStr,
-      transferIntervalHours,
-      existingBatches,
-      preventatives,
-      manualAllocations,
-      ignoreBatchId,
-      setupTimes,
-      envaseCount
-    );
-  } catch (err: any) {
-    return {
-      success: false,
-      steps: [],
-      startDateTime: preferredStartStr,
-      errorReason: err.message || 'Erro ao mapear rota de reatores para o lote.'
-    };
-  }
-
-  const shiftVal = validateBatchShifts(initialSteps, shiftConfig);
-  const overlapsVal = checkStepsOverlap(initialSteps, existingBatches, preventatives, ignoreBatchId, setupTimes, envaseCount);
-
-  if (shiftVal.isValid && !overlapsVal) {
-    return {
-      success: true,
-      steps: initialSteps,
-      startDateTime: preferredStartStr
-    };
-  }
-
-  if (!shiftVal.isValid) {
-    initialErrorReason = shiftVal.reason || '';
+  const preferredRes = testCandidate(preferredStart);
+  if (preferredRes.success) {
+    if (preferredRes.isPerfect) {
+      return {
+        success: true,
+        steps: preferredRes.steps,
+        startDateTime: preferredStartStr,
+        shiftedHours: 0
+      };
+    } else {
+      bestFallback = {
+        success: true,
+        steps: preferredRes.steps,
+        startDateTime: preferredStartStr,
+        shiftedHours: 0,
+        errorReason: preferredRes.reason
+      };
+    }
   } else {
-    initialErrorReason = 'Tempo coincide de forma conflitante com Manutenção Preventiva ou outro lote ativo (incluindo tempo de setup/higienização).';
+    initialErrorReason = preferredRes.reason || '';
   }
 
   // 2. BACKWARD SCHEDULING - Search up to 168 hours backward
   for (let hoursBack = 1; hoursBack <= 168; hoursBack++) {
     const testStart = new Date(preferredStart.getTime() - hoursBack * 60 * 60 * 1000);
-    try {
-      const backwardSteps = calculateProductionTimeline(
-        recipe,
-        testStart.toISOString(),
-        transferIntervalHours,
-        existingBatches,
-        preventatives,
-        manualAllocations,
-        ignoreBatchId,
-        setupTimes,
-        envaseCount
-      );
-
-      const testShiftVal = validateBatchShifts(backwardSteps, shiftConfig);
-      const testOverlap = checkStepsOverlap(backwardSteps, existingBatches, preventatives, ignoreBatchId, setupTimes, envaseCount);
-
-      if (testShiftVal.isValid && !testOverlap) {
+    const res = testCandidate(testStart);
+    if (res.success) {
+      if (res.isPerfect) {
         return {
           success: true,
-          steps: backwardSteps,
-          startDateTime: testStart.toISOString()
+          steps: res.steps,
+          startDateTime: testStart.toISOString(),
+          shiftedHours: hoursBack
+        };
+      } else if (!bestFallback) {
+        bestFallback = {
+          success: true,
+          steps: res.steps,
+          startDateTime: testStart.toISOString(),
+          shiftedHours: hoursBack,
+          errorReason: res.reason
         };
       }
-    } catch {
-      // Keep searching
     }
   }
 
-  // 3. FORWARD SCHEDULING - Try to search forward as fallback (up to 7 days) if backward didn't work
+  // 3. FORWARD SCHEDULING - Try to search forward as fallback (up to 7 days)
   for (let hoursForward = 1; hoursForward <= 168; hoursForward++) {
     const testStart = new Date(preferredStart.getTime() + hoursForward * 60 * 60 * 1000);
-    try {
-      const forwardSteps = calculateProductionTimeline(
-        recipe,
-        testStart.toISOString(),
-        transferIntervalHours,
-        existingBatches,
-        preventatives,
-        manualAllocations,
-        ignoreBatchId,
-        setupTimes,
-        envaseCount
-      );
-
-      const testShiftVal = validateBatchShifts(forwardSteps, shiftConfig);
-      const testOverlap = checkStepsOverlap(forwardSteps, existingBatches, preventatives, ignoreBatchId, setupTimes, envaseCount);
-
-      if (testShiftVal.isValid && !testOverlap) {
+    const res = testCandidate(testStart);
+    if (res.success) {
+      if (res.isPerfect) {
         return {
           success: true,
-          steps: forwardSteps,
-          startDateTime: testStart.toISOString()
+          steps: res.steps,
+          startDateTime: testStart.toISOString(),
+          shiftedHours: hoursForward
+        };
+      } else if (!bestFallback) {
+        bestFallback = {
+          success: true,
+          steps: res.steps,
+          startDateTime: testStart.toISOString(),
+          shiftedHours: hoursForward,
+          errorReason: res.reason
         };
       }
-    } catch {
-      // Keep searching
     }
+  }
+
+  if (bestFallback) {
+    return bestFallback;
   }
 
   return {
     success: false,
     steps: [],
     startDateTime: preferredStartStr,
-    errorReason: `Falha ao programar lote devido a restrição de turnos ou colisão física. Detalhes: ${initialErrorReason}`
+    errorReason: initialErrorReason || 'Recursos industriais ocupados ou fora de turno.'
   };
 }
 
 /**
- * Automatically plans and schedules several batches to meet a production volume goal, taking setup blocks and dynamic envaser count into parallel allocation.
+ * Calculates theoretical inoculation start date by working backward from an Envase start date,
+ * by subtracting the durations of all preceding stages and their transfer intervals.
  */
+export function getInoculationDateFromEnvaseStart(
+  recipe: ProductRecipe,
+  envaseStartDate: Date,
+  transferIntervalHours: number
+): Date {
+  let totalHoursBeforeEnvase = 0;
+  for (let i = 0; i < recipe.steps.length - 1; i++) {
+    totalHoursBeforeEnvase += recipe.steps[i].durationHours + transferIntervalHours;
+  }
+  return new Date(envaseStartDate.getTime() - totalHoursBeforeEnvase * 60 * 60 * 1000);
+}
+
+/**
+ * Generates an automatic campaign timeline for a target volume,
+ * implementing staggered scheduling based on packaging line availability and backward offsets.
+ */
+export function assignStepOpNumbers(steps: ScheduledStep[], lotNumber: string): ScheduledStep[] {
+  return steps.map((step, idx) => {
+    let scaleSuffix = '';
+    switch (step.scaleType) {
+      case 'Erlenmeyer': scaleSuffix = '-ERL'; break;
+      case 'Balão': scaleSuffix = '-BAL'; break;
+      case '100L': scaleSuffix = '-100L'; break;
+      case '500L': scaleSuffix = '-500L'; break;
+      case '3000_5000L': scaleSuffix = '-5K'; break;
+      case 'Envase': scaleSuffix = '-ENV'; break;
+      default: scaleSuffix = `-${step.scaleType}`; break;
+    }
+
+    const opNumber = step.scaleType === 'Envase' ? lotNumber : `${lotNumber}${scaleSuffix}`;
+
+    let parentOpNumber: string | undefined = undefined;
+    if (idx > 0) {
+      const prevStep = steps[idx - 1];
+      parentOpNumber = prevStep.scaleType === 'Envase' ? lotNumber : `${lotNumber}-${prevStep.scaleType === '3000_5000L' ? '5K' : prevStep.scaleType.toUpperCase().substring(0, 4)}`;
+    }
+
+    return {
+      ...step,
+      opNumber,
+      parentOpNumber
+    };
+  });
+}
+
 export function generateAutomaticPlanning(
   recipe: ProductRecipe,
   targetVolume: number,
@@ -448,70 +653,115 @@ export function generateAutomaticPlanning(
   preventatives: Preventative[],
   shiftConfig: ShiftConfig,
   setupTimes?: Record<ScaleType, number>,
-  envaseLinesCount?: number
+  envaseLinesCount?: number,
+  customOpNumbers?: string[],
+  opPrefix?: string,
+  customAssets?: Asset[]
 ): {
   scheduledBatches: Batch[];
+  outOfShiftBatches: Batch[];
   errors: PlanningErrorLog[];
 } {
   const envaseCount = envaseLinesCount || 3;
   const scheduledBatches: Batch[] = [];
+  const outOfShiftBatches: Batch[] = [];
   const errors: PlanningErrorLog[] = [];
   
-  const batchesNeeded = Math.ceil(targetVolume / recipe.yieldPerBatch);
-  if (batchesNeeded <= 0) {
-    return { scheduledBatches, errors };
+  const initialEstimate = Math.ceil(targetVolume / recipe.yieldPerBatch);
+  if (initialEstimate <= 0) {
+    return { scheduledBatches, outOfShiftBatches, errors: [] };
   }
 
   // Create active pool copying existing schedule
   const activeBatchesPool = [...existingBatches];
-  const currentSearchStart = new Date(startDateStr);
+  const scanLimitHours = 1080; // 45 days search window
 
-  for (let lotIdx = 0; lotIdx < batchesNeeded; lotIdx++) {
-    const lotNumber = `${recipe.name.substring(0, 3).toUpperCase()}-L${String(1000 + lotIdx + 1).substring(1)}`;
+  let currentRealVolume = 0;
+  let lotIdx = 0;
+  const maxSafetyBatches = Math.max(initialEstimate * 2, initialEstimate + 25);
+
+  while (currentRealVolume < targetVolume && lotIdx < maxSafetyBatches) {
+    let lotNumber = `${recipe.name.substring(0, 3).toUpperCase()}-L${String(1000 + lotIdx + 1).substring(1)}`;
+
+    if (customOpNumbers && customOpNumbers[lotIdx]) {
+      lotNumber = customOpNumbers[lotIdx].trim();
+    } else if (opPrefix && opPrefix.trim()) {
+      const cleanPrefix = opPrefix.trim();
+      const matchNumber = cleanPrefix.match(/^(.*?)(\d+)$/);
+      if (matchNumber) {
+        const prefixText = matchNumber[1];
+        const numVal = parseInt(matchNumber[2], 10) + lotIdx;
+        const padLen = matchNumber[2].length;
+        lotNumber = `${prefixText}${String(numVal).padStart(padLen, '0')}`;
+      } else {
+        lotNumber = `${cleanPrefix}-${lotIdx + 1}`;
+      }
+    }
+
+    let baseStartMs = new Date(startDateStr).getTime();
+    if (lotIdx > 0) {
+      const allPrev = [...scheduledBatches, ...outOfShiftBatches];
+      if (allPrev.length > 0) {
+        const prevStartMs = new Date(allPrev[allPrev.length - 1].startDateTime).getTime();
+        baseStartMs = Math.max(baseStartMs, prevStartMs + 60 * 60 * 1000);
+      }
+    }
+
     let lotScheduled = false;
 
-    // Scan forward hour-by-hour (up to 45 days = 1080 hours) to see where this batch can be allocated
-    const scanLimitHours = 1080; 
     let foundPerfectStart = '';
     let foundPerfectSteps: ScheduledStep[] = [];
+
+    let foundFlexibleStart = '';
+    let foundFlexibleSteps: ScheduledStep[] = [];
+    let flexibleReason = '';
 
     let foundBypassStart = '';
     let foundBypassSteps: ScheduledStep[] = [];
     let bypassReason = '';
 
     for (let offset = 0; offset <= scanLimitHours; offset++) {
-      const testStart = new Date(currentSearchStart.getTime() + offset * 60 * 60 * 1000);
-      
+      const candidateStart = new Date(baseStartMs + offset * 60 * 60 * 1000);
+
       try {
         const candidateSteps = calculateProductionTimeline(
           recipe,
-          testStart.toISOString(),
-          0, // 0h standard interval for auto batches
+          candidateStart.toISOString(),
+          0,
           activeBatchesPool,
           preventatives,
-          undefined, // manualAllocations
-          undefined, // ignoreBatchId
+          undefined,
+          undefined,
           setupTimes,
-          envaseCount
+          envaseCount,
+          customAssets
         );
 
-        const hasOverlap = checkStepsOverlap(candidateSteps, activeBatchesPool, preventatives, undefined, setupTimes, envaseCount);
+        const hasOverlap = checkStepsOverlap(candidateSteps, activeBatchesPool, preventatives, undefined, setupTimes, envaseCount, customAssets);
         if (hasOverlap) {
-          continue; // Physical collision on reactor/preventatives is strictly forbidden
+          continue; // Physical collision -> try next hour
         }
 
         const shiftVal = validateBatchShifts(candidateSteps, shiftConfig);
+        
         if (shiftVal.isValid) {
-          foundPerfectStart = testStart.toISOString();
+          foundPerfectStart = candidateStart.toISOString();
           foundPerfectSteps = candidateSteps;
           lotScheduled = true;
-          break;
+          break; // Perfect in-shift slot found!
         } else {
-          // If we haven't found a bypass start yet, save the first physical-safe but shift-invalid slot
-          if (!foundBypassStart) {
-            foundBypassStart = testStart.toISOString();
-            foundBypassSteps = candidateSteps;
-            bypassReason = shiftVal.reason || 'Conflito de turnos.';
+          if (!shiftVal.hasIndustrialViolation) {
+            if (!foundFlexibleStart) {
+              foundFlexibleStart = candidateStart.toISOString();
+              foundFlexibleSteps = candidateSteps;
+              flexibleReason = shiftVal.reason || 'Necessita inoculação (Erlenmeyer/Balão) fora do turno.';
+            }
+          } else {
+            if (!foundBypassStart) {
+              foundBypassStart = candidateStart.toISOString();
+              foundBypassSteps = candidateSteps;
+              bypassReason = shiftVal.reason || 'Conflito de turnos industriais (Envase).';
+            }
           }
         }
       } catch (err: any) {
@@ -520,43 +770,248 @@ export function generateAutomaticPlanning(
     }
 
     if (lotScheduled && foundPerfectStart && foundPerfectSteps.length > 0) {
+      const stepsWithOps = assignStepOpNumbers(foundPerfectSteps, lotNumber);
       const newBatch: Batch = {
         id: `auto-batch-${recipe.id}-${Date.now()}-${lotIdx}`,
         lotNumber,
         productId: recipe.id,
         startDateTime: foundPerfectStart,
         transferIntervalHours: 0,
-        steps: foundPerfectSteps
+        steps: stepsWithOps
       };
-      
+
       scheduledBatches.push(newBatch);
       activeBatchesPool.push(newBatch);
-    } else if (foundBypassStart && foundBypassSteps.length > 0) {
-      // It is physical-safe but failed shifts -> present as bypassable "Horas Extras" warning!
-      errors.push({
-        id: `err-bypass-${recipe.id}-${Date.now()}-${lotIdx}`,
-        lotNumber,
-        productName: recipe.name,
-        timestamp: new Date().toISOString(),
-        reason: `Cairia fora do turno de trabalho operacional. ${bypassReason}`,
-        productId: recipe.id,
-        startDateTime: foundBypassStart,
-        canBypass: true
-      });
+      currentRealVolume += getBatchYield(newBatch, recipe, customAssets || envaseCount);
     } else {
-      errors.push({
-        id: `err-absolute-${recipe.id}-${Date.now()}-${lotIdx}`,
-        lotNumber,
-        productName: recipe.name,
-        timestamp: new Date().toISOString(),
-        reason: `Lote ${lotNumber} totalmente inviabilizado: Sem reatores ou rota física livre no período analisado (incluindo setup).`,
-        canBypass: false
-      });
+      const chosenSteps = foundFlexibleSteps.length > 0 ? foundFlexibleSteps : foundBypassSteps;
+      const chosenStart = foundFlexibleStart || foundBypassStart;
+
+      if (chosenSteps.length > 0 && chosenStart) {
+        const stepsWithOps = assignStepOpNumbers(chosenSteps, lotNumber);
+        const newBatch: Batch = {
+          id: `auto-batch-bypass-${recipe.id}-${Date.now()}-${lotIdx}`,
+          lotNumber,
+          productId: recipe.id,
+          startDateTime: chosenStart,
+          transferIntervalHours: 0,
+          steps: stepsWithOps
+        };
+
+        outOfShiftBatches.push(newBatch);
+        activeBatchesPool.push(newBatch);
+        currentRealVolume += getBatchYield(newBatch, recipe, customAssets || envaseCount);
+
+        const isFlex = foundFlexibleStart && chosenStart === foundFlexibleStart;
+        errors.push({
+          id: `err-bypass-${recipe.id}-${Date.now()}-${lotIdx}`,
+          lotNumber,
+          productName: recipe.name,
+          timestamp: new Date().toISOString(),
+          reason: isFlex ? `Turno Flexível (Inoculação): ${flexibleReason}` : `Turno Operacional (Envase): ${bypassReason}`,
+          productId: recipe.id,
+          startDateTime: chosenStart,
+          canBypass: true
+        });
+      } else {
+        errors.push({
+          id: `err-absolute-${recipe.id}-${Date.now()}-${lotIdx}`,
+          lotNumber,
+          productName: recipe.name,
+          timestamp: new Date().toISOString(),
+          reason: `Lote ${lotNumber} totalmente inviabilizado: Sem reatores ou rota física livre no período analisado (incluindo setup).`,
+          canBypass: false
+        });
+        currentRealVolume += recipe.yieldPerBatch; // Advance count on unfeasible batch to avoid infinite loop
+      }
     }
+
+    lotIdx++;
   }
 
   return {
     scheduledBatches,
+    outOfShiftBatches,
     errors
   };
+}
+
+export interface ProductSuggestionDetail {
+  recipeId: string;
+  recipeName: string;
+  color?: string;
+  targetVolume: number;
+  scheduledVolume: number;
+  batchesScheduledCount: number;
+  yieldPerBatch: number;
+}
+
+export interface StartTimeSuggestion {
+  startDateTime: string;
+  endDateTime: string;
+  volumeScheduled: number;
+  batchesScheduledCount: number;
+  hasErrors: boolean;
+  errorsCount: number;
+  requiresBypass: boolean;
+  errors: PlanningErrorLog[];
+  productDetails?: ProductSuggestionDetail[];
+}
+
+/**
+ * Sweeps the entire active month to find the best candidate start times for a campaign.
+ */
+export function findBestStartTimes(
+  year: number,
+  monthIndex: number,
+  campaignItems: { recipe: ProductRecipe; targetVolume: number }[],
+  existingBatches: Batch[],
+  preventatives: Preventative[],
+  shiftConfig: ShiftConfig,
+  setupTimes: Record<ScaleType, number>,
+  envaseLinesCount: number,
+  restrictToMonth: boolean,
+  customAssets?: Asset[]
+): StartTimeSuggestion[] {
+  const suggestions: StartTimeSuggestion[] = [];
+  const targetMonthStartMs = new Date(year, monthIndex, 1, 0, 0, 0).getTime();
+  const targetMonthEndMs = new Date(year, monthIndex + 1, 0, 23, 59, 59).getTime();
+  
+  let leadTimeHours = 0;
+  if (campaignItems.length > 0) {
+    const recipe = campaignItems[0].recipe;
+    for (let i = 0; i < recipe.steps.length - 1; i++) {
+      leadTimeHours += recipe.steps[i].durationHours;
+    }
+    leadTimeHours += (recipe.steps.length - 2) * 2; // buffer transfer
+  }
+  if (leadTimeHours <= 0) leadTimeHours = 96;
+
+  const sweepStartMs = restrictToMonth 
+    ? targetMonthStartMs - leadTimeHours * 60 * 60 * 1000 
+    : targetMonthStartMs;
+
+  const testPoints: Date[] = [];
+  let currentTest = new Date(sweepStartMs);
+  currentTest.setMinutes(0, 0, 0);
+  if (currentTest.getHours() % 2 !== 0) {
+    currentTest.setHours(currentTest.getHours() + 1);
+  }
+
+  while (currentTest.getTime() <= targetMonthEndMs) {
+    testPoints.push(new Date(currentTest.getTime()));
+    currentTest.setHours(currentTest.getHours() + 2);
+  }
+  
+  const formatLocal = (d: Date): string => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  for (const point of testPoints) {
+    const startStr = formatLocal(point);
+    let activePool = [...existingBatches];
+    let totalVolumeScheduled = 0;
+    let totalBatchesScheduled = 0;
+    let totalErrors: PlanningErrorLog[] = [];
+    let maxEndMs = new Date(startStr).getTime();
+    const productDetails: ProductSuggestionDetail[] = [];
+    
+    for (const item of campaignItems) {
+      const result = generateAutomaticPlanning(
+        item.recipe,
+        item.targetVolume,
+        startStr,
+        activePool,
+        preventatives,
+        shiftConfig,
+        setupTimes,
+        envaseLinesCount
+      );
+      
+      let batchesToCount = result.scheduledBatches;
+      if (restrictToMonth) {
+        batchesToCount = result.scheduledBatches.filter(b => {
+          const envaseStep = b.steps.find(s => s.scaleType === 'Envase');
+          if (!envaseStep) return false;
+          const envaseStartMs = new Date(envaseStep.startDateTime).getTime();
+          const envaseEndMs = new Date(envaseStep.endDateTime).getTime();
+          return envaseEndMs >= targetMonthStartMs && envaseStartMs <= targetMonthEndMs;
+        });
+      }
+
+      const itemScheduledVol = batchesToCount.reduce((acc, b) => acc + getBatchYield(b, item.recipe, customAssets || envaseLinesCount), 0);
+      productDetails.push({
+        recipeId: item.recipe.id,
+        recipeName: item.recipe.name,
+        color: item.recipe.color,
+        targetVolume: item.targetVolume,
+        scheduledVolume: itemScheduledVol,
+        batchesScheduledCount: batchesToCount.length,
+        yieldPerBatch: item.recipe.yieldPerBatch
+      });
+      
+      if (batchesToCount.length > 0) {
+        totalBatchesScheduled += batchesToCount.length;
+        totalVolumeScheduled += itemScheduledVol;
+        activePool.push(...batchesToCount);
+        
+        batchesToCount.forEach(b => {
+          b.steps.forEach(s => {
+            const t = new Date(s.endDateTime).getTime();
+            if (t > maxEndMs) maxEndMs = t;
+          });
+        });
+      }
+      
+      if (result.errors.length > 0) {
+        const filteredErrors = result.errors.filter(err => {
+          if (!err.startDateTime) return true;
+          const errStartMs = new Date(err.startDateTime).getTime();
+          return !restrictToMonth || (errStartMs >= targetMonthStartMs && errStartMs <= targetMonthEndMs);
+        });
+        totalErrors.push(...filteredErrors);
+      }
+    }
+    
+    if (totalBatchesScheduled > 0) {
+      const endStr = formatLocal(new Date(maxEndMs));
+      const requiresBypass = totalErrors.some(e => e.canBypass);
+      
+      suggestions.push({
+        startDateTime: startStr,
+        endDateTime: endStr,
+        volumeScheduled: totalVolumeScheduled,
+        batchesScheduledCount: totalBatchesScheduled,
+        hasErrors: totalErrors.length > 0,
+        errorsCount: totalErrors.length,
+        requiresBypass,
+        errors: totalErrors,
+        productDetails
+      });
+    }
+  }
+  
+  suggestions.sort((a, b) => {
+    if (b.volumeScheduled !== a.volumeScheduled) {
+      return b.volumeScheduled - a.volumeScheduled;
+    }
+    if (a.errorsCount !== b.errorsCount) {
+      return a.errorsCount - b.errorsCount;
+    }
+    return new Date(a.endDateTime).getTime() - new Date(b.endDateTime).getTime();
+  });
+  
+  const uniqueSuggestions: StartTimeSuggestion[] = [];
+  const seenStarts = new Set<string>();
+  
+  for (const sug of suggestions) {
+    if (!seenStarts.has(sug.startDateTime)) {
+      seenStarts.add(sug.startDateTime);
+      uniqueSuggestions.push(sug);
+      if (uniqueSuggestions.length >= 5) break;
+    }
+  }
+  
+  return uniqueSuggestions;
 }
