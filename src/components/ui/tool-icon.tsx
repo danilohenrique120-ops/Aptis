@@ -8,6 +8,8 @@ import {
   Activity,
   Users,
   MessageSquareText,
+  Target,
+  Compass,
   Layers,
   LucideProps
 } from 'lucide-react';
@@ -34,6 +36,10 @@ export function ToolIcon({ name, ...props }: ToolIconProps) {
       return <Users {...props} />;
     case 'MessageSquareText':
       return <MessageSquareText {...props} />;
+    case 'Target':
+      return <Target {...props} />;
+    case 'Compass':
+      return <Compass {...props} />;
     default:
       return <Layers {...props} />;
   }

@@ -102,20 +102,21 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
     }
   },
   {
-    id: 'audit-5s',
-    name: 'Aptis 5S',
-    shortDescription: 'Checklists digitais nos postos de trabalho com pontuação e plano de ação.',
-    fullDescription: 'Digitalize as auditorias dos 5 sensos com evidências fotográficas, plano de 5W2H imediato e evolução do radar 5S por setor fabril ou administrativo.',
-    category: 'Melhoria Contínua',
-    route: '/dashboard/tools/audit-5s',
-    iconName: 'ClipboardCheck',
-    status: 'coming_soon',
-    badge: 'Em Breve',
+    id: 'pdi-manager',
+    name: 'Aptis PDI',
+    shortDescription: 'Plano de Desenvolvimento Individual para cada colaborador, metodologia 70-20-10 e acompanhamento da evolução.',
+    fullDescription: 'Estruture planos de desenvolvimento individual (PDI) de alta performance para cada operador e líder da fábrica. Mapeamento de forças e gaps de competência, metas estruturadas no modelo 70-20-10 (On-the-job, Mentoria e Cursos), histórico de check-ins periódicos e curva de evolução contínua.',
+    category: 'Gestão de Pessoas',
+    route: '/dashboard/tools/pdi-manager',
+    iconName: 'Compass',
+    status: 'active',
+    badge: 'Pessoas & Carreira',
     recommendedPlan: 'pro',
     keyFeatures: [
-      'Checklist padronizado para os 5 sensos',
-      'Cálculo automático de score por área',
-      'Abertura de desvios e ações corretivas'
+      'Metodologia 70-20-10 (70% Prática na Fábrica, 20% Mentoria/Troca, 10% Cursos/Normas)',
+      'Diagnóstico de competências: Forças atuais vs. Gaps para o próximo nível',
+      'Check-ins periódicos com parecer do gestor e cálculo contínuo de evolução (%)',
+      'Modelos prontos de PDI fabril (Operador Líder, Preparador SMED, Manutenção Autônoma)'
     ],
     colorTheme: {
       bg: 'bg-purple-600',

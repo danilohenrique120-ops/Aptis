@@ -97,8 +97,24 @@ export const INITIAL_LICENSES: License[] = [
     validUntil: '2025-12-31',
     assignedAt: '2025-01-15'
   },
+  {
+    id: 'lic-1-one-on-one',
+    tenantId: 'tenant-1',
+    toolId: 'one-on-one',
+    isActive: true,
+    validUntil: '2027-12-31',
+    assignedAt: '2025-01-15'
+  },
+  {
+    id: 'lic-1-pdi',
+    tenantId: 'tenant-1',
+    toolId: 'pdi-manager',
+    isActive: true,
+    validUntil: '2027-12-31',
+    assignedAt: '2025-01-15'
+  },
 
-  // Tenant 2 (Beta): tem todas as 4 ferramentas ativas
+  // Tenant 2 (Beta): tem todas as ferramentas ativas
   {
     id: 'lic-5',
     tenantId: 'tenant-2',
@@ -127,6 +143,22 @@ export const INITIAL_LICENSES: License[] = [
     id: 'lic-8',
     tenantId: 'tenant-2',
     toolId: 'kaizen-manager',
+    isActive: true,
+    validUntil: '2027-12-31',
+    assignedAt: '2025-03-10'
+  },
+  {
+    id: 'lic-2-one-on-one',
+    tenantId: 'tenant-2',
+    toolId: 'one-on-one',
+    isActive: true,
+    validUntil: '2027-12-31',
+    assignedAt: '2025-03-10'
+  },
+  {
+    id: 'lic-2-pdi',
+    tenantId: 'tenant-2',
+    toolId: 'pdi-manager',
     isActive: true,
     validUntil: '2027-12-31',
     assignedAt: '2025-03-10'
