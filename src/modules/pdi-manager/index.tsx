@@ -1,42 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { EmployeePdi } from './types';
 import { INITIAL_PDIS } from './mock-data';
 import { PdiDashboard } from './components/PdiDashboard';
 import { PdiDetailView } from './components/PdiDetailView';
 import { PdiModalForm } from './components/PdiModalForm';
-
-const STORAGE_KEY = 'aptis_pdi_state_v1';
+import { useTenantStorage } from '@/hooks/use-tenant-storage';
 
 export default function PdiManagerModule() {
-  const [pdis, setPdis] = useState<EmployeePdi[]>(INITIAL_PDIS);
+  const [pdis, setPdis] = useTenantStorage<EmployeePdi[]>('pdi-manager', 'pdis', INITIAL_PDIS);
   const [selectedPdiId, setSelectedPdiId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Carregar do LocalStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPdis(parsed);
-        }
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar PDIs do LocalStorage:', e);
-    }
-  }, []);
-
-  // Salvar no LocalStorage
+  // Salvar no Supabase e LocalStorage via useTenantStorage
   const persistPdis = (newPdis: EmployeePdi[]) => {
     setPdis(newPdis);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newPdis));
-    } catch (e) {
-      console.warn('Erro ao salvar PDIs no LocalStorage:', e);
-    }
   };
 
   const handleCreateOrUpdatePdi = (pdi: EmployeePdi) => {

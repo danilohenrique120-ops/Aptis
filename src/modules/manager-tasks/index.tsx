@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTenant } from '@/context/tenant-context';
+import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { ManagerTask, TaskPriority, TaskStatus, TaskViewTab, EisenhowerQuadrant } from './types';
 import { 
   Plus, 
@@ -134,42 +135,12 @@ const SECTORS = [
 
 export default function ManagerTasksModule() {
   const { currentTenant } = useTenant();
-  const [tasks, setTasks] = useState<ManagerTask[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [tasks, setTasks] = useTenantStorage<ManagerTask[]>('manager-tasks', 'tasks', INITIAL_TASKS);
+  const [isLoaded, setIsLoaded] = useState(true);
   const [activeTab, setActiveTab] = useState<TaskViewTab>('kanban');
   const [selectedSector, setSelectedSector] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
-
-  // Load from localStorage on mount (clean default [], but auto-fills with demo when ?demo=true)
-  React.useEffect(() => {
-    try {
-      const isDemoRequested = typeof window !== 'undefined' && 
-        (new URLSearchParams(window.location.search).get('demo') === 'true' || 
-         new URLSearchParams(window.location.search).get('demo') === '1');
-
-      const saved = localStorage.getItem('aptis_routine_tasks');
-      if (isDemoRequested) {
-        setTasks(INITIAL_TASKS);
-      } else if (saved) {
-        setTasks(JSON.parse(saved));
-      } else {
-        setTasks([]);
-      }
-    } catch (e) {
-      console.error('Erro ao carregar tarefas da rotina:', e);
-      setTasks([]);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
-
-  // Save to localStorage when tasks change
-  React.useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('aptis_routine_tasks', JSON.stringify(tasks));
-    }
-  }, [tasks, isLoaded]);
   
   // Drag & Drop State
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);

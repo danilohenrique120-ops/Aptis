@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/context/tenant-context';
+import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { KaizenProject, KaizenLevel, KaizenCategory, KaizenStage } from './types';
 import { INITIAL_KAIZEN_PROJECTS, KAIZEN_LEVEL_CONFIG, SECTORS_LIST } from './mock-data';
 import { KaizenLevelBadge } from './components/KaizenLevelBadge';
@@ -39,8 +40,8 @@ const STORAGE_KEY = 'aptis_kaizen_projects_v2';
 export default function KaizenManagerModule() {
   const { currentTenant } = useTenant();
   const [activeTab, setActiveTab] = useState<'kanban' | 'people' | 'sectors' | 'a3_central'>('kanban');
-  const [projects, setProjects] = useState<KaizenProject[]>(INITIAL_KAIZEN_PROJECTS);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [projects, setProjects] = useTenantStorage<KaizenProject[]>('kaizen-manager', 'projects', INITIAL_KAIZEN_PROJECTS);
+  const [isLoaded, setIsLoaded] = useState(true);
 
   // Filtros
   const [search, setSearch] = useState('');
@@ -51,31 +52,9 @@ export default function KaizenManagerModule() {
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selectedProjectForA3, setSelectedProjectForA3] = useState<KaizenProject | null>(null);
 
-  // Carregar do LocalStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setProjects(parsed);
-        }
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar Kaizens do LocalStorage:', e);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
-
-  // Salvar no LocalStorage
+  // Salvar no Supabase e LocalStorage via useTenantStorage
   const persistProjects = (newProjects: KaizenProject[]) => {
     setProjects(newProjects);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newProjects));
-    } catch (e) {
-      console.warn(e);
-    }
   };
 
   const handleAddProject = (newProject: KaizenProject) => {

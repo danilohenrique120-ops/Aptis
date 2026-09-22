@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTenant } from '@/context/tenant-context';
+import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { 
   SkillLevel, 
   SkillStation, 
@@ -370,59 +371,14 @@ const INITIAL_SUCCESSION_PLANS: SuccessionPlan[] = [
 export default function SkillsMatrixModule() {
   const { currentTenant, currentUser } = useTenant();
 
-  // Multi-Sector State
-  const [sectors, setSectors] = useState<Sector[]>(INITIAL_SECTORS);
+  // Multi-Sector State persisted in Supabase per tenant
+  const [sectors, setSectors] = useTenantStorage<Sector[]>('skills-matrix', 'sectors', INITIAL_SECTORS);
   const [selectedSectorId, setSelectedSectorId] = useState<string>(INITIAL_SECTORS[0].id);
-  const [stations, setStations] = useState<SkillStation[]>([]);
-  const [employees, setEmployees] = useState<EmployeeSkillRecord[]>([]);
-  const [trainingActions, setTrainingActions] = useState<TrainingAction[]>([]);
-  const [successionPlans, setSuccessionPlans] = useState<SuccessionPlan[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // Load from localStorage on mount (clean default [], but auto-fills with demo when ?demo=true)
-  React.useEffect(() => {
-    try {
-      const isDemoRequested = typeof window !== 'undefined' && 
-        (new URLSearchParams(window.location.search).get('demo') === 'true' || 
-         new URLSearchParams(window.location.search).get('demo') === '1');
-
-      const savedStations = localStorage.getItem('aptis_skills_stations');
-      const savedEmployees = localStorage.getItem('aptis_skills_employees');
-      const savedActions = localStorage.getItem('aptis_skills_actions');
-      const savedSectors = localStorage.getItem('aptis_skills_sectors');
-      const savedSuccession = localStorage.getItem('aptis_skills_succession');
-
-      if (isDemoRequested) {
-        // Carrega automaticamente todos os exemplos industriais no localhost pelo link ?demo=true
-        setStations(INITIAL_STATIONS);
-        setEmployees(INITIAL_EMPLOYEES);
-        setTrainingActions(INITIAL_ACTIONS);
-        setSectors(INITIAL_SECTORS);
-        setSuccessionPlans(INITIAL_SUCCESSION_PLANS);
-      } else {
-        if (savedStations) setStations(JSON.parse(savedStations));
-        if (savedEmployees) setEmployees(JSON.parse(savedEmployees));
-        if (savedActions) setTrainingActions(JSON.parse(savedActions));
-        if (savedSectors) setSectors(JSON.parse(savedSectors));
-        if (savedSuccession) setSuccessionPlans(JSON.parse(savedSuccession));
-      }
-    } catch (e) {
-      console.error('Erro ao carregar dados da matriz de habilidades:', e);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
-
-  // Save to localStorage when state changes
-  React.useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('aptis_skills_stations', JSON.stringify(stations));
-      localStorage.setItem('aptis_skills_employees', JSON.stringify(employees));
-      localStorage.setItem('aptis_skills_actions', JSON.stringify(trainingActions));
-      localStorage.setItem('aptis_skills_sectors', JSON.stringify(sectors));
-      localStorage.setItem('aptis_skills_succession', JSON.stringify(successionPlans));
-    }
-  }, [stations, employees, trainingActions, sectors, successionPlans, isLoaded]);
+  const [stations, setStations] = useTenantStorage<SkillStation[]>('skills-matrix', 'stations', INITIAL_STATIONS);
+  const [employees, setEmployees] = useTenantStorage<EmployeeSkillRecord[]>('skills-matrix', 'employees', INITIAL_EMPLOYEES);
+  const [trainingActions, setTrainingActions] = useTenantStorage<TrainingAction[]>('skills-matrix', 'actions', INITIAL_ACTIONS);
+  const [successionPlans, setSuccessionPlans] = useTenantStorage<SuccessionPlan[]>('skills-matrix', 'succession', INITIAL_SUCCESSION_PLANS);
+  const [isLoaded, setIsLoaded] = useState(true);
 
   // View & Presentation State - Default to 'dashboard' for dynamic management overview
   const [activeTab, setActiveTab] = useState<ViewTab>('dashboard');

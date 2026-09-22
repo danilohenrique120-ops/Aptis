@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/context/tenant-context';
+import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { 
   TeamMember1on1, 
   OneOnOneMeeting, 
@@ -38,42 +39,19 @@ export default function OneOnOneModule() {
   const { currentUser, currentTenant } = useTenant();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'questions' | 'actions'>('dashboard');
-  const [members, setMembers] = useState<TeamMember1on1[]>(INITIAL_TEAM_MEMBERS);
-  const [meetings, setMeetings] = useState<OneOnOneMeeting[]>(INITIAL_MEETINGS_HISTORY);
+  const [members, setMembers] = useTenantStorage<TeamMember1on1[]>('one-on-one', 'members', INITIAL_TEAM_MEMBERS);
+  const [meetings, setMeetings] = useTenantStorage<OneOnOneMeeting[]>('one-on-one', 'meetings', INITIAL_MEETINGS_HISTORY);
   
   // Modais
   const [selectedMemberForMeeting, setSelectedMemberForMeeting] = useState<TeamMember1on1 | null>(null);
   const [selectedMeetingDetail, setSelectedMeetingDetail] = useState<OneOnOneMeeting | null>(null);
 
-  // Carrega e persiste no localStorage
-  useEffect(() => {
-    try {
-      const savedMembers = localStorage.getItem('aptis_1on1_members');
-      const savedMeetings = localStorage.getItem('aptis_1on1_meetings');
-
-      if (savedMembers) setMembers(JSON.parse(savedMembers));
-      if (savedMeetings) setMeetings(JSON.parse(savedMeetings));
-    } catch (e) {
-      console.warn('Erro ao carregar reuniões 1:1 do localStorage:', e);
-    }
-  }, []);
-
   const saveMembersToStorage = (newMembers: TeamMember1on1[]) => {
     setMembers(newMembers);
-    try {
-      localStorage.setItem('aptis_1on1_members', JSON.stringify(newMembers));
-    } catch (e) {
-      console.warn(e);
-    }
   };
 
   const saveMeetingsToStorage = (newMeetings: OneOnOneMeeting[]) => {
     setMeetings(newMeetings);
-    try {
-      localStorage.setItem('aptis_1on1_meetings', JSON.stringify(newMeetings));
-    } catch (e) {
-      console.warn(e);
-    }
   };
 
   // Salvar nova reunião realizada

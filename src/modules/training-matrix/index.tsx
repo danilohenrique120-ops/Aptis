@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTenant } from '@/context/tenant-context';
+import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { 
   TrainingRecord, 
   TrainingValidityStatus, 
@@ -269,41 +270,9 @@ const SECTORS = [
 
 export default function TrainingMatrixModule() {
   const { currentTenant } = useTenant();
-  const [trainings, setTrainings] = useState<TrainingRecord[]>([]);
-  const [documents, setDocuments] = useState<DocumentAttachment[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // Load from localStorage on mount (clean default [], but auto-fills with demo when ?demo=true)
-  React.useEffect(() => {
-    try {
-      const isDemoRequested = typeof window !== 'undefined' && 
-        (new URLSearchParams(window.location.search).get('demo') === 'true' || 
-         new URLSearchParams(window.location.search).get('demo') === '1');
-
-      const savedTrainings = localStorage.getItem('aptis_compliance_trainings');
-      const savedDocs = localStorage.getItem('aptis_compliance_docs');
-
-      if (isDemoRequested) {
-        setTrainings(INITIAL_TRAININGS);
-        setDocuments(INITIAL_DOCUMENTS);
-      } else {
-        if (savedTrainings) setTrainings(JSON.parse(savedTrainings));
-        if (savedDocs) setDocuments(JSON.parse(savedDocs));
-      }
-    } catch (e) {
-      console.error('Erro ao carregar dados de conformidade:', e);
-    } finally {
-      setIsLoaded(true);
-    }
-  }, []);
-
-  // Save to localStorage when state changes
-  React.useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem('aptis_compliance_trainings', JSON.stringify(trainings));
-      localStorage.setItem('aptis_compliance_docs', JSON.stringify(documents));
-    }
-  }, [trainings, documents, isLoaded]);
+  const [trainings, setTrainings] = useTenantStorage<TrainingRecord[]>('training-matrix', 'trainings', INITIAL_TRAININGS);
+  const [documents, setDocuments] = useTenantStorage<DocumentAttachment[]>('training-matrix', 'documents', INITIAL_DOCUMENTS);
+  const [isLoaded, setIsLoaded] = useState(true);
 
   // View tabs
   const [activeTab, setActiveTab] = useState<'list' | 'matrix'>('list');

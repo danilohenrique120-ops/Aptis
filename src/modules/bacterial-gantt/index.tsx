@@ -16,6 +16,7 @@ import IndustrialAssetsManager from './components/IndustrialAssetsManager';
 import { AlertTriangle, Calendar, PlayCircle, Layers, ShieldX, HelpCircle, AlertOctagon, CheckCircle, BarChart3, Database, RefreshCw, XCircle, Trash2, Clock, CalendarDays, Sliders, ChevronUp, ChevronDown, X, Cloud, CloudCheck, Lock } from 'lucide-react';
 import { getAssetsPool, normalizeAssetId, FactoryScaleCounts, DEFAULT_SCALE_COUNTS, Asset } from './types';
 import { getSafeStorage, setSafeStorage, removeSafeStorage } from './utils/storage';
+import { useTenantStorage } from '@/hooks/use-tenant-storage';
 
 export default function BacterialGanttModule() {
   const { currentTenant } = useTenant();
@@ -24,52 +25,18 @@ export default function BacterialGanttModule() {
   // Tabs: 'gantt' | 'batch' | 'product' | 'preventatives' | 'deviations'
   const [activeTab, setActiveTab] = useState<'gantt' | 'batch' | 'product' | 'preventatives' | 'deviations'>('gantt');
 
-  // Core application states loaded from Firestore multi-tenant configs or local fallback
-  const [recipes, setRecipes] = useState<ProductRecipe[]>(() => {
-    const saved = getSafeStorage(`pcp_recipes_${tenantId}`) || getSafeStorage('pcp_recipes');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_RECIPES;
-  });
-  const [batches, setBatches] = useState<Batch[]>(() => {
-    const saved = getSafeStorage(`pcp_batches_${tenantId}`) || getSafeStorage('pcp_batches');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return getInitialBatches();
-  });
-  const [preventatives, setPreventatives] = useState<Preventative[]>(() => {
-    const saved = getSafeStorage(`pcp_preventatives_${tenantId}`) || getSafeStorage('pcp_preventatives');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return INITIAL_PREVENTATIVES;
-  });
-  const [deviations, setDeviations] = useState<DeviationLog[]>(() => {
-    const saved = getSafeStorage(`pcp_deviations_${tenantId}`) || getSafeStorage('pcp_deviations');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [];
-  });
-  const [scaleCounts, setScaleCounts] = useState<FactoryScaleCounts>(() => {
-    const saved = getSafeStorage('pcp_scale_counts');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') return { ...DEFAULT_SCALE_COUNTS, ...parsed };
-      } catch (e) {}
-    }
-    return DEFAULT_SCALE_COUNTS;
-  });
+  // Core application states loaded from Supabase multi-tenant persistence with instant local cache
+  const [recipes, setRecipes] = useTenantStorage<ProductRecipe[]>('bacterial-gantt', 'recipes', INITIAL_RECIPES);
+  const [batches, setBatches] = useTenantStorage<Batch[]>('bacterial-gantt', 'batches', getInitialBatches);
+  const [preventatives, setPreventatives] = useTenantStorage<Preventative[]>('bacterial-gantt', 'preventatives', INITIAL_PREVENTATIVES);
+  const [deviations, setDeviations] = useTenantStorage<DeviationLog[]>('bacterial-gantt', 'deviations', []);
+  const [scaleCounts, setScaleCounts] = useTenantStorage<FactoryScaleCounts>('bacterial-gantt', 'scale_counts', DEFAULT_SCALE_COUNTS);
 
   const [envaseLinesCount, setEnvaseLinesCount] = useState<number>(3);
 
   useEffect(() => {
-    setSafeStorage('pcp_scale_counts', JSON.stringify(scaleCounts));
-    setEnvaseLinesCount(scaleCounts.envaseCount);
-  }, [scaleCounts]);
+    setEnvaseLinesCount(scaleCounts.envaseCount || 3);
+  }, [scaleCounts.envaseCount]);
 
   const handleUpdateScaleCount = (scale: keyof FactoryScaleCounts, delta: number) => {
     setScaleCounts(prev => {
@@ -79,20 +46,7 @@ export default function BacterialGanttModule() {
     });
   };
 
-  const [customAssets, setCustomAssets] = useState<Asset[]>(() => {
-    const saved = getSafeStorage('pcp_custom_assets');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
-    return getAssetsPool(scaleCounts);
-  });
-
-  useEffect(() => {
-    setSafeStorage('pcp_custom_assets', JSON.stringify(customAssets));
-  }, [customAssets]);
+  const [customAssets, setCustomAssets] = useTenantStorage<Asset[]>('bacterial-gantt', 'custom_assets', () => getAssetsPool(scaleCounts));
 
   const handleUpdateAsset = (id: string, name: string, capacityLiters?: number) => {
     setCustomAssets(prev => prev.map(a => a.id === id ? { ...a, name, capacityLiters: capacityLiters !== undefined ? capacityLiters : a.capacityLiters } : a));
@@ -142,7 +96,7 @@ export default function BacterialGanttModule() {
     removeSafeStorage('pcp_custom_assets');
   };
 
-  const [setupTimes, setSetupTimes] = useState<Record<ScaleType, number>>({
+  const [setupTimes, setSetupTimes] = useTenantStorage<Record<ScaleType, number>>('bacterial-gantt', 'setup_times', {
     'Erlenmeyer': 0,
     'Balão': 0,
     '100L': 4,
@@ -150,7 +104,7 @@ export default function BacterialGanttModule() {
     '3000_5000L': 8,
     'Envase': 4
   });
-  const [shiftConfig, setShiftConfig] = useState<ShiftConfig>({
+  const [shiftConfig, setShiftConfig] = useTenantStorage<ShiftConfig>('bacterial-gantt', 'shifts', {
     shifts: [
       { id: 'sh-1', name: '1º Turno (Seg a Sex)', startHour: '06:00', endHour: '14:00', workDays: [1, 2, 3, 4, 5] },
       { id: 'sh-2', name: '1º Turno (Ter a Sáb)', startHour: '06:00', endHour: '14:00', workDays: [2, 3, 4, 5, 6] },
