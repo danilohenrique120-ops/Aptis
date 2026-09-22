@@ -150,6 +150,32 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
       hover: 'hover:border-rose-500',
       lightBg: 'bg-rose-50'
     }
+  },
+  {
+    id: 'bacterial-gantt',
+    name: 'Aptis Sequenciador',
+    shortDescription: 'Sequenciador Gantt de Multiplicação Bacteriana, alocação finita de reatores, setup CIP e gestão de turnos.',
+    fullDescription: 'Planejamento e Controle de Produção (PCP) biológico avançado. Linha do tempo visual tipo Gantt com alocação inteligente de vasos (Erlenmeyers, Balões, Tanques 100L a 5000L e Envase), detecção e bloqueio de colisões físicas, parametrização de turnos operacionais, horas extras, setup/CIP e tratativa de desvios (contaminações e trocas de rota) em tempo real.',
+    category: 'Planejamento & PCP',
+    route: '/dashboard/tools/bacterial-gantt',
+    iconName: 'CalendarDays',
+    status: 'active',
+    badge: 'PCP Biológico',
+    recommendedPlan: 'enterprise',
+    keyFeatures: [
+      'Gantt interativo com zoom ajustável e alocação dinâmica de reatores',
+      'Detecção de colisão física e tempos de setup/higienização CIP pós-lote',
+      'Gestão de turnos operacionais, validação de horários e horas extras',
+      'Intervenções ao vivo: bloqueio por contaminação, recálculo de atrasos e troca de rota',
+      'Motor de planejamento automático por meta mensal de volume (Litros)'
+    ],
+    colorTheme: {
+      bg: 'bg-amber-600',
+      text: 'text-amber-600',
+      border: 'border-amber-200',
+      hover: 'hover:border-amber-500',
+      lightBg: 'bg-amber-50'
+    }
   }
 ];
 
@@ -157,7 +183,8 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   'Rotina & Tarefas',
   'Gestão de Pessoas',
   'Capacitação & Compliance',
-  'Melhoria Contínua'
+  'Melhoria Contínua',
+  'Planejamento & PCP'
 ];
 
 export function getAllTools(): ToolDefinition[] {

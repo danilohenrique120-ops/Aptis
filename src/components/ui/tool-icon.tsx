@@ -11,6 +11,7 @@ import {
   Target,
   Compass,
   Layers,
+  CalendarDays,
   LucideProps
 } from 'lucide-react';
 
@@ -20,6 +21,8 @@ interface ToolIconProps extends LucideProps {
 
 export function ToolIcon({ name, ...props }: ToolIconProps) {
   switch (name) {
+    case 'CalendarDays':
+      return <CalendarDays {...props} />;
     case 'CheckSquare':
       return <CheckSquare {...props} />;
     case 'Grid':

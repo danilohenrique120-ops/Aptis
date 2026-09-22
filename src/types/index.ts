@@ -39,7 +39,8 @@ export type ToolCategory =
   | 'Rotina & Tarefas' 
   | 'Gestão de Pessoas' 
   | 'Capacitação & Compliance' 
-  | 'Melhoria Contínua';
+  | 'Melhoria Contínua'
+  | 'Planejamento & PCP';
 
 export type ToolStatus = 'active' | 'beta' | 'coming_soon';
 

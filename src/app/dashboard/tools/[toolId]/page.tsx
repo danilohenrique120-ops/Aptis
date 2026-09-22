@@ -8,6 +8,7 @@ import TrainingMatrixModule from '@/modules/training-matrix';
 import KaizenManagerModule from '@/modules/kaizen-manager';
 import OneOnOneModule from '@/modules/one-on-one';
 import PdiManagerModule from '@/modules/pdi-manager';
+import BacterialGanttModule from '@/modules/bacterial-gantt';
 
 export function generateStaticParams() {
   return getAllTools().map(tool => ({
@@ -42,6 +43,8 @@ export default async function ToolPage({
         return <OneOnOneModule />;
       case 'pdi-manager':
         return <PdiManagerModule />;
+      case 'bacterial-gantt':
+        return <BacterialGanttModule />;
       default:
         return (
           <div className="bg-white p-12 rounded-xl border border-slate-200 text-center">
