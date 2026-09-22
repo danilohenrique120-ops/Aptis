@@ -21,7 +21,8 @@ import {
   Calendar,
   Layers,
   HelpCircle,
-  Clock
+  Clock,
+  Printer
 } from 'lucide-react';
 import { 
   HercaInvestigation, 
@@ -40,6 +41,7 @@ interface InvestigationModalProps {
   onClose: () => void;
   onSave: (inv: HercaInvestigation) => void;
   onOpenOpl?: (inv: HercaInvestigation) => void;
+  onOpenPdfReport?: (inv: HercaInvestigation) => void;
 }
 
 const defaultInvestigation: HercaInvestigation = {
@@ -94,6 +96,7 @@ export function InvestigationModal({
   onClose,
   onSave,
   onOpenOpl,
+  onOpenPdfReport,
 }: InvestigationModalProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
   const [formData, setFormData] = useState<HercaInvestigation>(
@@ -948,7 +951,7 @@ export function InvestigationModal({
 
         {/* Footer Navigation */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-2">
             {currentStep > 1 && (
               <button
                 type="button"
@@ -957,6 +960,17 @@ export function InvestigationModal({
               >
                 <ArrowLeft className="w-4 h-4" />
                 Voltar
+              </button>
+            )}
+
+            {onOpenPdfReport && (
+              <button
+                type="button"
+                onClick={() => onOpenPdfReport(formData)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold transition"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Dossiê em PDF
               </button>
             )}
           </div>

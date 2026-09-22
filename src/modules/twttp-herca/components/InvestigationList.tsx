@@ -26,6 +26,7 @@ interface InvestigationListProps {
   onSelectInvestigation: (inv: HercaInvestigation) => void;
   onNewInvestigation: () => void;
   onOpenOpl: (inv: HercaInvestigation) => void;
+  onOpenPdfReport?: (inv: HercaInvestigation) => void;
   onDeleteInvestigation?: (id: string) => void;
 }
 
@@ -58,6 +59,7 @@ export function InvestigationList({
   onSelectInvestigation,
   onNewInvestigation,
   onOpenOpl,
+  onOpenPdfReport,
 }: InvestigationListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -265,6 +267,19 @@ export function InvestigationList({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {onOpenPdfReport && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenPdfReport(inv);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold transition flex items-center gap-1"
+                          title="Emitir Dossiê em PDF"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                          PDF
+                        </button>
+                      )}
                       {inv.opl && (
                         <button
                           onClick={(e) => {

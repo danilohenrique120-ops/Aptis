@@ -16,7 +16,8 @@ import {
   ChevronDown,
   ChevronUp,
   Cpu,
-  BookOpen
+  BookOpen,
+  Printer
 } from 'lucide-react';
 import { HercaInvestigation } from '../types';
 
@@ -25,6 +26,7 @@ interface HercaDashboardProps {
   onSelectInvestigation: (inv: HercaInvestigation) => void;
   onNewInvestigation: () => void;
   onOpenOpl: (inv: HercaInvestigation) => void;
+  onOpenPdfReport?: (inv: HercaInvestigation) => void;
 }
 
 export function HercaDashboard({
@@ -32,6 +34,7 @@ export function HercaDashboard({
   onSelectInvestigation,
   onNewInvestigation,
   onOpenOpl,
+  onOpenPdfReport,
 }: HercaDashboardProps) {
   const [showMethodologyHelp, setShowMethodologyHelp] = useState(false);
 
@@ -480,19 +483,34 @@ export function HercaDashboard({
                   </p>
 
                   <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px] text-slate-500">
-                    <span>{inv.sector}</span>
-                    {inv.opl && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenOpl(inv);
-                        }}
-                        className="text-indigo-600 hover:underline font-semibold flex items-center gap-1"
-                      >
-                        OPL Gerada
-                        <ArrowUpRight className="w-3 h-3" />
-                      </button>
-                    )}
+                    <span className="line-clamp-1 max-w-[130px]">{inv.sector}</span>
+                    <div className="flex items-center gap-2">
+                      {onOpenPdfReport && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenPdfReport(inv);
+                          }}
+                          className="text-purple-600 hover:underline font-semibold flex items-center gap-0.5"
+                          title="Gerar Relatório em PDF"
+                        >
+                          <Printer className="w-3 h-3" />
+                          PDF
+                        </button>
+                      )}
+                      {inv.opl && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenOpl(inv);
+                          }}
+                          className="text-indigo-600 hover:underline font-semibold flex items-center gap-1"
+                        >
+                          OPL
+                          <ArrowUpRight className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

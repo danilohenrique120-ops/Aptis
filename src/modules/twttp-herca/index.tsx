@@ -9,10 +9,10 @@ import {
   FileText, 
   Plus, 
   Cloud, 
-  CloudCheck, 
   RefreshCw,
   Sparkles,
-  Layers
+  Layers,
+  Printer
 } from 'lucide-react';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { useTenant } from '@/context/tenant-context';
@@ -23,6 +23,7 @@ import { InvestigationList } from './components/InvestigationList';
 import { InvestigationModal } from './components/InvestigationModal';
 import { ActionPlanPanel } from './components/ActionPlanPanel';
 import { OplModal } from './components/OplModal';
+import { InvestigationPdfReportModal } from './components/InvestigationPdfReportModal';
 
 export function TwttpHercaModule() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'investigations' | 'actions' | 'opls'>('dashboard');
@@ -43,6 +44,9 @@ export function TwttpHercaModule() {
   const [isOplModalOpen, setIsOplModalOpen] = useState(false);
   const [selectedOplInvestigation, setSelectedOplInvestigation] = useState<HercaInvestigation | null>(null);
 
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [selectedPdfInvestigation, setSelectedPdfInvestigation] = useState<HercaInvestigation | null>(null);
+
   // Handlers
   const handleOpenNewInvestigation = () => {
     setSelectedInvestigation(null);
@@ -57,6 +61,11 @@ export function TwttpHercaModule() {
   const handleOpenOpl = (inv: HercaInvestigation) => {
     setSelectedOplInvestigation(inv);
     setIsOplModalOpen(true);
+  };
+
+  const handleOpenPdfReport = (inv: HercaInvestigation) => {
+    setSelectedPdfInvestigation(inv);
+    setIsPdfModalOpen(true);
   };
 
   const handleSaveInvestigation = (savedInv: HercaInvestigation) => {
@@ -118,96 +127,74 @@ export function TwttpHercaModule() {
   const oplInvestigations = investigations.filter((i: HercaInvestigation) => i.opl);
 
   return (
-    <div className="w-full min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-16 text-slate-800 dark:text-slate-100">
-      {/* Top Application Bar */}
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/25">
-              <BrainCircuit className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                  Aptis TWTTP & HERCA
-                </h1>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
-                  WCM Root Cause
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 line-clamp-1">
-                Investigação de Falha Humana • 4 Perguntas Gemba • 5 Porquês • Poka-Yoke & OPL
-              </p>
-            </div>
+    <div className="space-y-6 w-full pb-12">
+      {/* HEADER DO MÓDULO (Padrão Oficial Aptis) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+              <BrainCircuit className="w-3.5 h-3.5" /> Qualidade & WCM
+            </span>
+            <span className="text-xs text-slate-500 font-medium">Planta: {currentTenant?.name || 'Planta Principal'}</span>
+            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <Cloud className="w-3 h-3" /> Nuvem Ativa
+            </span>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+            Aptis TWTTP & HERCA • Investigação de Causa Raiz
+          </h1>
+          <p className="text-sm text-slate-600 max-w-3xl mt-1">
+            Metodologia World Class Manufacturing para eliminação de falhas humanas: diagnóstico do método de instrução do líder (TWTTP), taxonomia científica do erro (HERCA), 5 Porquês, Poka-Yoke e emissão de Dossiê em PDF.
+          </p>
+        </div>
 
-          {/* Tenant & Cloud Sync Badge */}
-          <div className="flex items-center gap-3 text-xs">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Cliente: <strong className="font-bold">{currentTenant?.name || 'Planta Principal'}</strong></span>
-            </div>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleOpenNewInvestigation}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-600/25 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Nova Investigação
+          </button>
+        </div>
+      </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-100 dark:border-indigo-900">
-              {isSynced ? (
-                <>
-                  <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-emerald-700 dark:text-emerald-300 font-semibold">Nuvem Sincronizada</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-500" />
-                  <span>Sincronizando Nuvem...</span>
-                </>
-              )}
-            </div>
-
+      {/* NAVEGAÇÃO POR ABAS (Padrão Oficial Aptis) */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto text-xs font-semibold">
+        {[
+          { id: 'dashboard', label: 'Dashboard Executivo', icon: BarChart3 },
+          { id: 'investigations', label: `Investigações (${investigations.length})`, icon: FileSpreadsheet },
+          { id: 'actions', label: `Plano 5W2H (${investigations.flatMap((i: HercaInvestigation) => i.actions).length})`, icon: CheckSquare },
+          { id: 'opls', label: `Lições OPL (${oplInvestigations.length})`, icon: FileText },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
             <button
-              onClick={handleOpenNewInvestigation}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/20"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`py-2 px-4 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer ${
+                isActive
+                  ? 'bg-purple-600 text-white font-bold shadow-md shadow-purple-600/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              Nova Investigação
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
             </button>
-          </div>
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Tab Navigation Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 overflow-x-auto border-t border-slate-100 dark:border-slate-800/60 text-xs font-semibold">
-          {[
-            { id: 'dashboard', label: 'Dashboard Executivo', icon: BarChart3 },
-            { id: 'investigations', label: `Investigações (${investigations.length})`, icon: FileSpreadsheet },
-            { id: 'actions', label: `Plano 5W2H (${investigations.flatMap((i: HercaInvestigation) => i.actions).length})`, icon: CheckSquare },
-            { id: 'opls', label: `Lições OPL (${oplInvestigations.length})`, icon: FileText },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-3 px-4 flex items-center gap-2 border-b-2 transition whitespace-nowrap ${
-                  isActive
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/20 dark:bg-indigo-950/20'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      {/* CONTEÚDO PRINCIPAL */}
+      <div className="w-full">
         {activeTab === 'dashboard' && (
           <HercaDashboard
             investigations={investigations}
             onSelectInvestigation={handleOpenEditInvestigation}
             onNewInvestigation={handleOpenNewInvestigation}
             onOpenOpl={handleOpenOpl}
+            onOpenPdfReport={handleOpenPdfReport}
           />
         )}
 
@@ -217,6 +204,7 @@ export function TwttpHercaModule() {
             onSelectInvestigation={handleOpenEditInvestigation}
             onNewInvestigation={handleOpenNewInvestigation}
             onOpenOpl={handleOpenOpl}
+            onOpenPdfReport={handleOpenPdfReport}
             onDeleteInvestigation={handleDeleteInvestigation}
           />
         )}
@@ -233,7 +221,7 @@ export function TwttpHercaModule() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-slate-900">
                   Catálogo de Lições de Ponto Único (OPL / LPU)
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -243,9 +231,9 @@ export function TwttpHercaModule() {
             </div>
 
             {oplInvestigations.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400">
+              <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 text-slate-400">
                 <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhuma OPL gerada</h4>
+                <h4 className="text-sm font-bold text-slate-700">Nenhuma OPL gerada</h4>
                 <p className="text-xs text-slate-500 mt-1">Abra uma investigação e clique no botão &quot;Gerar OPL Automática&quot; na Etapa 4.</p>
               </div>
             ) : (
@@ -256,11 +244,11 @@ export function TwttpHercaModule() {
                     <div
                       key={opl.id}
                       onClick={() => handleOpenOpl(inv)}
-                      className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-600 hover:shadow-md transition cursor-pointer group flex flex-col justify-between"
+                      className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-purple-400 hover:shadow-md transition cursor-pointer group flex flex-col justify-between"
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950">
+                          <span className="font-mono text-xs font-bold text-purple-600 px-2 py-0.5 rounded-md bg-purple-50">
                             {opl.code}
                           </span>
                           <span className="text-[10px] uppercase font-bold text-slate-500">
@@ -268,7 +256,7 @@ export function TwttpHercaModule() {
                           </span>
                         </div>
 
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition line-clamp-2">
+                        <h4 className="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition line-clamp-2">
                           {opl.title}
                         </h4>
 
@@ -277,7 +265,7 @@ export function TwttpHercaModule() {
                         </p>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-purple-600 font-semibold">
                         <span>Ver e Imprimir Padrão</span>
                         <span>Posto: {opl.station}</span>
                       </div>
@@ -288,7 +276,7 @@ export function TwttpHercaModule() {
             )}
           </div>
         )}
-      </main>
+      </div>
 
       {/* Investigation Modal */}
       <InvestigationModal
@@ -297,6 +285,7 @@ export function TwttpHercaModule() {
         onClose={() => setIsInvestigationModalOpen(false)}
         onSave={handleSaveInvestigation}
         onOpenOpl={handleOpenOpl}
+        onOpenPdfReport={handleOpenPdfReport}
       />
 
       {/* OPL Visual Viewer / Print Modal */}
@@ -304,6 +293,14 @@ export function TwttpHercaModule() {
         investigation={selectedOplInvestigation}
         isOpen={isOplModalOpen}
         onClose={() => setIsOplModalOpen(false)}
+      />
+
+      {/* Professional PDF Report Dossier Modal */}
+      <InvestigationPdfReportModal
+        investigation={selectedPdfInvestigation}
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        tenantName={currentTenant?.name}
       />
     </div>
   );
