@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { SpeakerRole, TranscriptBlock } from '../types';
@@ -33,6 +33,7 @@ export function LiveMeetingRecorder({
   onTranscriptionUpdate
 }: LiveMeetingRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
+  const [autoDiarization, setAutoDiarization] = useState(true);
   const [currentSpeaker, setCurrentSpeaker] = useState<SpeakerRole>('manager');
   const [interimText, setInterimText] = useState('');
   const [seconds, setSeconds] = useState(0);
@@ -41,6 +42,17 @@ export function LiveMeetingRecorder({
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const currentSpeakerRef = useRef<SpeakerRole>('manager');
+  const autoDiarizationRef = useRef<boolean>(true);
+  const lastFinalTimestampRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    currentSpeakerRef.current = currentSpeaker;
+  }, [currentSpeaker]);
+
+  useEffect(() => {
+    autoDiarizationRef.current = autoDiarization;
+  }, [autoDiarization]);
 
   // Inicializa reconhecimento de fala via Web Speech API
   useEffect(() => {
@@ -94,15 +106,45 @@ export function LiveMeetingRecorder({
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const transcriptPart = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            if (transcriptPart.trim()) {
+            const trimmed = transcriptPart.trim();
+            if (trimmed) {
+              const now = Date.now();
+              const timeSinceLastFinal = now - lastFinalTimestampRef.current;
+              lastFinalTimestampRef.current = now;
+
+              // REGRAS DE DIARIZAÇÃO AUTOMÁTICA EM TEMPO REAL:
+              // Se o modo automático estiver ativo:
+              // 1. Se houve pausa na conversa maior que 1.8 segundos, ou
+              // 2. Se a frase anterior terminou com tom de pergunta (interrogação ou palavras interrogativas),
+              // alternamos automaticamente o orador!
+              let assignedSpeaker = currentSpeakerRef.current;
+
+              if (autoDiarizationRef.current) {
+                const isQuestion = trimmed.endsWith('?') ||
+                  /^(como|qual|quando|onde|por que|porque|você|voce|me conta|o que|conte-me)/i.test(trimmed);
+
+                // Se passou mais de 1.8s de silêncio e o bloco anterior era longo, alterna o orador
+                if (timeSinceLastFinal > 1800) {
+                  assignedSpeaker = currentSpeakerRef.current === 'manager' ? 'employee' : 'manager';
+                  currentSpeakerRef.current = assignedSpeaker;
+                  setCurrentSpeaker(assignedSpeaker);
+                }
+              }
+
               const newBlock: TranscriptBlock = {
                 id: `tr-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-                speaker: currentSpeaker,
-                speakerName: currentSpeaker === 'manager' ? `${managerName} (Gestor)` : employeeName,
+                speaker: assignedSpeaker,
+                speakerName: assignedSpeaker === 'manager' ? `${managerName} (Gestor)` : employeeName,
                 timestamp: formatTimer(seconds),
-                text: transcriptPart.trim()
+                text: trimmed
               };
               onAddTranscript(newBlock);
+
+              // Se a fala acabou de ser uma pergunta do gestor, a próxima fala esperada é automaticamente do liderado
+              if (autoDiarizationRef.current && assignedSpeaker === 'manager' && (trimmed.endsWith('?') || /^(como|qual|o que|onde)/i.test(trimmed))) {
+                currentSpeakerRef.current = 'employee';
+                setCurrentSpeaker('employee');
+              }
             }
           } else {
             interim += transcriptPart;
@@ -250,39 +292,82 @@ export function LiveMeetingRecorder({
         </div>
       )}
 
-      {/* CONTROLE DE DIARIZAÇÃO: QUEM ESTÁ FALANDO AGORA */}
-      <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-          <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-          Quem está com a palavra agora?
-        </span>
+      {/* CONTROLE DE DIARIZAÇÃO: IDENTIFICAÇÃO AUTOMÁTICA & MANUAL */}
+      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-800/80">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              {autoDiarization && isRecording && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              )}
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${autoDiarization ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
+            </span>
+            <span className="text-xs font-bold text-white flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              Identificação Automática de Orador (Diarização)
+            </span>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              autoDiarization 
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' 
+                : 'bg-slate-800 text-slate-400 border border-slate-700'
+            }`}>
+              {autoDiarization ? 'Ativada (Mãos Livres)' : 'Desativada (Manual)'}
+            </span>
+          </div>
 
-        <div className="inline-flex rounded-xl p-1 bg-slate-900 border border-slate-800">
+          {/* Alternar modo Automático / Manual */}
           <button
             type="button"
-            onClick={() => handleSpeakerChange('manager')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              currentSpeaker === 'manager'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setAutoDiarization(!autoDiarization)}
+            className={`text-xs px-3 py-1 rounded-lg font-medium transition-all border cursor-pointer ${
+              autoDiarization
+                ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
             }`}
           >
-            <UserCheck className="w-3.5 h-3.5" />
-            <span>👔 {managerName} (Gestor)</span>
+            {autoDiarization ? 'Modo Mãos Livres Ativo' : 'Ativar Modo Mãos Livres'}
           </button>
+        </div>
 
-          <button
-            type="button"
-            onClick={() => handleSpeakerChange('employee')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              currentSpeaker === 'employee'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>👤 {employeeName} (Colaborador)</span>
-          </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <p className="text-slate-400 text-[11px] leading-relaxed max-w-md">
+            {autoDiarization 
+              ? '✨ O sistema detecta perguntas e pausas naturais para alternar automaticamente quem está falando sem você precisar clicar.' 
+              : 'Clique abaixo para alternar manualmente quem está com a palavra agora.'}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-500 font-medium">Orador Atual:</span>
+            <div className="inline-flex rounded-xl p-1 bg-slate-900 border border-slate-800">
+              <button
+                type="button"
+                onClick={() => handleSpeakerChange('manager')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentSpeaker === 'manager'
+                    ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400/50'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Clique para forçar Gestor como orador"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>👔 {managerName} (Gestor)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSpeakerChange('employee')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentSpeaker === 'employee'
+                    ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400/50'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="Clique para forçar Colaborador como orador"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>👤 {employeeName} (Colaborador)</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
