@@ -67,7 +67,7 @@ export default function PdiManagerModule() {
   const selectedPdi = pdis.find(p => p.id === selectedPdiId) || null;
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
+    <div className="w-full space-y-6">
       {selectedPdi ? (
         <PdiDetailView
           pdi={selectedPdi}
