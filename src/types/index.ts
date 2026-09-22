@@ -40,7 +40,8 @@ export type ToolCategory =
   | 'Gestão de Pessoas' 
   | 'Capacitação & Compliance' 
   | 'Melhoria Contínua'
-  | 'Planejamento & PCP';
+  | 'Planejamento & PCP'
+  | 'Qualidade & WCM';
 
 export type ToolStatus = 'active' | 'beta' | 'coming_soon';
 

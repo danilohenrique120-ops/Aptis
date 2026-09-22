@@ -12,6 +12,7 @@ import {
   Compass,
   Layers,
   CalendarDays,
+  BrainCircuit,
   LucideProps
 } from 'lucide-react';
 
@@ -21,6 +22,8 @@ interface ToolIconProps extends LucideProps {
 
 export function ToolIcon({ name, ...props }: ToolIconProps) {
   switch (name) {
+    case 'BrainCircuit':
+      return <BrainCircuit {...props} />;
     case 'CalendarDays':
       return <CalendarDays {...props} />;
     case 'CheckSquare':

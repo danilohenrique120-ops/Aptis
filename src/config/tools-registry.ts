@@ -176,6 +176,32 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
       hover: 'hover:border-amber-500',
       lightBg: 'bg-amber-50'
     }
+  },
+  {
+    id: 'twttp-herca',
+    name: 'Aptis TWTTP & HERCA',
+    shortDescription: 'Investigação de causa raiz para erros humanos (TWTTP & HERCA), 4 passos Gemba, 5 Porquês, Poka-Yoke e Lição de Ponto Único (OPL).',
+    fullDescription: 'Metodologia World Class Manufacturing (WCM) para eliminação de falhas humanas na indústria. Diagnóstico do método de ensino do líder (TWTTP), classificação científica do mecanismo de falha humana (HERCA), 5 Porquês com Ishikawa, matriz 5W2H com foco em barreiras físicas (Poka-Yoke) e gerador de Lições de Ponto Único (OPL) com visão executiva para gerentes de planta.',
+    category: 'Qualidade & WCM',
+    route: '/dashboard/tools/twttp-herca',
+    iconName: 'BrainCircuit',
+    status: 'active',
+    badge: 'WCM Causa Raiz',
+    recommendedPlan: 'pro',
+    keyFeatures: [
+      'TWTTP: 4 perguntas no Gemba e diagnóstico da eficácia do líder',
+      'HERCA: Taxonomia científica de erro humano e 5 Porquês',
+      'Hierarquia WCM: Priorização de Poka-Yoke contra falácia do re-treinamento',
+      'Gerador automático de Lição de Ponto Único (OPL) pronta para impressão',
+      'Dashboard executivo com Pareto de causas e reincidência por setor'
+    ],
+    colorTheme: {
+      bg: 'bg-purple-600',
+      text: 'text-purple-600',
+      border: 'border-purple-200',
+      hover: 'hover:border-purple-500',
+      lightBg: 'bg-purple-50'
+    }
   }
 ];
 
@@ -184,7 +210,8 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   'Gestão de Pessoas',
   'Capacitação & Compliance',
   'Melhoria Contínua',
-  'Planejamento & PCP'
+  'Planejamento & PCP',
+  'Qualidade & WCM'
 ];
 
 export function getAllTools(): ToolDefinition[] {

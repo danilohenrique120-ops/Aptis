@@ -121,6 +121,14 @@ export const INITIAL_LICENSES: License[] = [
     validUntil: '2027-12-31',
     assignedAt: '2025-01-15'
   },
+  {
+    id: 'lic-1-twttp-herca',
+    tenantId: 'tenant-1',
+    toolId: 'twttp-herca',
+    isActive: true,
+    validUntil: '2027-12-31',
+    assignedAt: '2025-01-15'
+  },
 
   // Tenant 2 (Beta): tem todas as ferramentas ativas
   {
@@ -175,6 +183,14 @@ export const INITIAL_LICENSES: License[] = [
     id: 'lic-2-bacterial-gantt',
     tenantId: 'tenant-2',
     toolId: 'bacterial-gantt',
+    isActive: true,
+    validUntil: '2027-12-31',
+    assignedAt: '2025-03-10'
+  },
+  {
+    id: 'lic-2-twttp-herca',
+    tenantId: 'tenant-2',
+    toolId: 'twttp-herca',
     isActive: true,
     validUntil: '2027-12-31',
     assignedAt: '2025-03-10'
