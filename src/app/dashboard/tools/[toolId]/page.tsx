@@ -6,6 +6,7 @@ import ManagerTasksModule from '@/modules/manager-tasks';
 import SkillsMatrixModule from '@/modules/skills-matrix';
 import TrainingMatrixModule from '@/modules/training-matrix';
 import KaizenManagerModule from '@/modules/kaizen-manager';
+import OneOnOneModule from '@/modules/one-on-one';
 
 export function generateStaticParams() {
   return getAllTools().map(tool => ({
@@ -36,6 +37,8 @@ export default async function ToolPage({
         return <TrainingMatrixModule />;
       case 'kaizen-manager':
         return <KaizenManagerModule />;
+      case 'one-on-one':
+        return <OneOnOneModule />;
       default:
         return (
           <div className="bg-white p-12 rounded-xl border border-slate-200 text-center">

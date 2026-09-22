@@ -43,6 +43,7 @@ export function PublicFooter() {
               <li><Link href="/dashboard/tools/manager-tasks" className="hover:text-cyan-400 transition-colors">Aptis Routine (Kamishibai & Turno)</Link></li>
               <li><Link href="/dashboard/tools/training-matrix" className="hover:text-cyan-400 transition-colors">Aptis Compliance (NRs & POPs)</Link></li>
               <li><Link href="/dashboard/tools/kaizen-manager" className="hover:text-cyan-400 transition-colors">Aptis Kaizen (Melhoria Contínua)</Link></li>
+              <li><Link href="/dashboard/tools/one-on-one" className="hover:text-rose-400 text-rose-300 font-semibold transition-colors">Aptis 1:1 (Liderança & Reuniões)</Link></li>
             </ul>
           </div>
 

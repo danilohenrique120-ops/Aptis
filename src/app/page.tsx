@@ -709,6 +709,13 @@ export default function HomePage() {
     category: 'Melhoria Contínua',
     route: '/dashboard/tools/kaizen-manager',
     status: 'active'
+  },
+  {
+    id: 'one-on-one',
+    name: 'Aptis 1:1',
+    category: 'Gestão de Pessoas',
+    route: '/dashboard/tools/one-on-one',
+    status: 'active'
   }
 ];`}
                 </pre>

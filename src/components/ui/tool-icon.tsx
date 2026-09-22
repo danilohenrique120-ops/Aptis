@@ -6,6 +6,8 @@ import {
   TrendingUp,
   ClipboardCheck,
   Activity,
+  Users,
+  MessageSquareText,
   Layers,
   LucideProps
 } from 'lucide-react';
@@ -28,6 +30,10 @@ export function ToolIcon({ name, ...props }: ToolIconProps) {
       return <ClipboardCheck {...props} />;
     case 'Activity':
       return <Activity {...props} />;
+    case 'Users':
+      return <Users {...props} />;
+    case 'MessageSquareText':
+      return <MessageSquareText {...props} />;
     default:
       return <Layers {...props} />;
   }

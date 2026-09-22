@@ -126,27 +126,28 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
     }
   },
   {
-    id: 'oee-tracker',
-    name: 'Aptis OEE',
-    shortDescription: 'Monitoramento de disponibilidade, performance e qualidade das linhas de produção.',
-    fullDescription: 'Acompanhe as paradas de máquina em tempo real, calcule o OEE por célula de trabalho e identifique as principais causas de refugo e ociosidade no turno.',
-    category: 'Rotina & Tarefas',
-    route: '/dashboard/tools/oee-tracker',
-    iconName: 'Activity',
-    status: 'coming_soon',
-    badge: 'Em Breve',
-    recommendedPlan: 'enterprise',
+    id: 'one-on-one',
+    name: 'Aptis 1:1',
+    shortDescription: 'Reuniões 1:1 estratégicas com o time, pautas colaborativas, transcrição ao vivo com IA e planos de ação.',
+    fullDescription: 'Conduza conversas 1:1 de alto impacto com seus liderados seguindo as melhores práticas mundiais de gestão. Pautas colaborativas, termômetro de clima, banco de perguntas poderosas, gravação de áudio com transcrição em tempo real diferenciando oradores e rastreamento de compromissos mútuos.',
+    category: 'Gestão de Pessoas',
+    route: '/dashboard/tools/one-on-one',
+    iconName: 'MessageSquareText',
+    status: 'active',
+    badge: 'Liderança & Pessoas',
+    recommendedPlan: 'pro',
     keyFeatures: [
-      'Cálculo do indicador OEE em tempo real',
-      'Gráfico de Pareto das maiores causas de parada',
-      'Painel de bordo para operadores e líderes de turno'
+      'Gravação e transcrição em tempo real com separação de oradores (Gestor x Liderado)',
+      'Banco de perguntas poderosas (Metodologias Andy Grove e Radical Candor)',
+      'Termômetro de motivação, bem-estar e energia da equipe',
+      'Plano de ação com prazos e acompanhamento contínuo de compromissos'
     ],
     colorTheme: {
-      bg: 'bg-cyan-600',
-      text: 'text-cyan-600',
-      border: 'border-cyan-200',
-      hover: 'hover:border-cyan-500',
-      lightBg: 'bg-cyan-50'
+      bg: 'bg-rose-600',
+      text: 'text-rose-600',
+      border: 'border-rose-200',
+      hover: 'hover:border-rose-500',
+      lightBg: 'bg-rose-50'
     }
   }
 ];
