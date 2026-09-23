@@ -11,6 +11,8 @@ import PdiManagerModule from '@/modules/pdi-manager';
 import BacterialGanttModule from '@/modules/bacterial-gantt';
 import TwttpHercaModule from '@/modules/twttp-herca';
 
+export const dynamic = 'force-dynamic';
+
 export function generateStaticParams() {
   return getAllTools().map(tool => ({
     toolId: tool.id

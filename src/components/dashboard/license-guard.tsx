@@ -21,9 +21,27 @@ interface LicenseGuardProps {
 }
 
 export function LicenseGuard({ toolId, children }: LicenseGuardProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const { currentTenant, currentUser, hasLicense, toggleLicense } = useTenant();
   const [requestedActivation, setRequestedActivation] = useState(false);
   const tool = getToolById(toolId);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center bg-white/50 rounded-2xl border border-slate-200/80 p-12">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-slate-500 font-mono tracking-wider">
+            Sincronizando {tool?.name || 'módulo'}...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const isLicensed = hasLicense(toolId);
 

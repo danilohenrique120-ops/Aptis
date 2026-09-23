@@ -37,14 +37,14 @@ export function useTenantStorage<T>(
   const rowId = `${tenantId}:${toolId}:${dataKey}`;
   const localCacheKey = `aptis_${tenantId}_${toolId}_${dataKey}`;
 
-  const resolvedDefault = typeof defaultValue === 'function'
-    ? (defaultValue as () => T)()
-    : defaultValue;
-  const isArrayExpected = Array.isArray(resolvedDefault);
+  const getDefault = (): T => {
+    return typeof defaultValue === 'function'
+      ? (defaultValue as () => T)()
+      : defaultValue;
+  };
 
   const isValidValue = (val: any): boolean => {
     if (val === null || val === undefined) return false;
-    if (isArrayExpected && !Array.isArray(val)) return false;
     return true;
   };
 
@@ -59,7 +59,7 @@ export function useTenantStorage<T>(
         }
       } catch {}
     }
-    return resolvedDefault;
+    return getDefault();
   });
 
   const [isSynced, setIsSynced] = useState<boolean>(false);
@@ -103,25 +103,27 @@ export function useTenantStorage<T>(
           setSafeStorage(localCacheKey, JSON.stringify(data.data));
           setIsSynced(true);
         } else if (!isCancelled && (!data || !isValidValue(data.data))) {
-          // Nuvem ainda não possui este registro ou possui dado corrompido: semeia com o estado local inicial
+          // Nuvem ainda não possui este registro: semeia com o estado local inicial
           const currentLocal = stateRef.current;
           if (isValidValue(currentLocal)) {
-            supabase
-              .from('tenant_tool_data')
-              .upsert(
-                {
-                  id: rowId,
-                  tenant_id: tenantId,
-                  tool_id: toolId,
-                  data_key: dataKey,
-                  data: currentLocal,
-                  updated_at: new Date().toISOString()
-                },
-                { onConflict: 'id' }
-              )
-              .then(({ error: upErr }) => {
-                if (!upErr && !isCancelled) setIsSynced(true);
-              });
+            try {
+              const { error: upErr } = await supabase
+                .from('tenant_tool_data')
+                .upsert(
+                  {
+                    id: rowId,
+                    tenant_id: tenantId,
+                    tool_id: toolId,
+                    data_key: dataKey,
+                    data: currentLocal,
+                    updated_at: new Date().toISOString()
+                  },
+                  { onConflict: 'id' }
+                );
+              if (!upErr && !isCancelled) setIsSynced(true);
+            } catch (seedErr) {
+              console.warn(`[useTenantStorage] Aviso ao semear nuvem para ${rowId}:`, seedErr);
+            }
           }
         }
       } catch (err) {
@@ -132,30 +134,43 @@ export function useTenantStorage<T>(
     loadCloudData();
 
     // 3. Subscrição em Realtime para multi-usuários
-    const channel = supabase
-      .channel(`tenant_tool_sync_${rowId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tenant_tool_data',
-          filter: `id=eq.${rowId}`
-        },
-        (payload) => {
-          if (!isCancelled && payload.new && isValidValue((payload.new as any).data)) {
-            const incoming = (payload.new as any).data as T;
-            setState(incoming);
-            stateRef.current = incoming;
-            setSafeStorage(localCacheKey, JSON.stringify(incoming));
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(`tenant_tool_sync_${rowId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'tenant_tool_data',
+            filter: `id=eq.${rowId}`
+          },
+          (payload) => {
+            if (!isCancelled && payload.new && isValidValue((payload.new as any).data)) {
+              const incoming = (payload.new as any).data as T;
+              setState(incoming);
+              stateRef.current = incoming;
+              setSafeStorage(localCacheKey, JSON.stringify(incoming));
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            setIsSynced(true);
+          }
+        });
+    } catch (chanErr) {
+      console.warn(`[useTenantStorage] Realtime indisponível para ${rowId}:`, chanErr);
+    }
 
     return () => {
       isCancelled = true;
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch {}
+      }
     };
   }, [tenantId, toolId, dataKey, rowId, localCacheKey]);
 
