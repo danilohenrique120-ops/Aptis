@@ -36,11 +36,11 @@ export function AptisLogo({
         )}
         <div className="relative overflow-hidden rounded-xl border border-slate-700/60 bg-slate-900/90 shadow-lg shadow-black/40">
           <Image
-            src="/brand/aptis-logo.png"
-            alt="Aptis Logo"
+            src="/brand/aptis-symbol.png"
+            alt="Aptis Símbolo Delta"
             width={dimensions.img}
             height={dimensions.img}
-            className="object-cover"
+            className="w-full h-full object-cover"
             priority
           />
         </div>
@@ -60,11 +60,11 @@ export function AptisLogo({
         )}
         <div className="relative w-full h-full rounded-xl overflow-hidden shadow-md shadow-slate-950/50 border border-cyan-500/30 bg-slate-950 flex items-center justify-center">
           <Image
-            src="/brand/aptis-logo.png"
-            alt="Aptis"
+            src="/brand/aptis-symbol.png"
+            alt="Aptis Símbolo Delta"
             width={dimensions.img}
             height={dimensions.img}
-            className="w-full h-full object-cover scale-110"
+            className="w-full h-full object-cover"
             priority
           />
         </div>
@@ -84,8 +84,8 @@ export function AptisLogo({
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl blur-sm opacity-40 group-hover:opacity-75 transition-opacity" />
         )}
         <Image
-          src="/brand/aptis-logo.png"
-          alt="Aptis Monogram"
+          src="/brand/aptis-symbol.png"
+          alt="Aptis Símbolo Delta"
           width={dimensions.img}
           height={dimensions.img}
           className="w-full h-full object-cover"
@@ -96,7 +96,7 @@ export function AptisLogo({
       {/* Typography Lockup */}
       <div className="flex flex-col justify-center leading-none">
         <div className="flex items-center gap-1.5">
-          <span className={`${dimensions.font} font-black tracking-wider text-white uppercase`}>
+          <span className={`${dimensions.font} font-brand font-bold tracking-wider text-white uppercase`}>
             APTIS
           </span>
           <span className="px-1.5 py-0.5 rounded-sm bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-[9px] font-bold tracking-widest uppercase">

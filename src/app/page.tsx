@@ -70,15 +70,15 @@ export default function HomePage() {
           <div className="relative max-w-5xl mx-auto text-center space-y-8">
             {/* Logotipo Monumental com Efeito de Luz */}
             <div className="flex flex-col items-center justify-center pt-2">
-              <div className="relative group inline-flex p-1 rounded-3xl bg-gradient-to-b from-slate-700/60 via-slate-800/40 to-slate-900/80 border border-slate-700/80 shadow-2xl shadow-black/80 backdrop-blur-xl">
+              <div className="relative group inline-flex p-1.5 rounded-3xl bg-gradient-to-b from-slate-700/60 via-slate-800/40 to-slate-900/80 border border-slate-700/80 shadow-2xl shadow-black/80 backdrop-blur-xl">
                 <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 to-blue-600/30 rounded-3xl blur-xl opacity-60 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-[22px] overflow-hidden bg-slate-950 px-8 py-6 flex items-center justify-center">
+                <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-[22px] overflow-hidden bg-slate-950 flex items-center justify-center border border-cyan-500/20 shadow-inner">
                   <Image
-                    src="/brand/aptis-logo.png"
-                    alt="Aptis - Logotipo Oficial"
-                    width={280}
-                    height={100}
-                    className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
+                    src="/brand/aptis-symbol.png"
+                    alt="Aptis - Símbolo Oficial Delta"
+                    width={200}
+                    height={200}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
                     priority
                   />
                 </div>
@@ -93,9 +93,12 @@ export default function HomePage() {
 
             {/* Headline Oficial */}
             <div className="space-y-4">
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-tight">
-                Aptis: <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-200 to-slate-100">
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-tight font-brand">
+                <span className="text-white tracking-wide font-extrabold">
+                  Aptis:
+                </span>{" "}
+                <br className="hidden sm:inline" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-200 to-slate-100 font-extrabold">
                   A fábrica sempre apta.
                 </span>
               </h1>
