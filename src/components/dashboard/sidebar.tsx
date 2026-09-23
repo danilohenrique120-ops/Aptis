@@ -15,8 +15,10 @@ import {
   ExternalLink,
   Sparkles,
   Activity,
-  Building2
+  Building2,
+  Layers
 } from 'lucide-react';
+import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -27,6 +29,7 @@ export function DashboardSidebar() {
   const availableTools = allTools.filter(t => !hasLicense(t.id));
 
   const isCurrentRoute = (route: string) => pathname === route;
+  const [isSectorsModalOpen, setIsSectorsModalOpen] = React.useState(false);
 
   return (
     <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 border-r border-slate-800/80 min-h-screen select-none">
@@ -89,6 +92,19 @@ export function DashboardSidebar() {
             <Store className="w-4 h-4 text-slate-400" />
             Suíte Aptis & Licenças
           </Link>
+          <button
+            onClick={() => setIsSectorsModalOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-900 hover:text-white transition-all cursor-pointer group text-left"
+            title="Gerenciar áreas e setores fabris cadastrados na planta"
+          >
+            <div className="flex items-center gap-2.5">
+              <Layers className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+              <span>Áreas & Setores Fabris</span>
+            </div>
+            <span className="text-[10px] bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800/60 font-semibold font-mono">
+              Central
+            </span>
+          </button>
         </div>
 
         {/* Módulos Licenciados (Ativos) */}
@@ -175,6 +191,13 @@ export function DashboardSidebar() {
           </span>
         </Link>
       </div>
+
+      {/* Modal Central de Áreas e Setores da Planta */}
+      <PlantSectorsManagerModal 
+        isOpen={isSectorsModalOpen} 
+        onClose={() => setIsSectorsModalOpen(false)} 
+        tenantName={currentTenant.name} 
+      />
     </aside>
   );
 }

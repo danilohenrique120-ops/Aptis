@@ -21,12 +21,17 @@ import {
   ChevronRight,
   Database,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  Layers
 } from 'lucide-react';
+import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 export default function DashboardHomePage() {
   const { currentTenant, currentUser, hasLicense, toggleLicense } = useTenant();
   const allTools = getAllTools();
+  const { sectors } = usePlantSectors();
+  const [isSectorsModalOpen, setIsSectorsModalOpen] = React.useState(false);
 
   const activeTools = allTools.filter(tool => hasLicense(tool.id));
   const lockedTools = allTools.filter(tool => !hasLicense(tool.id));
@@ -137,6 +142,36 @@ export default function DashboardHomePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* GOVERNANÇA DA PLANTA: ESTRUTURA DE ÁREAS & SETORES FABRIS */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 rounded-2xl p-5 border border-slate-800 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+            <Layers className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-white">
+                Estrutura da Planta: Áreas & Setores Fabris
+              </h2>
+              <span className="text-[11px] bg-cyan-950/90 text-cyan-300 px-2.5 py-0.5 rounded-full border border-cyan-800/80 font-bold font-mono">
+                {sectors.length} Áreas Ativas
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+              Base oficial da sua fábrica. Cadastre novos setores ou exclua áreas descontinuadas. Toda alteração replica em tempo real em todas as ferramentas da suíte Aptis.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsSectorsModalOpen(true)}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20 shrink-0 cursor-pointer"
+        >
+          <Layers className="w-4 h-4 text-slate-950" />
+          Gerenciar Áreas & Setores
+        </button>
       </div>
 
       {/* O CONCEITO DE OURO: THE APTIS SCORE (ÍNDICE DE APTIDÃO DA PLANTA) */}
@@ -467,6 +502,13 @@ export default function DashboardHomePage() {
           )}
         </div>
       </section>
+
+      {/* Modal Central de Áreas & Setores Fabris */}
+      <PlantSectorsManagerModal
+        isOpen={isSectorsModalOpen}
+        onClose={() => setIsSectorsModalOpen(false)}
+        tenantName={currentTenant.name}
+      />
     </div>
   );
 }
