@@ -34,6 +34,7 @@ import {
   HercaAction,
   OnePointLesson
 } from '../types';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 interface InvestigationModalProps {
   investigation?: HercaInvestigation | null;
@@ -104,6 +105,7 @@ export function InvestigationModal({
   );
 
   const [systemicFactorInput, setSystemicFactorInput] = useState('');
+  const { sectors: plantSectors } = usePlantSectors();
 
   if (!isOpen) return null;
 
@@ -348,13 +350,18 @@ export function InvestigationModal({
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
                     Setor Industrial
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.sector}
                     onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                    placeholder="Ex: Fermentação & Biorreatores"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
-                  />
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                  >
+                    {plantSectors.map(s => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
+                    {formData.sector && !plantSectors.some(s => s.name === formData.sector) && (
+                      <option value={formData.sector}>{formData.sector}</option>
+                    )}
+                  </select>
                 </div>
 
                 <div>

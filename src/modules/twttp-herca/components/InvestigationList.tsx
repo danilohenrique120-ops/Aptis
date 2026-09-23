@@ -20,6 +20,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { HercaInvestigation, InvestigationStatus, SeverityLevel, ErrorClassificationType } from '../types';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 interface InvestigationListProps {
   investigations: HercaInvestigation[];
@@ -66,8 +67,12 @@ export function InvestigationList({
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [sectorFilter, setSectorFilter] = useState<string>('all');
 
-  // Unique sectors
-  const sectors = Array.from(new Set(investigations.map(i => i.sector)));
+  const { sectors: plantSectors } = usePlantSectors();
+  // Setores unificados da planta e de casos cadastrados
+  const sectors = Array.from(new Set([
+    ...plantSectors.map(s => s.name),
+    ...investigations.map(i => i.sector)
+  ]));
 
   const filteredInvestigations = investigations.filter((inv) => {
     const matchesSearch = 

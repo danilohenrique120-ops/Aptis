@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { KaizenProject, KaizenLevel, KaizenStage } from '../types';
-import { SECTORS_LIST, KAIZEN_LEVEL_CONFIG } from '../mock-data';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
+import { KAIZEN_LEVEL_CONFIG } from '../mock-data';
 import { KaizenLevelBadge } from './KaizenLevelBadge';
 import { 
   Building2, 
@@ -26,14 +27,15 @@ export function KaizenSectorMatrix({
   projects,
   onOpenA3
 }: KaizenSectorMatrixProps) {
+  const { sectors: plantSectors } = usePlantSectors();
   const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('all');
 
-  // Setores identificados a partir dos dados e da lista padrão
+  // Setores identificados a partir da planta e dos projetos existentes
   const allSectors = useMemo(() => {
-    const set = new Set<string>(SECTORS_LIST);
+    const set = new Set<string>(plantSectors.map(s => s.name));
     projects.forEach(p => { if (p.sector) set.add(p.sector); });
     return Array.from(set);
-  }, [projects]);
+  }, [plantSectors, projects]);
 
   // Estatísticas por Setor
   const sectorStats = useMemo(() => {

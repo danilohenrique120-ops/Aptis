@@ -24,6 +24,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
 
 export default function SuperAdminPage() {
   const { 
@@ -33,13 +34,15 @@ export default function SuperAdminPage() {
     toggleLicense, 
     addTenant, 
     updateLeadStatus,
-    switchTenant
+    switchTenant,
+    currentTenant
   } = useTenant();
 
   const allTools = getAllTools();
 
   // Modal / Form para nova empresa
   const [isNewTenantOpen, setIsNewTenantOpen] = useState(false);
+  const [isSectorsModalOpen, setIsSectorsModalOpen] = useState(false);
   const [onboardingTenant, setOnboardingTenant] = useState<Tenant | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [companyName, setCompanyName] = useState('');
@@ -89,13 +92,23 @@ export default function SuperAdminPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsNewTenantOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Cadastrar Nova Empresa Cliente
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsSectorsModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer"
+          >
+            <Building2 className="w-4 h-4 text-cyan-400" />
+            Central de Áreas & Setores
+          </button>
+
+          <button
+            onClick={() => setIsNewTenantOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Cadastrar Nova Empresa Cliente
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards SuperAdmin */}
@@ -216,6 +229,17 @@ export default function SuperAdminPage() {
 
                       <td className="py-4 px-4 text-right border-l border-slate-800">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              switchTenant(tenant.id);
+                              setIsSectorsModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer"
+                            title="Gerenciar áreas e setores desta fábrica"
+                          >
+                            <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                            Setores
+                          </button>
                           <button
                             onClick={() => setOnboardingTenant(tenant)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black rounded-lg transition-all shadow-sm cursor-pointer"
@@ -520,6 +544,13 @@ Para o primeiro acesso da sua liderança e supervisores, a plataforma já inicia
           </div>
         </div>
       )}
+
+      {/* Modal Central de Áreas & Setores Fabris */}
+      <PlantSectorsManagerModal
+        isOpen={isSectorsModalOpen}
+        onClose={() => setIsSectorsModalOpen(false)}
+        tenantName={currentTenant?.name}
+      />
     </div>
   );
 }

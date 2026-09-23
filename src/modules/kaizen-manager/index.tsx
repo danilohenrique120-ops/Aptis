@@ -35,10 +35,14 @@ const STAGES: { id: KaizenStage; label: string; dot: string }[] = [
   { id: 'standardized', label: '4. Concluído & Padronizado', dot: 'bg-emerald-500' }
 ];
 
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
+
 const STORAGE_KEY = 'aptis_kaizen_projects_v2';
 
 export default function KaizenManagerModule() {
   const { currentTenant } = useTenant();
+  const { sectors: plantSectors } = usePlantSectors();
+  const sectorsList = plantSectors.map(s => s.name);
   const [activeTab, setActiveTab] = useState<'kanban' | 'people' | 'sectors' | 'a3_central'>('kanban');
   const [projects, setProjects] = useTenantStorage<KaizenProject[]>('kaizen-manager', 'projects', INITIAL_KAIZEN_PROJECTS);
   const [isLoaded, setIsLoaded] = useState(true);
@@ -288,7 +292,7 @@ export default function KaizenManagerModule() {
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 font-semibold focus:outline-none focus:border-purple-500"
               >
                 <option value="all">Todos os Setores</option>
-                {SECTORS_LIST.map(s => (
+                {sectorsList.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

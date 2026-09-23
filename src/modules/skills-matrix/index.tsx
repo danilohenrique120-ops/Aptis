@@ -15,7 +15,8 @@ import {
   DisplayFormat 
 } from './types';
 import { IluoCircle } from './components/IluoCircle';
-import { SectorManagerModal } from './components/SectorManagerModal';
+import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 import { AddOperatorModal } from './components/AddOperatorModal';
 import { AddStationModal } from './components/AddStationModal';
 import { GapAnalysisPanel } from './components/GapAnalysisPanel';
@@ -371,9 +372,19 @@ const INITIAL_SUCCESSION_PLANS: SuccessionPlan[] = [
 export default function SkillsMatrixModule() {
   const { currentTenant, currentUser } = useTenant();
 
-  // Multi-Sector State persisted in Supabase per tenant
-  const [sectors, setSectors] = useTenantStorage<Sector[]>('skills-matrix', 'sectors', INITIAL_SECTORS);
-  const [selectedSectorId, setSelectedSectorId] = useState<string>(INITIAL_SECTORS[0].id);
+  // Multi-Sector State unificado da planta
+  const { sectors: plantSectors, addSector } = usePlantSectors();
+  const sectors: Sector[] = plantSectors.map(ps => ({
+    id: ps.id,
+    code: ps.code,
+    name: ps.name,
+    description: ps.description || `Matriz de Habilidades do setor ${ps.name}`,
+    managerName: ps.managerName || 'Supervisor Responsável',
+    managerRole: ps.managerRole || 'Supervisor de Operações',
+    authorizedRoles: ['superadmin', 'tenant_admin', `${ps.id}-supervisor`],
+    color: ps.color || 'from-blue-600 to-indigo-600'
+  }));
+  const [selectedSectorId, setSelectedSectorId] = useState<string>(plantSectors[0]?.id || 'sec-usinagem');
   const [stations, setStations] = useTenantStorage<SkillStation[]>('skills-matrix', 'stations', INITIAL_STATIONS);
   const [employees, setEmployees] = useTenantStorage<EmployeeSkillRecord[]>('skills-matrix', 'employees', INITIAL_EMPLOYEES);
   const [trainingActions, setTrainingActions] = useTenantStorage<TrainingAction[]>('skills-matrix', 'actions', INITIAL_ACTIONS);
@@ -462,7 +473,7 @@ export default function SkillsMatrixModule() {
 
   // Criação Dinâmica
   const handleAddSector = (newSector: Sector) => {
-    setSectors(prev => [...prev, newSector]);
+    addSector(newSector);
     setSelectedSectorId(newSector.id);
   };
 
@@ -616,10 +627,10 @@ export default function SkillsMatrixModule() {
               <button
                 onClick={() => setIsSectorModalOpen(true)}
                 className="px-3 py-2 rounded-xl text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
-                title="Cadastrar novo setor com matriz própria"
+                title="Central de Áreas: cadastrar, editar ou excluir setores da planta"
               >
                 <PlusCircle className="w-4 h-4" />
-                Novo Setor
+                Gerenciar Setores
               </button>
             </div>
           </div>
@@ -1137,11 +1148,10 @@ export default function SkillsMatrixModule() {
       )}
 
       {/* MODAIS DO MÓDULO */}
-      <SectorManagerModal
+      <PlantSectorsManagerModal
         isOpen={isSectorModalOpen}
         onClose={() => setIsSectorModalOpen(false)}
-        sectors={sectors}
-        onAddSector={handleAddSector}
+        tenantName={currentTenant?.name}
       />
 
       <AddOperatorModal

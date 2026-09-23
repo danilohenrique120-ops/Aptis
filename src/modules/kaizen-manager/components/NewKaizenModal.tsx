@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { KaizenProject, KaizenLevel, KaizenCategory } from '../types';
-import { SECTORS_LIST } from '../mock-data';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 import { X, Sparkles, Plus, Layers, User } from 'lucide-react';
 
 interface NewKaizenModalProps {
@@ -18,10 +18,12 @@ export function NewKaizenModal({
   onSave,
   tenantId
 }: NewKaizenModalProps) {
+  const { sectors: plantSectors } = usePlantSectors();
+  const availableSectors = plantSectors.map(s => s.name);
   const [title, setTitle] = useState('');
   const [level, setLevel] = useState<KaizenLevel>('quick');
   const [category, setCategory] = useState<KaizenCategory>('produtividade');
-  const [sector, setSector] = useState(SECTORS_LIST[0]);
+  const [sector, setSector] = useState(availableSectors[0] || 'Usinagem CNC & Precisão');
   const [area, setArea] = useState('');
   const [leaderName, setLeaderName] = useState('');
   const [leaderRole, setLeaderRole] = useState('Operador de Célula');
@@ -164,7 +166,7 @@ export function NewKaizenModal({
                 onChange={(e) => setSector(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
               >
-                {SECTORS_LIST.map(s => (
+                {availableSectors.map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

@@ -260,16 +260,15 @@ const INITIAL_TRAININGS: TrainingRecord[] = [
   }
 ];
 
-const SECTORS = [
-  { id: 'all', label: 'Todos os Setores' },
-  { id: 'Usinagem CNC', label: 'Usinagem CNC' },
-  { id: 'Estamparia & Prensas', label: 'Estamparia & Prensas' },
-  { id: 'Montagem & Solda', label: 'Montagem & Solda' },
-  { id: 'Geral', label: 'Geral / Supervisão' }
-];
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 export default function TrainingMatrixModule() {
   const { currentTenant } = useTenant();
+  const { sectors: plantSectors } = usePlantSectors();
+  const sectorsList = [
+    { id: 'all', label: 'Todos os Setores' },
+    ...plantSectors.map(s => ({ id: s.name, label: s.name }))
+  ];
   const [trainings, setTrainings] = useTenantStorage<TrainingRecord[]>('training-matrix', 'trainings', INITIAL_TRAININGS);
   const [documents, setDocuments] = useTenantStorage<DocumentAttachment[]>('training-matrix', 'documents', INITIAL_DOCUMENTS);
   const [isLoaded, setIsLoaded] = useState(true);
@@ -603,7 +602,7 @@ export default function TrainingMatrixModule() {
 
           {/* Setor */}
           <div className="flex items-center gap-1 overflow-x-auto">
-            {SECTORS.map(sec => (
+            {sectorsList.map(sec => (
               <button
                 key={sec.id}
                 onClick={() => setSelectedSector(sec.id)}
@@ -905,9 +904,9 @@ export default function TrainingMatrixModule() {
                     onChange={e => setNewDepartment(e.target.value)}
                     className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
                   >
-                    <option value="Usinagem CNC">Usinagem CNC</option>
-                    <option value="Estamparia & Prensas">Estamparia & Prensas</option>
-                    <option value="Montagem & Solda">Montagem & Solda</option>
+                    {plantSectors.map(s => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
                     <option value="Geral">Geral / Supervisão</option>
                   </select>
                 </div>

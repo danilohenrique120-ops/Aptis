@@ -88,6 +88,27 @@ export function useTenantStorage<T>(
           stateRef.current = data.data as T;
           setSafeStorage(localCacheKey, JSON.stringify(data.data));
           setIsSynced(true);
+        } else if (!isCancelled && (!data || data.data === undefined)) {
+          // Nuvem ainda não possui este registro: semeia com o estado local inicial
+          const currentLocal = stateRef.current;
+          if (currentLocal !== undefined && currentLocal !== null) {
+            supabase
+              .from('tenant_tool_data')
+              .upsert(
+                {
+                  id: rowId,
+                  tenant_id: tenantId,
+                  tool_id: toolId,
+                  data_key: dataKey,
+                  data: currentLocal,
+                  updated_at: new Date().toISOString()
+                },
+                { onConflict: 'id' }
+              )
+              .then(({ error: upErr }) => {
+                if (!upErr && !isCancelled) setIsSynced(true);
+              });
+          }
         }
       } catch (err) {
         console.warn(`[useTenantStorage] Falha de conexão ao carregar ${rowId}:`, err);

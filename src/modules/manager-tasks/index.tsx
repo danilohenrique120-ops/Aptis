@@ -125,16 +125,15 @@ const COLUMNS: { id: TaskStatus; label: string; bg: string; dot: string }[] = [
   { id: 'done', label: 'Concluído', bg: 'bg-emerald-50/70', dot: 'bg-emerald-500' }
 ];
 
-const SECTORS = [
-  { id: 'all', label: 'Todos os Setores' },
-  { id: 'Usinagem CNC', label: 'Usinagem CNC' },
-  { id: 'Estamparia & Prensas', label: 'Estamparia & Prensas' },
-  { id: 'Montagem & Solda', label: 'Montagem & Solda' },
-  { id: 'Geral', label: 'Geral / Supervisão' }
-];
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 export default function ManagerTasksModule() {
   const { currentTenant } = useTenant();
+  const { sectors: plantSectors } = usePlantSectors();
+  const sectorsList = [
+    { id: 'all', label: 'Todos os Setores' },
+    ...plantSectors.map(s => ({ id: s.name, label: s.name }))
+  ];
   const [tasks, setTasks] = useTenantStorage<ManagerTask[]>('manager-tasks', 'tasks', INITIAL_TASKS);
   const [isLoaded, setIsLoaded] = useState(true);
   const [activeTab, setActiveTab] = useState<TaskViewTab>('kanban');
@@ -453,7 +452,7 @@ export default function ManagerTasksModule() {
         {/* Filtro Setorial Rápido */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Área:</span>
-          {SECTORS.map(sec => (
+          {sectorsList.map(sec => (
             <button
               key={sec.id}
               onClick={() => setSelectedSector(sec.id)}
