@@ -24,9 +24,10 @@ import {
   DollarSign, 
   Clock, 
   ArrowRight, 
-  Award,
+  Award, 
   Trash2
 } from 'lucide-react';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 const STAGES: { id: KaizenStage; label: string; dot: string }[] = [
   { id: 'ideation', label: '1. Ideação & Submissão', dot: 'bg-purple-500' },
@@ -35,14 +36,13 @@ const STAGES: { id: KaizenStage; label: string; dot: string }[] = [
   { id: 'standardized', label: '4. Concluído & Padronizado', dot: 'bg-emerald-500' }
 ];
 
-import { usePlantSectors } from '@/hooks/use-plant-sectors';
-
 const STORAGE_KEY = 'aptis_kaizen_projects_v2';
 
 export default function KaizenManagerModule() {
   const { currentTenant } = useTenant();
   const { sectors: plantSectors } = usePlantSectors();
-  const sectorsList = plantSectors.map(s => s.name);
+  const safePlantSectors = Array.isArray(plantSectors) && plantSectors.length > 0 ? plantSectors : [];
+  const sectorsList = safePlantSectors.map(s => s.name);
   const [activeTab, setActiveTab] = useState<'kanban' | 'people' | 'sectors' | 'a3_central'>('kanban');
   const [projects, setProjects] = useTenantStorage<KaizenProject[]>('kaizen-manager', 'projects', INITIAL_KAIZEN_PROJECTS);
   const [isLoaded, setIsLoaded] = useState(true);
@@ -91,29 +91,36 @@ export default function KaizenManagerModule() {
   };
 
   const handleDeleteProject = (id: string) => {
-    const updated = projects.filter(p => p.id !== id);
+    const updated = (projects || []).filter(p => p.id !== id);
     persistProjects(updated);
   };
 
-  // Filtragem de Projetos
-  const filteredProjects = projects.filter(p => {
+  // Filtragem de Projetos 100% segura contra campos nulos
+  const safeProjects = Array.isArray(projects) ? projects : [];
+  const filteredProjects = safeProjects.filter(p => {
+    if (!p) return false;
+    const title = p.title || '';
+    const leader = p.leaderName || '';
+    const sector = p.sector || '';
+    const team = Array.isArray(p.teamMembers) ? p.teamMembers : [];
+
     const matchesSearch = 
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.leaderName.toLowerCase().includes(search.toLowerCase()) ||
-      p.sector.toLowerCase().includes(search.toLowerCase()) ||
-      p.teamMembers.some(m => m.toLowerCase().includes(search.toLowerCase()));
+      title.toLowerCase().includes(search.toLowerCase()) ||
+      leader.toLowerCase().includes(search.toLowerCase()) ||
+      sector.toLowerCase().includes(search.toLowerCase()) ||
+      team.some(m => (m || '').toLowerCase().includes(search.toLowerCase()));
 
     const matchesLevel = levelFilter === 'all' || p.level === levelFilter;
-    const matchesSector = sectorFilter === 'all' || p.sector === sectorFilter;
+    const matchesSector = sectorFilter === 'all' || sector === sectorFilter;
 
     return matchesSearch && matchesLevel && matchesSector;
   });
 
   // Métricas Globais
-  const totalProjects = projects.length;
-  const standardizedCount = projects.filter(p => p.stage === 'standardized').length;
-  const totalSavings = projects.reduce((acc, p) => acc + (p.estimatedSavingsAnnual || 0), 0);
-  const totalHours = projects.reduce((acc, p) => acc + (p.hoursSavedMonthly || 0), 0);
+  const totalProjects = safeProjects.length;
+  const standardizedCount = safeProjects.filter(p => p && p.stage === 'standardized').length;
+  const totalSavings = safeProjects.reduce((acc, p) => acc + (p?.estimatedSavingsAnnual || 0), 0);
+  const totalHours = safeProjects.reduce((acc, p) => acc + (p?.hoursSavedMonthly || 0), 0);
 
   return (
     <div className="space-y-6 w-full pb-12">

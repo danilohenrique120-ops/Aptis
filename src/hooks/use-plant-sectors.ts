@@ -5,11 +5,15 @@ import { PlantSector, DEFAULT_PLANT_SECTORS } from '@/types/sectors';
 import { useCallback } from 'react';
 
 export function usePlantSectors() {
-  const [sectors, setSectors, isSynced] = useTenantStorage<PlantSector[]>(
+  const [rawSectors, setSectors, isSynced] = useTenantStorage<PlantSector[]>(
     'plant-core',
     'sectors',
     DEFAULT_PLANT_SECTORS
   );
+
+  const sectors: PlantSector[] = Array.isArray(rawSectors) && rawSectors.length > 0
+    ? rawSectors
+    : DEFAULT_PLANT_SECTORS;
 
   const addSector = useCallback((sectorData: Omit<PlantSector, 'id' | 'createdAt'>): PlantSector => {
     const code = sectorData.code.toUpperCase().trim();

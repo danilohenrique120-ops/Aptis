@@ -19,7 +19,8 @@ export function NewKaizenModal({
   tenantId
 }: NewKaizenModalProps) {
   const { sectors: plantSectors } = usePlantSectors();
-  const availableSectors = plantSectors.map(s => s.name);
+  const safePlantSectors = Array.isArray(plantSectors) && plantSectors.length > 0 ? plantSectors : [];
+  const availableSectors = safePlantSectors.map(s => s.name);
   const [title, setTitle] = useState('');
   const [level, setLevel] = useState<KaizenLevel>('quick');
   const [category, setCategory] = useState<KaizenCategory>('produtividade');

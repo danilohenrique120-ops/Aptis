@@ -27,6 +27,7 @@ import { EisenhowerMatrix } from './components/EisenhowerMatrix';
 import { KamishibaiRoutine } from './components/KamishibaiRoutine';
 import { ShiftHandoverModal } from './components/ShiftHandoverModal';
 import { TaskDetailsModal } from './components/TaskDetailsModal';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 const INITIAL_TASKS: ManagerTask[] = [
   {
@@ -125,14 +126,13 @@ const COLUMNS: { id: TaskStatus; label: string; bg: string; dot: string }[] = [
   { id: 'done', label: 'Concluído', bg: 'bg-emerald-50/70', dot: 'bg-emerald-500' }
 ];
 
-import { usePlantSectors } from '@/hooks/use-plant-sectors';
-
 export default function ManagerTasksModule() {
   const { currentTenant } = useTenant();
   const { sectors: plantSectors } = usePlantSectors();
+  const safePlantSectors = Array.isArray(plantSectors) ? plantSectors : [];
   const sectorsList = [
     { id: 'all', label: 'Todos os Setores' },
-    ...plantSectors.map(s => ({ id: s.name, label: s.name }))
+    ...safePlantSectors.map(s => ({ id: s.name, label: s.name }))
   ];
   const [tasks, setTasks] = useTenantStorage<ManagerTask[]>('manager-tasks', 'tasks', INITIAL_TASKS);
   const [isLoaded, setIsLoaded] = useState(true);

@@ -35,6 +35,7 @@ import { DeepSearchModal } from './components/DeepSearchModal';
 import { ComplianceMatrixView } from './components/ComplianceMatrixView';
 import { TrainingBatchModal } from './components/TrainingBatchModal';
 import { EmployeeDossierModal } from './components/EmployeeDossierModal';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 
 const INITIAL_DOCUMENTS: DocumentAttachment[] = [
   {
@@ -260,14 +261,13 @@ const INITIAL_TRAININGS: TrainingRecord[] = [
   }
 ];
 
-import { usePlantSectors } from '@/hooks/use-plant-sectors';
-
 export default function TrainingMatrixModule() {
   const { currentTenant } = useTenant();
   const { sectors: plantSectors } = usePlantSectors();
+  const safePlantSectors = Array.isArray(plantSectors) ? plantSectors : [];
   const sectorsList = [
     { id: 'all', label: 'Todos os Setores' },
-    ...plantSectors.map(s => ({ id: s.name, label: s.name }))
+    ...safePlantSectors.map(s => ({ id: s.name, label: s.name }))
   ];
   const [trainings, setTrainings] = useTenantStorage<TrainingRecord[]>('training-matrix', 'trainings', INITIAL_TRAININGS);
   const [documents, setDocuments] = useTenantStorage<DocumentAttachment[]>('training-matrix', 'documents', INITIAL_DOCUMENTS);

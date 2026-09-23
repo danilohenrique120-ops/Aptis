@@ -17,6 +17,7 @@ import {
 import { IluoCircle } from './components/IluoCircle';
 import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
+import { DEFAULT_PLANT_SECTORS, PlantSector } from '@/types/sectors';
 import { AddOperatorModal } from './components/AddOperatorModal';
 import { AddStationModal } from './components/AddStationModal';
 import { GapAnalysisPanel } from './components/GapAnalysisPanel';
@@ -374,7 +375,11 @@ export default function SkillsMatrixModule() {
 
   // Multi-Sector State unificado da planta
   const { sectors: plantSectors, addSector } = usePlantSectors();
-  const sectors: Sector[] = plantSectors.map(ps => ({
+  const safePlantSectors = Array.isArray(plantSectors) && plantSectors.length > 0 
+    ? plantSectors 
+    : DEFAULT_PLANT_SECTORS;
+
+  const sectors: Sector[] = safePlantSectors.map((ps: PlantSector) => ({
     id: ps.id,
     code: ps.code,
     name: ps.name,
@@ -384,7 +389,19 @@ export default function SkillsMatrixModule() {
     authorizedRoles: ['superadmin', 'tenant_admin', `${ps.id}-supervisor`],
     color: ps.color || 'from-blue-600 to-indigo-600'
   }));
-  const [selectedSectorId, setSelectedSectorId] = useState<string>(plantSectors[0]?.id || 'sec-usinagem');
+
+  const defaultFallbackSector: Sector = sectors[0] || {
+    id: 'sec-usinagem',
+    code: 'USI',
+    name: 'Usinagem CNC & Precisão',
+    description: 'Matriz de Habilidades padrão',
+    managerName: 'Supervisor Responsável',
+    managerRole: 'Supervisor de Operações',
+    authorizedRoles: ['superadmin', 'tenant_admin'],
+    color: 'from-blue-600 to-indigo-600'
+  };
+
+  const [selectedSectorId, setSelectedSectorId] = useState<string>(safePlantSectors[0]?.id || 'sec-usinagem');
   const [stations, setStations] = useTenantStorage<SkillStation[]>('skills-matrix', 'stations', INITIAL_STATIONS);
   const [employees, setEmployees] = useTenantStorage<EmployeeSkillRecord[]>('skills-matrix', 'employees', INITIAL_EMPLOYEES);
   const [trainingActions, setTrainingActions] = useTenantStorage<TrainingAction[]>('skills-matrix', 'actions', INITIAL_ACTIONS);
@@ -406,15 +423,16 @@ export default function SkillsMatrixModule() {
   // Simulador de Perfil para Teste de Restrição de Área
   const [simulatedAccessRole, setSimulatedAccessRole] = useState<string>('all_access');
 
-  const activeSector = sectors.find(s => s.id === selectedSectorId) || sectors[0];
+  const activeSector: Sector = sectors.find(s => s.id === selectedSectorId) || sectors[0] || defaultFallbackSector;
 
   // ==========================================
   // VALIDAÇÃO DE ACESSO POR ÁREA (RESTRIÇÃO)
   // ==========================================
   const isUserAuthorizedForSector = (sector: Sector): boolean => {
+    if (!sector) return true;
     // 1. Caso o simulador esteja em 'all_access' ou usuário seja superadmin / tenant_admin
     if (simulatedAccessRole === 'all_access') return true;
-    if (currentUser.role === 'superadmin' || currentUser.role === 'tenant_admin') {
+    if (currentUser?.role === 'superadmin' || currentUser?.role === 'tenant_admin') {
       if (simulatedAccessRole !== 'all_access') {
         // Respeita o simulador para o usuário poder testar o bloqueio!
         return simulatedAccessRole === sector.id;
@@ -427,13 +445,19 @@ export default function SkillsMatrixModule() {
 
   const hasAccess = isUserAuthorizedForSector(activeSector);
 
-  // Postos e colaboradores isolados do setor ativo
-  const sectorStations = stations.filter(s => s.sectorId === activeSector.id);
-  const sectorEmployees = employees.filter(e => e.sectorId === activeSector.id);
+  // Postos e colaboradores isolados do setor ativo (com fallback de array)
+  const safeStations = Array.isArray(stations) ? stations : [];
+  const safeEmployees = Array.isArray(employees) ? employees : [];
+
+  const sectorStations = safeStations.filter(s => s && s.sectorId === activeSector.id);
+  const sectorEmployees = safeEmployees.filter(e => e && e.sectorId === activeSector.id);
 
   const filteredEmployees = sectorEmployees.filter(emp => {
-    const matchesSearch = emp.employeeName.toLowerCase().includes(search.toLowerCase()) ||
-                          emp.role.toLowerCase().includes(search.toLowerCase());
+    if (!emp) return false;
+    const name = emp.employeeName || '';
+    const role = emp.role || '';
+    const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) ||
+                          role.toLowerCase().includes(search.toLowerCase());
     const matchesShift = selectedShift === 'all' || emp.shift === selectedShift;
     return matchesSearch && matchesShift;
   });

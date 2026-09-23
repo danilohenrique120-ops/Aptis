@@ -37,17 +37,29 @@ export function useTenantStorage<T>(
   const rowId = `${tenantId}:${toolId}:${dataKey}`;
   const localCacheKey = `aptis_${tenantId}_${toolId}_${dataKey}`;
 
+  const resolvedDefault = typeof defaultValue === 'function'
+    ? (defaultValue as () => T)()
+    : defaultValue;
+  const isArrayExpected = Array.isArray(resolvedDefault);
+
+  const isValidValue = (val: any): boolean => {
+    if (val === null || val === undefined) return false;
+    if (isArrayExpected && !Array.isArray(val)) return false;
+    return true;
+  };
+
   // 1. Inicializa com o cache local (0ms de latência) ou valor padrão
   const [state, setState] = useState<T>(() => {
     const cached = getSafeStorage(localCacheKey);
     if (cached) {
       try {
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        if (isValidValue(parsed)) {
+          return parsed;
+        }
       } catch {}
     }
-    return typeof defaultValue === 'function'
-      ? (defaultValue as () => T)()
-      : defaultValue;
+    return resolvedDefault;
   });
 
   const [isSynced, setIsSynced] = useState<boolean>(false);
@@ -65,8 +77,10 @@ export function useTenantStorage<T>(
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        setState(parsed);
-        stateRef.current = parsed;
+        if (isValidValue(parsed)) {
+          setState(parsed);
+          stateRef.current = parsed;
+        }
       } catch {}
     }
 
@@ -83,15 +97,15 @@ export function useTenantStorage<T>(
           return;
         }
 
-        if (!isCancelled && data && data.data !== undefined) {
+        if (!isCancelled && data && isValidValue(data.data)) {
           setState(data.data as T);
           stateRef.current = data.data as T;
           setSafeStorage(localCacheKey, JSON.stringify(data.data));
           setIsSynced(true);
-        } else if (!isCancelled && (!data || data.data === undefined)) {
-          // Nuvem ainda não possui este registro: semeia com o estado local inicial
+        } else if (!isCancelled && (!data || !isValidValue(data.data))) {
+          // Nuvem ainda não possui este registro ou possui dado corrompido: semeia com o estado local inicial
           const currentLocal = stateRef.current;
-          if (currentLocal !== undefined && currentLocal !== null) {
+          if (isValidValue(currentLocal)) {
             supabase
               .from('tenant_tool_data')
               .upsert(
@@ -129,7 +143,7 @@ export function useTenantStorage<T>(
           filter: `id=eq.${rowId}`
         },
         (payload) => {
-          if (!isCancelled && payload.new && (payload.new as any).data !== undefined) {
+          if (!isCancelled && payload.new && isValidValue((payload.new as any).data)) {
             const incoming = (payload.new as any).data as T;
             setState(incoming);
             stateRef.current = incoming;

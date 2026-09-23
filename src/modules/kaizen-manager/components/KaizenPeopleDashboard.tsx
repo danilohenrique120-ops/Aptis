@@ -48,7 +48,9 @@ export function KaizenPeopleDashboard({
       totalSavings: number;
     }>();
 
-    projects.forEach(p => {
+    const safeProjects = Array.isArray(projects) ? projects : [];
+    safeProjects.forEach(p => {
+      if (!p) return;
       // Líder
       if (p.leaderName) {
         const name = p.leaderName;
@@ -66,7 +68,7 @@ export function KaizenPeopleDashboard({
 
         current.ledCount += 1;
         current.ledProjects.push(p);
-        const levelPts = KAIZEN_LEVEL_CONFIG[p.level]?.points || 20;
+        const levelPts = (p.level && KAIZEN_LEVEL_CONFIG[p.level]?.points) || 20;
         current.totalPoints += (levelPts + 15); // +15 bônus de liderança
         current.totalSavings += (p.estimatedSavingsAnnual || 0);
 
@@ -74,7 +76,8 @@ export function KaizenPeopleDashboard({
       }
 
       // Participantes
-      p.teamMembers.forEach(member => {
+      const team = Array.isArray(p.teamMembers) ? p.teamMembers : [];
+      team.forEach(member => {
         if (member && member !== p.leaderName) {
           const current = map.get(member) || {
             name: member,
