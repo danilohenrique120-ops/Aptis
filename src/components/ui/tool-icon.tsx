@@ -13,6 +13,7 @@ import {
   Layers,
   CalendarDays,
   BrainCircuit,
+  Wrench,
   LucideProps
 } from 'lucide-react';
 
@@ -24,6 +25,8 @@ export function ToolIcon({ name, ...props }: ToolIconProps) {
   switch (name) {
     case 'BrainCircuit':
       return <BrainCircuit {...props} />;
+    case 'Wrench':
+      return <Wrench {...props} />;
     case 'CalendarDays':
       return <CalendarDays {...props} />;
     case 'CheckSquare':

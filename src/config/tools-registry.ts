@@ -202,6 +202,34 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
       hover: 'hover:border-purple-500',
       lightBg: 'bg-purple-50'
     }
+  },
+  {
+    id: 'service-pro',
+    name: 'Aptis Service Pro',
+    shortDescription: 'Gestão para empresas de manutenção terceirizada: multi-clientes, importação IA/OCR de plaquetas e manuais, catálogo mestre, agenda WhatsApp e OS digital.',
+    fullDescription: 'O sistema operacional definitivo para o empresário e prestador de serviços de manutenção industrial e predial. Controle múltiplos clientes B2B, inventário de máquinas com QR Code, inteligência cruzada de diagnósticos de falhas entre empresas, régua preventiva multicanal com WhatsApp e OS mobile com assinatura na tela.',
+    category: 'Manutenção & Serviços',
+    route: '/dashboard/tools/service-pro',
+    iconName: 'Wrench',
+    status: 'active',
+    badge: 'Gestão de Terceiros',
+    recommendedPlan: 'pro',
+    keyFeatures: [
+      'Gestão Multi-Cliente B2B com filiais, contratos e SLA',
+      'Leitor Inteligente IA/OCR de fotos de plaquetas e manuais PDF',
+      'Catálogo Mestre Unificado com herança automática de fichas técnicas',
+      'Inteligência Cruzada de Diagnóstico entre clientes (Waze da Manutenção)',
+      'Calendário Preventivo com régua de disparos automáticos via WhatsApp e E-mail',
+      'OS 100% Digital com fotos Antes & Depois e Assinatura na tela',
+      'Gerador de etiquetas industriais com QR Code dinâmico por equipamento'
+    ],
+    colorTheme: {
+      bg: 'bg-teal-600',
+      text: 'text-teal-600',
+      border: 'border-teal-200',
+      hover: 'hover:border-teal-500',
+      lightBg: 'bg-teal-50'
+    }
   }
 ];
 
@@ -211,7 +239,8 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   'Capacitação & Compliance',
   'Melhoria Contínua',
   'Planejamento & PCP',
-  'Qualidade & WCM'
+  'Qualidade & WCM',
+  'Manutenção & Serviços'
 ];
 
 export function getAllTools(): ToolDefinition[] {

@@ -41,7 +41,8 @@ export type ToolCategory =
   | 'Capacitação & Compliance' 
   | 'Melhoria Contínua'
   | 'Planejamento & PCP'
-  | 'Qualidade & WCM';
+  | 'Qualidade & WCM'
+  | 'Manutenção & Serviços';
 
 export type ToolStatus = 'active' | 'beta' | 'coming_soon';
 

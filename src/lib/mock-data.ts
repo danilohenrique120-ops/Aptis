@@ -129,6 +129,14 @@ export const INITIAL_LICENSES: License[] = [
     validUntil: '2027-12-31',
     assignedAt: '2025-01-15'
   },
+  {
+    id: 'lic-1-service-pro',
+    tenantId: 'tenant-1',
+    toolId: 'service-pro',
+    isActive: true,
+    validUntil: '2028-12-31',
+    assignedAt: '2026-09-27'
+  },
 
   // Tenant 2 (Beta): tem todas as ferramentas ativas
   {

@@ -10,6 +10,7 @@ import OneOnOneModule from '@/modules/one-on-one';
 import PdiManagerModule from '@/modules/pdi-manager';
 import BacterialGanttModule from '@/modules/bacterial-gantt';
 import TwttpHercaModule from '@/modules/twttp-herca';
+import ServiceProModule from '@/modules/service-pro';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,8 @@ export default async function ToolPage({
         return <BacterialGanttModule />;
       case 'twttp-herca':
         return <TwttpHercaModule />;
+      case 'service-pro':
+        return <ServiceProModule />;
       default:
         return (
           <div className="bg-white p-12 rounded-xl border border-slate-200 text-center">
