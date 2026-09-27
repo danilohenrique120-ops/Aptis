@@ -230,6 +230,33 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
       hover: 'hover:border-teal-500',
       lightBg: 'bg-teal-50'
     }
+  },
+  {
+    id: 'advisory',
+    name: 'Aptis Advisory',
+    shortDescription: 'Gestão executiva e governança para consultorias e assessorias B2B: radar de maturidade, roadmap com semáforo de bloqueios e ROI em tempo real.',
+    fullDescription: 'A cabine de comando definitiva para consultores autônomos, boutiques de consultoria e PMOs. Acompanhe contratos B2B, aplique assessments de maturidade (Antes vs Depois), gerencie roadmaps com identificador de gargalos no cliente, rastreie o ROI financeiro gerado pelo projeto e exporte apresentações executivas para o conselho em 1 clique.',
+    category: 'Consultoria & Estratégia',
+    route: '/dashboard/tools/advisory',
+    iconName: 'Briefcase',
+    status: 'active',
+    badge: 'Governança & Consultoria',
+    recommendedPlan: 'enterprise',
+    keyFeatures: [
+      'Radar de Diagnóstico & Maturidade Inicial vs Atual',
+      'Roadmap de Entregas com semáforo "Aguardando Cliente"',
+      'Calculadora Automática de ROI e Impacto Financeiro da Consultoria',
+      'One-Page Executive Summary gerado em 1 clique para reuniões de Board',
+      'Portal VIP do Patrocinador / CEO para aprovações instantâneas',
+      'Gestão de Honorários Mensais (MRR) e Limites de Escopo Declarado'
+    ],
+    colorTheme: {
+      bg: 'bg-indigo-600',
+      text: 'text-indigo-600',
+      border: 'border-indigo-200',
+      hover: 'hover:border-indigo-500',
+      lightBg: 'bg-indigo-50'
+    }
   }
 ];
 
@@ -240,7 +267,8 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   'Melhoria Contínua',
   'Planejamento & PCP',
   'Qualidade & WCM',
-  'Manutenção & Serviços'
+  'Manutenção & Serviços',
+  'Consultoria & Estratégia'
 ];
 
 export function getAllTools(): ToolDefinition[] {

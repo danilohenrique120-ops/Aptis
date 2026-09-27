@@ -42,7 +42,8 @@ export type ToolCategory =
   | 'Melhoria Contínua'
   | 'Planejamento & PCP'
   | 'Qualidade & WCM'
-  | 'Manutenção & Serviços';
+  | 'Manutenção & Serviços'
+  | 'Consultoria & Estratégia';
 
 export type ToolStatus = 'active' | 'beta' | 'coming_soon';
 
