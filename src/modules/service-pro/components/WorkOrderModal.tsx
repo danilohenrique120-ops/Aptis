@@ -127,41 +127,41 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-card border border-border w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white border border-slate-200 w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="p-6 border-b border-border flex items-center justify-between bg-muted/40">
+        <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50/80 via-white to-slate-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm">
               <Wrench className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="text-lg font-bold text-slate-900">
                 {editingOrder ? `Editar ${editingOrder.orderNumber}` : 'Nova Ordem de Serviço (OS)'}
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Agende uma visita preventiva, corretiva ou emergencial para sua equipe técnica
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSave} className="p-6 space-y-4 text-xs">
+        {/* Form Body - Solid White Background */}
+        <form onSubmit={handleSave} className="p-6 space-y-4 text-xs bg-white">
           {/* Client & Branch */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-foreground mb-1 block">Cliente Contratante</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Cliente Contratante *</label>
               <select
                 value={clientId}
                 onChange={(e) => handleClientChange(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xs"
               >
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -172,11 +172,11 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             </div>
 
             <div>
-              <label className="font-semibold text-foreground mb-1 block">Equipamento / TAG</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Equipamento / TAG *</label>
               <select
                 value={equipmentId}
                 onChange={(e) => setEquipmentId(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xs"
                 disabled={availableEquipments.length === 0}
               >
                 {availableEquipments.length === 0 ? (
@@ -195,11 +195,11 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           {/* Type & Priority */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-foreground mb-1 block">Tipo de Intervenção</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Tipo de Intervenção</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as WorkOrderType)}
-                className="w-full text-xs bg-background border border-border rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xs"
               >
                 <option value="preventive">Preventiva (Contratual / PMOC)</option>
                 <option value="corrective">Corretiva (Falha ou Quebra)</option>
@@ -209,13 +209,13 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             </div>
 
             <div>
-              <label className="font-semibold text-foreground mb-1 block">Nível de Prioridade</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Nível de Prioridade</label>
               <select
                 value={priority}
                 onChange={(e) =>
                   setPriority(e.target.value as MaintenanceWorkOrder['priority'])
                 }
-                className="w-full text-xs bg-background border border-border rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xs"
               >
                 <option value="urgent">🚨 Urgente (SLA 4 Horas - Parada)</option>
                 <option value="high">Alta (Linha de Produção Afetada)</option>
@@ -228,33 +228,33 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
           {/* Date & Time & Technician */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="font-semibold text-foreground mb-1 block">Data Agendada</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Data Agendada</label>
               <input
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded-lg p-2.5"
+                className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-medium text-slate-800 outline-none shadow-xs"
                 required
               />
             </div>
 
             <div>
-              <label className="font-semibold text-foreground mb-1 block">Janela de Horário</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Janela de Horário</label>
               <input
                 type="text"
                 value={scheduledTimeWindow}
                 onChange={(e) => setScheduledTimeWindow(e.target.value)}
                 placeholder="Ex: 08:00 - 12:00"
-                className="w-full text-xs bg-background border border-border rounded-lg p-2.5"
+                className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-medium text-slate-800 outline-none shadow-xs"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-foreground mb-1 block">Técnico Responsável</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Técnico Responsável</label>
               <select
                 value={technicianName}
                 onChange={(e) => setTechnicianName(e.target.value)}
-                className="w-full text-xs bg-background border border-border rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-primary"
+                className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-xs"
               >
                 <option value="Carlos Silveira">Carlos Silveira (Mecânica)</option>
                 <option value="Marcos Vinicius">Marcos Vinicius (Refrigeração)</option>
@@ -266,7 +266,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
 
           {/* Scope / Symptoms */}
           <div>
-            <label className="font-semibold text-foreground mb-1 block">
+            <label className="font-bold text-slate-700 mb-1.5 block">
               Escopo do Atendimento / Sintomas Informados
             </label>
             <textarea
@@ -274,23 +274,23 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
               value={symptomsReported}
               onChange={(e) => setSymptomsReported(e.target.value)}
               placeholder="Descreva o que será realizado ou o problema reportado pelo cliente..."
-              className="w-full text-xs bg-background border border-border rounded-lg p-2.5 resize-none"
+              className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 text-slate-800 resize-none outline-none shadow-xs"
               required
             />
           </div>
 
           {/* Footer buttons */}
-          <div className="pt-4 border-t border-border flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl shadow-md transition flex items-center gap-1.5"
+              className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center gap-1.5 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" />
               {editingOrder ? 'Salvar Alterações' : 'Criar Ordem de Serviço'}

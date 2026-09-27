@@ -48,39 +48,44 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-card border border-border w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-6 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white border border-slate-200 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-6 flex flex-col animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="p-6 border-b border-border flex items-center justify-between bg-muted/40">
+        <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50/80 via-white to-slate-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm">
               <QrCode className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                Etiqueta QR Code Inteligente • {equipment.tag}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Identificação física para colar na carcaça do equipamento ({equipment.name})
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900">
+                  Etiqueta QR Code Inteligente • {equipment.tag}
+                </h2>
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200 uppercase">
+                  Ativo Rastreado
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Identificação física padrão industrial para carcaça ({equipment.name})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-border bg-muted/20 px-6 pt-2">
+        <div className="flex border-b border-slate-200 bg-slate-50/80 px-6 pt-2">
           <button
             onClick={() => setActiveTab('label')}
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'label'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             <Printer className="w-3.5 h-3.5" />
@@ -88,10 +93,10 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('tech_flow')}
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'tech_flow'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             <Wrench className="w-3.5 h-3.5" />
@@ -99,10 +104,10 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('client_flow')}
-            className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition flex items-center gap-2 ${
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'client_flow'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
@@ -110,12 +115,12 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
           </button>
         </div>
 
-        {/* Body Content */}
-        <div className="p-6 space-y-6">
+        {/* Body Content - Solid White */}
+        <div className="p-6 space-y-6 bg-white">
           {activeTab === 'label' && (
             <div className="space-y-6">
               {/* The Physical Industrial Label Preview */}
-              <div className="flex justify-center">
+              <div className="flex justify-center p-3 bg-slate-100/70 rounded-2xl border border-slate-200">
                 <div
                   id="printable-industrial-label"
                   className="w-full max-w-md bg-white text-zinc-950 p-5 rounded-xl border-4 border-zinc-900 shadow-xl relative overflow-hidden"
@@ -183,23 +188,18 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
                         className="w-24 h-24 text-zinc-950"
                         fill="currentColor"
                       >
-                        {/* Realistic QR pattern illustration */}
-                        {/* Corner Top-Left */}
                         <rect x="5" y="5" width="28" height="28" fill="black" />
                         <rect x="9" y="9" width="20" height="20" fill="white" />
                         <rect x="13" y="13" width="12" height="12" fill="black" />
 
-                        {/* Corner Top-Right */}
                         <rect x="67" y="5" width="28" height="28" fill="black" />
                         <rect x="71" y="9" width="20" height="20" fill="white" />
                         <rect x="75" y="13" width="12" height="12" fill="black" />
 
-                        {/* Corner Bottom-Left */}
                         <rect x="5" y="67" width="28" height="28" fill="black" />
                         <rect x="9" y="71" width="20" height="20" fill="white" />
                         <rect x="13" y="75" width="12" height="12" fill="black" />
 
-                        {/* Alignment and data blocks */}
                         <rect x="40" y="8" width="6" height="6" fill="black" />
                         <rect x="52" y="8" width="6" height="6" fill="black" />
                         <rect x="40" y="20" width="6" height="6" fill="black" />
@@ -210,7 +210,6 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
                         <rect x="8" y="52" width="6" height="6" fill="black" />
                         <rect x="20" y="52" width="6" height="6" fill="black" />
 
-                        {/* Center core */}
                         <rect x="44" y="44" width="12" height="12" fill="black" />
                         <rect x="46" y="46" width="8" height="8" fill="white" />
                         <rect x="48" y="48" width="4" height="4" fill="black" />
@@ -240,21 +239,21 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
               </div>
 
               {/* Direct Link & Actions */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 bg-muted/30 p-3 rounded-xl border border-border">
-                <div className="flex-1 w-full text-xs font-mono bg-background p-2 rounded-lg border border-border truncate text-muted-foreground">
+              <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div className="flex-1 w-full text-xs font-mono bg-white p-2 rounded-lg border border-slate-300 truncate text-slate-600 shadow-2xs">
                   {directUrl}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleCopyLink}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-card border border-border hover:bg-muted text-foreground flex items-center gap-1.5 transition"
+                    className="px-3 py-2 text-xs font-bold rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? 'Copiado!' : 'Copiar Link'}
                   </button>
                   <button
                     onClick={handlePrint}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 transition"
+                    className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center gap-1.5 transition shadow-md shadow-blue-600/25 cursor-pointer"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     Imprimir Etiqueta
@@ -266,46 +265,46 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
 
           {activeTab === 'tech_flow' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-2">
-                <div className="flex items-center gap-2 text-primary font-bold text-sm">
-                  <Wrench className="w-4 h-4" />
-                  Experiência do Técnico ao Escanear
+              <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-1.5">
+                <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
+                  <Wrench className="w-4 h-4 text-blue-600" />
+                  Experiência do Técnico ao Escanear em Campo
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-blue-700">
                   Quando o técnico da sua empresa de manutenção chega ao cliente e aponta a câmera
-                  do celular para o QR Code da máquina:
+                  do celular para o QR Code fixado na carcaça:
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-xl border border-border bg-card space-y-1.5">
-                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 shadow-2xs">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
                     1
                   </div>
-                  <h4 className="text-xs font-bold text-foreground">Identificação Instantânea</h4>
-                  <p className="text-[11px] text-muted-foreground">
+                  <h4 className="text-xs font-bold text-slate-900">Identificação Instantânea</h4>
+                  <p className="text-[11px] text-slate-500">
                     Abre direto a ficha da máquina ({equipment.tag}), com histórico de atendimentos,
                     peças trocadas e manutenções anteriores.
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-xl border border-border bg-card space-y-1.5">
-                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 shadow-2xs">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
                     2
                   </div>
-                  <h4 className="text-xs font-bold text-foreground">Checklist Interativo</h4>
-                  <p className="text-[11px] text-muted-foreground">
+                  <h4 className="text-xs font-bold text-slate-900">Checklist Interativo</h4>
+                  <p className="text-[11px] text-slate-500">
                     Carrega automaticamente o checklist preventivo configurado para o modelo{' '}
                     {equipment.model} (norma {equipment.maintenancePlan?.legalNorm || 'vigente'}).
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-xl border border-border bg-card space-y-1.5">
-                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 shadow-2xs">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
                     3
                   </div>
-                  <h4 className="text-xs font-bold text-foreground">Assinatura Digital & Baixa</h4>
-                  <p className="text-[11px] text-muted-foreground">
+                  <h4 className="text-xs font-bold text-slate-900">Assinatura Digital & Baixa</h4>
+                  <p className="text-[11px] text-slate-500">
                     Tira fotos antes/depois, anota peças utilizadas e coleta a assinatura do
                     responsável da fábrica na tela do celular.
                   </p>
@@ -316,23 +315,23 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
 
           {activeTab === 'client_flow' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
-                <div className="flex items-center gap-2 text-amber-500 font-bold text-sm">
-                  <Smartphone className="w-4 h-4" />
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-1.5">
+                <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+                  <Smartphone className="w-4 h-4 text-amber-600" />
                   Experiência do Operador da Fábrica do Cliente
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-amber-700">
                   Se a máquina parar no meio do turno, qualquer operador ou líder do cliente pode
                   escanear o QR Code:
                 </p>
               </div>
 
-              <div className="space-y-2 text-xs">
-                <div className="flex items-start gap-2.5 p-3 rounded-lg border border-border bg-card">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+              <div className="space-y-2.5 text-xs">
+                <div className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                   <div>
-                    <strong className="text-foreground">Abertura de Chamado via WhatsApp com 1 Toque:</strong>
-                    <p className="text-muted-foreground mt-0.5">
+                    <strong className="text-slate-900 font-bold">Abertura de Chamado via WhatsApp com 1 Toque:</strong>
+                    <p className="text-slate-500 mt-0.5">
                       O QR code já monta uma mensagem de socorro no WhatsApp da sua empresa com a TAG
                       exata ({equipment.tag}), modelo ({equipment.model}) e localização física,
                       eliminando erros de informação.
@@ -340,11 +339,11 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2.5 p-3 rounded-lg border border-border bg-card">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                <div className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
                   <div>
-                    <strong className="text-foreground">Portal VIP de Transparência:</strong>
-                    <p className="text-muted-foreground mt-0.5">
+                    <strong className="text-slate-900 font-bold">Portal VIP de Transparência:</strong>
+                    <p className="text-slate-500 mt-0.5">
                       O cliente pode conferir a validade do laudo PMOC, ver quando é a próxima visita
                       já agendada e comprovar que a máquina está sob contrato de manutenção ativo.
                     </p>
@@ -356,10 +355,10 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border flex items-center justify-end bg-muted/30">
+        <div className="p-4 border-t border-slate-200 flex items-center justify-end bg-slate-50">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold bg-muted text-foreground hover:bg-muted/80 rounded-xl transition"
+            className="px-5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl transition shadow-2xs cursor-pointer"
           >
             Fechar
           </button>

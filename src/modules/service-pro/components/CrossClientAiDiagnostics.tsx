@@ -52,17 +52,17 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
   return (
     <div className="space-y-6">
       {/* Hero Banner explaining Waze da Manutenção */}
-      <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-muted/40 border border-primary/20 shadow-sm">
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/50 to-white border border-blue-200 shadow-sm">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1.5 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-bold border border-primary/30">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
               Waze da Manutenção Industrial • Inteligência Compartilhada
             </div>
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="text-xl font-black text-slate-900">
               Copiloto de Diagnósticos Cruzados Entre Clientes
             </h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Quando um técnico resolve uma falha complexa em um compressor Schulz no Cliente A, a
               solução e as peças recomendadas ficam disponíveis instantaneamente para orientar o
               técnico que atende o mesmo modelo no Cliente B. Evite viagens desnecessárias e acerte o
@@ -70,34 +70,34 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
             </p>
           </div>
 
-          <div className="p-3 bg-card border border-border rounded-xl text-center shrink-0">
-            <span className="text-2xl font-black text-primary block leading-none">94.8%</span>
-            <span className="text-[10px] text-muted-foreground uppercase font-semibold">
-              Taxa de Primeira Correção
+          <div className="p-4 bg-white border border-blue-200 rounded-2xl text-center shrink-0 shadow-sm">
+            <span className="text-3xl font-black text-blue-600 block leading-none">94.8%</span>
+            <span className="text-[10px] text-slate-500 uppercase font-bold mt-1 block">
+              Primeira Correção
             </span>
           </div>
         </div>
       </div>
 
       {/* Search & Model Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-card border border-border rounded-2xl">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar sintoma, ruído, código de alarme ou peça (ex: superaquecimento, vibração, filtro)..."
-            className="w-full text-xs pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+            className="w-full text-xs pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 focus:bg-white rounded-xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground shrink-0">Modelo:</span>
+          <span className="text-xs text-slate-500 font-semibold shrink-0">Modelo:</span>
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
-            className="text-xs bg-background border border-border rounded-xl px-3 py-2.5 text-foreground outline-none focus:ring-1 focus:ring-primary"
+            className="text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3 py-2.5 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
           >
             <option value="all">Todos os Modelos</option>
             {models.map((m) => (
@@ -112,10 +112,10 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
       {/* Diagnostics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {filtered.length === 0 ? (
-          <div className="col-span-2 p-12 text-center rounded-2xl border border-dashed border-border bg-card">
-            <Activity className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-            <p className="text-sm font-semibold text-foreground">Nenhum diagnóstico correspondente</p>
-            <p className="text-xs text-muted-foreground mt-1">
+          <div className="col-span-2 p-12 text-center rounded-2xl border border-dashed border-slate-300 bg-white">
+            <Activity className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-50" />
+            <p className="text-sm font-bold text-slate-800">Nenhum diagnóstico correspondente</p>
+            <p className="text-xs text-slate-500 mt-1">
               Tente buscar por termos mais genéricos como &quot;óleo&quot;, &quot;pressão&quot; ou selecione outro modelo.
             </p>
           </div>
@@ -123,29 +123,29 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
           filtered.map((diag, idx) => (
             <div
               key={idx}
-              className="p-5 rounded-2xl border border-border bg-card hover:border-primary/50 transition shadow-sm space-y-4 flex flex-col justify-between"
+              className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-md transition shadow-sm space-y-4 flex flex-col justify-between"
             >
               <div>
                 {/* Header Tag & Model */}
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                     {diag.equipmentModel}
                   </span>
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono">
-                    <Clock className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono font-medium">
+                    <Clock className="w-3.5 h-3.5 text-blue-600" />
                     <span>Média Reparo: ~{diag.averageRepairTimeHours}h</span>
                   </div>
                 </div>
 
                 {/* Symptom Title */}
-                <h3 className="text-sm font-bold text-foreground mb-1">{diag.symptomTitle}</h3>
+                <h3 className="text-sm font-bold text-slate-900 mb-1">{diag.symptomTitle}</h3>
 
                 {/* Keyword Pills */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {diag.symptomKeywords.map((kw, kIdx) => (
                     <span
                       key={kIdx}
-                      className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground font-mono"
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-mono font-medium border border-slate-200"
                     >
                       #{kw}
                     </span>
@@ -153,38 +153,38 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                 </div>
 
                 {/* Historical Root Causes (Top Matched) */}
-                <div className="space-y-2.5 pt-2 border-t border-border">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                     Causas Raízes Históricas Confirmadas na Base de Clientes:
                   </span>
 
                   {diag.causes.map((c, cIdx) => (
                     <div
                       key={cIdx}
-                      className="p-3 rounded-xl bg-muted/20 border border-border/80 space-y-2"
+                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 shadow-2xs"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-bold text-foreground">{c.cause}</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
+                        <span className="text-xs font-bold text-slate-900">{c.cause}</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                           {c.confidenceScore}% Probabilidade
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        <strong className="text-foreground">Resolução padrão:</strong> {c.resolution}
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        <strong className="text-slate-800">Resolução padrão:</strong> {c.resolution}
                       </p>
 
                       {/* Recommended Parts to pack in technician van */}
                       <div className="pt-1">
-                        <span className="text-[10px] font-semibold text-primary flex items-center gap-1 mb-1">
-                          <Package className="w-3 h-3" />
+                        <span className="text-[10px] font-bold text-blue-700 flex items-center gap-1 mb-1">
+                          <Package className="w-3 h-3 text-blue-600" />
                           Peças recomendadas para levar na van:
                         </span>
                         <div className="flex flex-wrap gap-1">
                           {c.recommendedParts.map((part, pIdx) => (
                             <span
                               key={pIdx}
-                              className="text-[10px] bg-background px-2 py-0.5 rounded border border-border text-foreground font-medium"
+                              className="text-[10px] bg-white px-2 py-0.5 rounded-md border border-slate-300 text-slate-800 font-medium shadow-2xs"
                             >
                               {part}
                             </span>
@@ -192,8 +192,8 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                         </div>
                       </div>
 
-                      <div className="text-[10px] text-muted-foreground pt-1 flex items-center justify-between border-t border-border/40">
-                        <span>Casos resolvidos com sucesso: <strong>{c.casesResolvedCount}</strong></span>
+                      <div className="text-[10px] text-slate-500 pt-1 flex items-center justify-between border-t border-slate-200">
+                        <span>Casos resolvidos: <strong>{c.casesResolvedCount}</strong></span>
                         <span>Clientes da base testados: <strong>{c.clientsAffected.length}</strong></span>
                       </div>
                     </div>
@@ -204,7 +204,7 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
               {/* Action Button */}
               <button
                 onClick={() => onApplyDiagnosticToOrder(diag)}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition flex items-center justify-center gap-2 shadow-sm mt-3"
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/25 mt-3 cursor-pointer"
               >
                 <Zap className="w-4 h-4" />
                 Criar Ordem de Serviço com Este Diagnóstico
