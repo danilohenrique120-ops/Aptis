@@ -53,4 +53,29 @@ export interface ShiftHandoverData {
   criticalIssues: string;
 }
 
-export type TaskViewTab = 'kanban' | 'eisenhower' | 'kamishibai';
+export interface FollowUpUpdate {
+  id: string;
+  date: string;
+  note: string;
+  author?: string;
+}
+
+export type FollowUpAttentionLevel = 'critico' | 'alto' | 'medio' | 'estavel';
+export type FollowUpStatus = 'aguardando_retorno' | 'em_monitoramento' | 'agendar_alinhamento' | 'encerrado';
+
+export interface ManagerFollowUpItem {
+  id: string;
+  tenantId: string;
+  title: string;
+  context: string;
+  counterpart: string;
+  sector: string;
+  attentionLevel: FollowUpAttentionLevel;
+  status: FollowUpStatus;
+  nextFollowUpDate: string;
+  createdAt: string;
+  updatedAt: string;
+  history: FollowUpUpdate[];
+}
+
+export type TaskViewTab = 'kanban' | 'eisenhower' | 'kamishibai' | 'followup';

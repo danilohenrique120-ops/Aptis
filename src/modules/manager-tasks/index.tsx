@@ -3,7 +3,16 @@
 import React, { useState } from 'react';
 import { useTenant } from '@/context/tenant-context';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
-import { ManagerTask, TaskPriority, TaskStatus, TaskViewTab, EisenhowerQuadrant } from './types';
+import { 
+  ManagerTask, 
+  TaskPriority, 
+  TaskStatus, 
+  TaskViewTab, 
+  EisenhowerQuadrant,
+  ManagerFollowUpItem,
+  FollowUpStatus,
+  FollowUpUpdate
+} from './types';
 import { 
   Plus, 
   Search, 
@@ -20,14 +29,89 @@ import {
   Repeat,
   Edit3,
   GripVertical,
-  Sparkles
+  Sparkles,
+  Eye,
+  Building2
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { EisenhowerMatrix } from './components/EisenhowerMatrix';
 import { KamishibaiRoutine } from './components/KamishibaiRoutine';
 import { ShiftHandoverModal } from './components/ShiftHandoverModal';
 import { TaskDetailsModal } from './components/TaskDetailsModal';
+import { ManagerFollowUpPanel } from './components/ManagerFollowUpPanel';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
+
+const INITIAL_FOLLOW_UPS: ManagerFollowUpItem[] = [
+  {
+    id: 'fup-1',
+    tenantId: 'tenant-1',
+    title: 'Homologação emergencial de novo fornecedor de matéria-prima (Aço 1045)',
+    context: 'Atraso no lote de barras laminadas do fornecedor atual ameaça o cronograma da linha de prensas no próximo mês. Compras está avaliando amostra do fornecedor Beta com urgência.',
+    counterpart: 'Eng. Suprimentos (Mariana) & Lab Metalúrgico',
+    sector: 'Estamparia & Prensas',
+    attentionLevel: 'critico',
+    status: 'aguardando_retorno',
+    nextFollowUpDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: '2026-09-20',
+    updatedAt: '2026-09-25',
+    history: [
+      {
+        id: 'h-1',
+        date: '2026-09-20',
+        note: 'Solicitada amostra de tração e dureza para o fornecedor alternativo.',
+        author: 'Carlos Silveira'
+      },
+      {
+        id: 'h-2',
+        date: '2026-09-25',
+        note: 'Laboratório confirmou recebimento dos corpos de prova. Laudo prometido em 48h.',
+        author: 'Carlos Silveira'
+      }
+    ]
+  },
+  {
+    id: 'fup-2',
+    tenantId: 'tenant-1',
+    title: 'Alinhamento com Diretoria e RH sobre nova escala de 3º Turno',
+    context: 'Proposta de adequação da escala 6x2 no setor de Usinagem CNC para atender o aumento na carteira de pedidos sem gerar sobrecarga ou passivo de horas extras.',
+    counterpart: 'Gerência Geral de Operações & RH Corporativo',
+    sector: 'Usinagem CNC',
+    attentionLevel: 'alto',
+    status: 'agendar_alinhamento',
+    nextFollowUpDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-26',
+    history: [
+      {
+        id: 'h-3',
+        date: '2026-09-22',
+        note: 'Simulação de custos de adicional noturno enviada para controladoria.',
+        author: 'Carlos Silveira'
+      }
+    ]
+  },
+  {
+    id: 'fup-3',
+    tenantId: 'tenant-1',
+    title: 'Monitoramento da fase de garantia pós-reforma da Ponte Rolante 02',
+    context: 'Acompanhar medição de vibração e alinhamento dos trilhos durante as primeiras 200 horas de operação pós-revisão geral feita pela contratada.',
+    counterpart: 'Manutenção Preditiva & Engenheiro Residente',
+    sector: 'Montagem & Solda',
+    attentionLevel: 'medio',
+    status: 'em_monitoramento',
+    nextFollowUpDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: '2026-09-18',
+    updatedAt: '2026-09-24',
+    history: [
+      {
+        id: 'h-4',
+        date: '2026-09-24',
+        note: 'Primeira análise de vibração aprovada dentro dos parâmetros ISO 10816.',
+        author: 'Carlos Silveira'
+      }
+    ]
+  }
+];
 
 const INITIAL_TASKS: ManagerTask[] = [
   {
@@ -135,6 +219,7 @@ export default function ManagerTasksModule() {
     ...safePlantSectors.map(s => ({ id: s.name, label: s.name }))
   ];
   const [tasks, setTasks] = useTenantStorage<ManagerTask[]>('manager-tasks', 'tasks', INITIAL_TASKS);
+  const [followUps, setFollowUps] = useTenantStorage<ManagerFollowUpItem[]>('manager-tasks', 'follow_ups', INITIAL_FOLLOW_UPS);
   const [isLoaded, setIsLoaded] = useState(true);
   const [activeTab, setActiveTab] = useState<TaskViewTab>('kanban');
   const [selectedSector, setSelectedSector] = useState<string>('all');
@@ -149,6 +234,68 @@ export default function ManagerTasksModule() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<ManagerTask | null>(null);
   const [isShiftHandoverOpen, setIsShiftHandoverOpen] = useState(false);
+
+  // Follow-up Handlers
+  const handleSaveFollowUp = (data: Omit<ManagerFollowUpItem, 'id' | 'createdAt' | 'updatedAt' | 'history' | 'tenantId'> & { id?: string; history?: FollowUpUpdate[] }) => {
+    const nowStr = new Date().toISOString().split('T')[0];
+    if (data.id) {
+      setFollowUps(prev => prev.map(item => item.id === data.id ? {
+        ...item,
+        ...data,
+        updatedAt: nowStr
+      } : item));
+    } else {
+      const newItem: ManagerFollowUpItem = {
+        id: `fup-${Date.now()}`,
+        tenantId: currentTenant.id,
+        createdAt: nowStr,
+        updatedAt: nowStr,
+        title: data.title,
+        context: data.context,
+        counterpart: data.counterpart,
+        sector: data.sector,
+        attentionLevel: data.attentionLevel,
+        status: data.status,
+        nextFollowUpDate: data.nextFollowUpDate,
+        history: data.history || []
+      };
+      setFollowUps(prev => [newItem, ...prev]);
+    }
+  };
+
+  const handleDeleteFollowUp = (id: string) => {
+    setFollowUps(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleAddQuickFollowUpUpdate = (id: string, note: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const newUpdate: FollowUpUpdate = {
+      id: `up-${Date.now()}`,
+      date: today,
+      note,
+      author: 'Gestor'
+    };
+    setFollowUps(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      return {
+        ...item,
+        updatedAt: today,
+        history: [newUpdate, ...(item.history || [])]
+      };
+    }));
+  };
+
+  const handleChangeFollowUpStatus = (id: string, newStatus: FollowUpStatus) => {
+    const today = new Date().toISOString().split('T')[0];
+    setFollowUps(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      return {
+        ...item,
+        status: newStatus,
+        updatedAt: today
+      };
+    }));
+  };
 
   // Sector and search filtering
   const filteredTasks = tasks.filter(task => {
@@ -411,7 +558,7 @@ export default function ManagerTasksModule() {
 
       {/* Abas Principais de Visualização */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
             onClick={() => setActiveTab('kanban')}
             className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
@@ -447,29 +594,56 @@ export default function ManagerTasksModule() {
             <CheckSquare className="w-3.5 h-3.5" />
             Rotina do Líder (Kamishibai)
           </button>
+
+          <button
+            onClick={() => setActiveTab('followup')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+              activeTab === 'followup'
+                ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5 text-blue-600" />
+            Assuntos sob Atenção (Follow-up)
+            {followUps.filter(f => f.status !== 'encerrado' && f.attentionLevel === 'critico').length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
+          </button>
         </div>
 
-        {/* Filtro Setorial Rápido */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Área:</span>
-          {sectorsList.map(sec => (
-            <button
-              key={sec.id}
-              onClick={() => setSelectedSector(sec.id)}
-              className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                selectedSector === sec.id
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              {sec.label}
-            </button>
-          ))}
+        {/* Filtro Setorial por Lista Suspensa */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="sector-select" className="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-blue-600" />
+            <span>Área / Setor:</span>
+          </label>
+          <select
+            id="sector-select"
+            value={selectedSector}
+            onChange={(e) => setSelectedSector(e.target.value)}
+            className="text-xs font-semibold bg-white border border-slate-300 hover:border-slate-400 rounded-lg px-3 py-1.5 text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer min-w-[200px]"
+          >
+            {sectorsList.map(sec => (
+              <option key={sec.id} value={sec.id} className="text-slate-800 py-1">
+                {sec.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* Conteúdo Dinâmico Conforme a Aba Ativa */}
-      {activeTab === 'kamishibai' ? (
+      {activeTab === 'followup' ? (
+        <ManagerFollowUpPanel
+          followUps={followUps}
+          onSaveFollowUp={handleSaveFollowUp}
+          onDeleteFollowUp={handleDeleteFollowUp}
+          onAddQuickUpdate={handleAddQuickFollowUpUpdate}
+          onChangeStatus={handleChangeFollowUpStatus}
+          onResetExamples={() => setFollowUps(INITIAL_FOLLOW_UPS)}
+          selectedSectorFilter={selectedSector}
+        />
+      ) : activeTab === 'kamishibai' ? (
         <KamishibaiRoutine selectedSector={selectedSector} />
       ) : activeTab === 'eisenhower' ? (
         <div className="space-y-4">
@@ -560,7 +734,7 @@ export default function ManagerTasksModule() {
                   onDragOver={(e) => handleColumnDragOver(e, col.id)}
                   onDragLeave={handleColumnDragLeave}
                   onDrop={(e) => handleColumnDrop(e, col.id)}
-                  className={`rounded-xl p-3 border min-h-[480px] flex flex-col transition-all duration-200 ${
+                  className={`rounded-xl p-3 border min-h-[480px] max-h-[720px] flex flex-col transition-all duration-200 ${
                     isDragOver 
                       ? 'bg-blue-50/90 border-blue-400 ring-2 ring-blue-400/60 ring-dashed shadow-md scale-[1.01]' 
                       : 'bg-slate-100/60 border-slate-200/80'
@@ -577,8 +751,8 @@ export default function ManagerTasksModule() {
                     </span>
                   </div>
 
-                  {/* Lista de Cards */}
-                  <div className="space-y-3 flex-1 flex flex-col">
+                  {/* Lista de Cards com rolagem interna */}
+                  <div className="space-y-3 flex-1 flex flex-col overflow-y-auto max-h-[620px] pr-1.5">
                     {colTasks.length === 0 ? (
                       <div className="py-10 text-center text-xs text-slate-400 italic flex-1 flex items-center justify-center border-2 border-dashed border-slate-200/60 rounded-xl">
                         Nenhuma tarefa nesta etapa

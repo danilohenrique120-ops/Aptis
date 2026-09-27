@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { ManagerTask, EisenhowerQuadrant, TaskStatus } from '../types';
@@ -234,8 +234,8 @@ export function EisenhowerMatrix({
                 </span>
               </div>
 
-              {/* Lista de Tarefas do Quadrante */}
-              <div className="space-y-2.5 flex-1 flex flex-col">
+              {/* Lista de Tarefas do Quadrante com rolagem interna */}
+              <div className="space-y-2.5 flex-1 flex flex-col max-h-[460px] overflow-y-auto pr-1.5">
                 {quadrantTasks.length === 0 ? (
                   <div className="py-12 text-center text-xs text-slate-400 italic flex-1 flex items-center justify-center border-2 border-dashed border-slate-200/50 rounded-xl">
                     Nenhuma demanda neste quadrante
