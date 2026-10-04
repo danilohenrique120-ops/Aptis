@@ -18,32 +18,65 @@ export default function AdminLayout({
   const [showPassword, setShowPassword] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
+  const [isLoading, setIsLoading] = useState(false);
+
   // Contador de leads pendentes
   const pendingLeadsCount = leads.filter(l => l.status === 'pending').length;
 
   useEffect(() => {
-    // Checa se a sessão master já está salva nesta aba do navegador
-    const sessionAuth = sessionStorage.getItem('aptis_admin_authenticated');
-    if (sessionAuth === 'true') {
-      setIsAuthenticated(true);
+    // Checa autenticação no servidor via cookie httpOnly assinado
+    async function checkServerSession() {
+      try {
+        const res = await fetch('/api/admin/verify');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            setIsAuthenticated(true);
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
     }
-    setIsCheckingAuth(false);
+    checkServerSession();
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Senha Master padrão da plataforma: aptis2026 ou 1204152 (últimos dígitos corporativos)
-    if (password === 'aptis2026' || password === 'admin123' || password === '1204152') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('aptis_admin_authenticated', 'true');
-      setErrorMsg('');
-    } else {
-      setErrorMsg('Senha Master incorreta. Acesso restrito à diretoria Aptis.');
+    if (!password.trim()) return;
+
+    setIsLoading(true);
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setPassword('');
+      } else {
+        setErrorMsg(data.error || 'Senha Master incorreta. Acesso restrito à diretoria Aptis.');
+      }
+    } catch {
+      setErrorMsg('Erro de conexão ao validar credenciais no servidor.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('aptis_admin_authenticated');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch {}
     setIsAuthenticated(false);
     setPassword('');
   };
@@ -104,9 +137,10 @@ export default function AdminLayout({
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+              disabled={isLoading}
+              className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
             >
-              Desbloquear Painel
+              {isLoading ? 'Verificando no Servidor...' : 'Desbloquear Painel'}
             </button>
           </form>
 

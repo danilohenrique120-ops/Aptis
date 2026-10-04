@@ -1,20 +1,69 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+
+// Rate Limiter em memória por IP (Token bucket simplificado)
+const ipRequestHistory = new Map<string, { count: number; firstRequestTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
+const MAX_REQUESTS_PER_WINDOW = 3; // Máximo 3 envios por minuto por IP
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = ipRequestHistory.get(ip);
+
+  if (!record) {
+    ipRequestHistory.set(ip, { count: 1, firstRequestTime: now });
+    return false;
+  }
+
+  if (now - record.firstRequestTime > RATE_LIMIT_WINDOW_MS) {
+    ipRequestHistory.set(ip, { count: 1, firstRequestTime: now });
+    return false;
+  }
+
+  record.count += 1;
+  return record.count > MAX_REQUESTS_PER_WINDOW;
+}
 
 export async function POST(request: Request) {
   try {
+    // 1. Identificação de IP para mitigação de spam e DoS
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
+
+    if (isRateLimited(clientIp)) {
+      return NextResponse.json(
+        { success: false, error: 'Muitas solicitações em curto intervalo. Aguarde 1 minuto.' },
+        { status: 429 }
+      );
+    }
+
     const data = await request.json();
 
-    const {
-      companyName,
-      contactName,
-      email,
-      phone,
-      teamSize,
-      toolName,
-      notes
-    } = data;
+    const companyName = String(data.companyName || '').trim().slice(0, 100);
+    const contactName = String(data.contactName || '').trim().slice(0, 80);
+    const email = String(data.email || '').trim().toLowerCase().slice(0, 100);
+    const phone = String(data.phone || '').trim().slice(0, 30);
+    const teamSize = String(data.teamSize || 'Não informado').slice(0, 50);
+    const toolName = String(data.toolName || 'Plataforma Geral').slice(0, 80);
+    const notes = String(data.notes || '').slice(0, 500);
 
-    console.log('--- [NOVO LEAD RECEBIDO APTIS] ---');
+    // 2. Validações estritas de entrada
+    if (!companyName || !contactName || !email || !phone) {
+      return NextResponse.json(
+        { success: false, error: 'Campos obrigatórios incompletos (Empresa, Nome, E-mail e Telefone).' },
+        { status: 400 }
+      );
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, error: 'Endereço de e-mail inválido.' },
+        { status: 400 }
+      );
+    }
+
+    console.log('--- [NOVO LEAD AUDITADO APTIS] ---');
+    console.log(`IP: ${clientIp}`);
     console.log(`Empresa: ${companyName}`);
     console.log(`Contato: ${contactName}`);
     console.log(`E-mail: ${email}`);
@@ -24,7 +73,7 @@ export async function POST(request: Request) {
     console.log(`Notas: ${notes}`);
     console.log('----------------------------------');
 
-    // 1. Envio por E-mail (via Resend se RESEND_API_KEY estiver presente)
+    // 3. Envio por E-mail (via Resend se RESEND_API_KEY estiver configurado)
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       try {
@@ -61,7 +110,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Notificação Webhook para WhatsApp (Se configurada a URL)
+    // 4. Notificação Webhook para WhatsApp
     const whatsappWebhookUrl = process.env.WHATSAPP_WEBHOOK_URL;
     if (whatsappWebhookUrl) {
       try {
@@ -78,9 +127,9 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: 'Lead processado com sucesso.' });
+    return NextResponse.json({ success: true, message: 'Lead processado e recebido com sucesso.' });
   } catch (error) {
     console.error('Erro na API lead:', error);
-    return NextResponse.json({ success: false, error: 'Falha no processamento' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Falha no processamento do lead.' }, { status: 500 });
   }
 }

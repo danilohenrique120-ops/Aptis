@@ -108,23 +108,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        // Carregar Leads do Supabase
-        const { data: cloudLeads, error: ldErr } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-        if (!ldErr && cloudLeads && cloudLeads.length > 0) {
-          const mappedLeads: LeadRequest[] = cloudLeads.map((ld: any) => ({
-            id: ld.id,
-            companyName: ld.company_name,
-            contactName: ld.contact_name,
-            email: ld.email,
-            phone: ld.phone,
-            teamSize: ld.team_size,
-            toolId: ld.tool_id,
-            toolName: ld.tool_name,
-            notes: ld.notes,
-            status: ld.status,
-            createdAt: ld.created_at ? ld.created_at.split('T')[0] : '2026-01-01'
-          }));
-          setLeads(mappedLeads);
+        // Carregar Leads do Supabase apenas se estiver acessando a área administrativa
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+          const { data: cloudLeads, error: ldErr } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+          if (!ldErr && cloudLeads && cloudLeads.length > 0) {
+            const mappedLeads: LeadRequest[] = cloudLeads.map((ld: any) => ({
+              id: ld.id,
+              companyName: ld.company_name,
+              contactName: ld.contact_name,
+              email: ld.email,
+              phone: ld.phone,
+              teamSize: ld.team_size,
+              toolId: ld.tool_id,
+              toolName: ld.tool_name,
+              notes: ld.notes,
+              status: ld.status,
+              createdAt: ld.created_at ? ld.created_at.split('T')[0] : '2026-01-01'
+            }));
+            setLeads(mappedLeads);
+          }
         }
       } catch (err) {
         console.warn('Supabase offline ou sem conexão, utilizando fallback local:', err);
@@ -136,7 +138,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     loadCloudData();
   }, []);
 
-  // Salva no localStorage em toda atualização
+  // Salva no localStorage em toda atualização (protegendo dados sensíveis de leads)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(tenants));
@@ -144,11 +146,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.LICENSES, JSON.stringify(licenses));
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, currentUserId);
-      localStorage.setItem(STORAGE_KEYS.LEADS, JSON.stringify(leads));
     } catch (e) {
       console.warn('Erro ao persistir dados no localStorage:', e);
     }
-  }, [tenants, currentTenantId, licenses, users, currentUserId, leads]);
+  }, [tenants, currentTenantId, licenses, users, currentUserId]);
 
   const currentTenant = tenants.find(t => t.id === currentTenantId) || tenants[0] || INITIAL_TENANTS[0];
   const currentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];

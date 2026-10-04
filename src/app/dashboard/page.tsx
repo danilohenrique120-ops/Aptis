@@ -47,10 +47,13 @@ export default function DashboardHomePage() {
 
   React.useEffect(() => {
     try {
-      const savedTasks = localStorage.getItem('aptis_routine_tasks');
-      const savedEmployees = localStorage.getItem('aptis_skills_employees');
-      const savedTrainings = localStorage.getItem('aptis_compliance_trainings');
-      const savedKaizens = localStorage.getItem('aptis_kaizen_ideas');
+      const tenantId = currentTenant?.id || 'dhp-enterprise';
+
+      // Busca dados com isolamento por Tenant ID
+      const savedTasks = localStorage.getItem(`aptis_${tenantId}_manager-tasks_tasks`) || localStorage.getItem('aptis_routine_tasks');
+      const savedEmployees = localStorage.getItem(`aptis_${tenantId}_skills-matrix_operators`) || localStorage.getItem('aptis_skills_employees');
+      const savedTrainings = localStorage.getItem(`aptis_${tenantId}_training-matrix_records`) || localStorage.getItem('aptis_compliance_trainings');
+      const savedKaizens = localStorage.getItem(`aptis_${tenantId}_kaizen-manager_kaizens`) || localStorage.getItem('aptis_kaizen_ideas');
 
       setStats({
         totalTasks: savedTasks ? JSON.parse(savedTasks).length : 0,
@@ -63,10 +66,20 @@ export default function DashboardHomePage() {
       console.error(e);
       setStats(prev => ({ ...prev, isLoaded: true }));
     }
-  }, []);
+  }, [currentTenant?.id]);
 
   const handleResetAllData = () => {
-    if (window.confirm('Tem certeza que deseja zerar todos os dados e deixar o sistema 100% em branco para operar do zero?')) {
+    if (window.confirm(`Tem certeza que deseja zerar os dados da unidade "${currentTenant.name}"? As outras unidades não serão afetadas.`)) {
+      const tenantId = currentTenant?.id || 'dhp-enterprise';
+      
+      // Remove somente chaves do tenant atual
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(`aptis_${tenantId}_`)) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Remove chaves legadas locais
       localStorage.removeItem('aptis_routine_tasks');
       localStorage.removeItem('aptis_skills_stations');
       localStorage.removeItem('aptis_skills_employees');

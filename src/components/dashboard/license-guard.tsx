@@ -128,20 +128,20 @@ export function LicenseGuard({ toolId, children }: LicenseGuardProps) {
           </Link>
         </div>
 
-        {/* Opção de Teste Rápido para Administradores */}
-        {(currentUser.role === 'superadmin' || currentUser.role === 'tenant_admin') && (
+        {/* Opção restrita exclusivamente ao SuperAdmin da plataforma Aptis */}
+        {currentUser.role === 'superadmin' && (
           <div className="mt-8 pt-6 border-t border-slate-200 w-full flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-slate-50/70 p-4 rounded-xl border border-slate-200/80">
             <div className="flex items-center gap-2 text-slate-600">
               <KeyRound className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
-                <strong>Modo Administrador ({currentUser.role}):</strong> Você pode liberar a licença para {currentTenant.name} agora para validar o módulo.
+                <strong>Console SuperAdmin:</strong> Liberação manual de teste para a unidade {currentTenant.name}.
               </span>
             </div>
             <button
               onClick={handleQuickActivate}
               className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg shadow-xs transition-colors shrink-0 cursor-pointer"
             >
-              Liberar Licença Imediata
+              Liberar Licença Imediata (Admin)
             </button>
           </div>
         )}
