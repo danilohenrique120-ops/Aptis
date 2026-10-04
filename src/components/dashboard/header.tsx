@@ -7,11 +7,12 @@ import {
   Building2, 
   ShieldCheck, 
   ExternalLink,
-  Activity
+  Activity,
+  LogOut
 } from 'lucide-react';
 
 export function DashboardHeader() {
-  const { currentTenant, currentUser } = useTenant();
+  const { currentTenant, currentUser, logout } = useTenant();
 
   return (
     <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
@@ -84,6 +85,19 @@ export function DashboardHeader() {
               {currentUser.department || 'Liderança'}
             </div>
           </div>
+
+          {/* Botão de Logout */}
+          <button
+            onClick={() => {
+              if (window.confirm('Deseja realmente sair da sua conta?')) {
+                logout();
+              }
+            }}
+            title="Encerrar sessão e sair com segurança"
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-200"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>

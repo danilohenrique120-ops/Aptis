@@ -20,6 +20,7 @@ interface TenantContextType {
   addTenant: (tenant: Omit<Tenant, 'id' | 'createdAt'>) => Promise<Tenant>;
   submitLead: (lead: Omit<LeadRequest, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   updateLeadStatus: (leadId: string, status: LeadRequest['status']) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -151,14 +152,55 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
   }, [tenants, currentTenantId, licenses, users, currentUserId]);
 
-  const currentTenant = tenants.find(t => t.id === currentTenantId) || tenants[0] || INITIAL_TENANTS[0];
+  // Sincroniza usuário autenticado via cookie de sessão do servidor
+  useEffect(() => {
+    async function syncAuthenticatedUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            setUsers(prev => {
+              const exists = prev.some(u => u.id === data.user.id);
+              if (!exists) {
+                return [data.user, ...prev];
+              }
+              return prev.map(u => u.id === data.user.id ? { ...u, ...data.user } : u);
+            });
+            setCurrentUserId(data.user.id);
+            setCurrentTenantId(data.user.tenantId);
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao sincronizar sessão:', err);
+      }
+    }
+    syncAuthenticatedUser();
+  }, []);
+
   const currentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];
 
+  // Regra de Ouro de Segurança: Usuários comuns NUNCA podem trocar de empresa/tenant!
+  // Somente o SuperAdmin da plataforma pode visualizar outros tenants.
+  const effectiveTenantId = currentUser.role === 'superadmin' ? currentTenantId : (currentUser.tenantId || INITIAL_TENANTS[0].id);
+  const currentTenant = tenants.find(t => t.id === effectiveTenantId) || tenants[0] || INITIAL_TENANTS[0];
+
   const switchTenant = (tenantId: string) => {
+    if (currentUser.role !== 'superadmin') {
+      console.warn('[BLOQUEIO DE SEGURANÇA] Tentativa de alternância de tenant rejeitada para:', currentUser.name);
+      return;
+    }
     const exists = tenants.some(t => t.id === tenantId);
     if (exists) {
       setCurrentTenantId(tenantId);
     }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
+    window.location.href = '/login';
   };
 
   const switchUserRole = (role: UserRole) => {
@@ -301,7 +343,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         getActiveLicensesForTenant,
         addTenant,
         submitLead,
-        updateLeadStatus
+        updateLeadStatus,
+        logout
       }}
     >
       {children}
