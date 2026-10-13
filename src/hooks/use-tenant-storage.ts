@@ -33,7 +33,7 @@ export function useTenantStorage<T>(
   defaultValue: T | (() => T)
 ): [T, (valOrUpdater: T | ((prev: T) => T)) => void, boolean] {
   const { currentTenant } = useTenant();
-  const tenantId = currentTenant?.id || 'dhp-enterprise';
+  const tenantId = currentTenant?.id || 'tenant-dhp';
   const rowId = `${tenantId}:${toolId}:${dataKey}`;
   const localCacheKey = `aptis_${tenantId}_${toolId}_${dataKey}`;
 

@@ -53,60 +53,115 @@ function getLocalString(key: string, fallback: string): string {
   }
 }
 
+// IDs de empresas mock antigas que devem ser expurgadas imediatamente de qualquer navegador
+const LEGACY_MOCK_TENANT_IDS = new Set(['tenant-1', 'tenant-2', 'tenant-3']);
+
+function getSanitizedTenants(fallback: Tenant[]): Tenant[] {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const item = localStorage.getItem(STORAGE_KEYS.TENANTS);
+    if (!item) return fallback;
+    const parsed: Tenant[] = JSON.parse(item);
+    const valid = parsed.filter(t => !LEGACY_MOCK_TENANT_IDS.has(t.id));
+    return valid.length > 0 ? valid : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function getSanitizedLicenses(fallback: License[]): License[] {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const item = localStorage.getItem(STORAGE_KEYS.LICENSES);
+    if (!item) return fallback;
+    const parsed: License[] = JSON.parse(item);
+    const valid = parsed.filter(l => !LEGACY_MOCK_TENANT_IDS.has(l.tenantId));
+    return valid.length > 0 ? valid : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function getSanitizedUsers(fallback: User[]): User[] {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const item = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (!item) return fallback;
+    const parsed: User[] = JSON.parse(item);
+    const valid = parsed.filter(u => !LEGACY_MOCK_TENANT_IDS.has(u.tenantId));
+    return valid.length > 0 ? valid : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function TenantProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
-  const [tenants, setTenants] = useState<Tenant[]>(() => getLocalInitial(STORAGE_KEYS.TENANTS, INITIAL_TENANTS));
-  const [currentTenantId, setCurrentTenantId] = useState<string>(() => getLocalString(STORAGE_KEYS.CURRENT_TENANT_ID, INITIAL_TENANTS[0].id));
-  const [users, setUsers] = useState<User[]>(() => getLocalInitial(STORAGE_KEYS.USERS, INITIAL_USERS));
+  const [tenants, setTenants] = useState<Tenant[]>(() => getSanitizedTenants(INITIAL_TENANTS));
+  const [currentTenantId, setCurrentTenantId] = useState<string>(() => {
+    const val = getLocalString(STORAGE_KEYS.CURRENT_TENANT_ID, INITIAL_TENANTS[0].id);
+    return LEGACY_MOCK_TENANT_IDS.has(val) ? INITIAL_TENANTS[0].id : val;
+  });
+  const [users, setUsers] = useState<User[]>(() => getSanitizedUsers(INITIAL_USERS));
   const [currentUserId, setCurrentUserId] = useState<string>(() => getLocalString(STORAGE_KEYS.CURRENT_USER_ID, INITIAL_USERS[0].id));
-  const [licenses, setLicenses] = useState<License[]>(() => getLocalInitial(STORAGE_KEYS.LICENSES, INITIAL_LICENSES));
+  const [licenses, setLicenses] = useState<License[]>(() => getSanitizedLicenses(INITIAL_LICENSES));
   const [leads, setLeads] = useState<LeadRequest[]>(() => getLocalInitial(STORAGE_KEYS.LEADS, INITIAL_LEADS));
 
-  // 1. Carrega dados do Supabase e mescla inteligentemente com LocalStorage
+  // 1. Carrega dados do Supabase e mescla com a fonte da verdade sem resgatar mocks antigos
   useEffect(() => {
     async function loadCloudData() {
       try {
         // Carregar Tenants do Supabase
         const { data: cloudTenants, error: tErr } = await supabase.from('tenants').select('*');
         if (!tErr && cloudTenants && cloudTenants.length > 0) {
-          const mappedTenants: Tenant[] = cloudTenants.map((t: any) => ({
-            id: t.id,
-            name: t.name,
-            document: t.document,
-            plan: t.plan,
-            status: t.status,
-            segment: t.segment,
-            employeeCount: t.employee_count,
-            contactEmail: t.contact_email,
-            createdAt: t.created_at ? t.created_at.split('T')[0] : '2026-01-01'
-          }));
+          const mappedTenants: Tenant[] = cloudTenants
+            .filter((t: any) => !LEGACY_MOCK_TENANT_IDS.has(t.id))
+            .map((t: any) => ({
+              id: t.id,
+              name: t.name,
+              document: t.document,
+              plan: t.plan,
+              status: t.status,
+              segment: t.segment,
+              employeeCount: t.employee_count,
+              contactEmail: t.contact_email,
+              createdAt: t.created_at ? t.created_at.split('T')[0] : '2026-01-01'
+            }));
           
-          setTenants(prev => {
-            // Preserva tenants adicionados localmente que ainda não foram para a nuvem
-            const cloudIds = new Set(mappedTenants.map(m => m.id));
-            const localOnly = prev.filter(p => !cloudIds.has(p.id));
-            return [...mappedTenants, ...localOnly];
-          });
+          if (mappedTenants.length > 0) {
+            setTenants(prev => {
+              const cloudIds = new Set(mappedTenants.map(m => m.id));
+              const localOnly = prev
+                .filter(p => !cloudIds.has(p.id))
+                .filter(p => !LEGACY_MOCK_TENANT_IDS.has(p.id));
+              return [...mappedTenants, ...localOnly];
+            });
+          }
         }
 
         // Carregar Licenças do Supabase
         const { data: cloudLicenses, error: lErr } = await supabase.from('licenses').select('*');
         if (!lErr && cloudLicenses && cloudLicenses.length > 0) {
-          const mappedLicenses: License[] = cloudLicenses.map((l: any) => ({
-            id: l.id,
-            tenantId: l.tenant_id,
-            toolId: l.tool_id,
-            isActive: l.is_active,
-            validUntil: l.valid_until,
-            assignedAt: l.assigned_at ? l.assigned_at.split('T')[0] : '2026-01-01'
-          }));
+          const mappedLicenses: License[] = cloudLicenses
+            .filter((l: any) => !LEGACY_MOCK_TENANT_IDS.has(l.tenant_id))
+            .map((l: any) => ({
+              id: l.id,
+              tenantId: l.tenant_id,
+              toolId: l.tool_id,
+              isActive: l.is_active,
+              validUntil: l.valid_until,
+              assignedAt: l.assigned_at ? l.assigned_at.split('T')[0] : '2026-01-01'
+            }));
 
-          setLicenses(prev => {
-            // Mescla sem perder licenças ativadas localmente
-            const cloudMap = new Map(mappedLicenses.map(l => [`${l.tenantId}:${l.toolId}`, l]));
-            const localOnly = prev.filter(p => !cloudMap.has(`${p.tenantId}:${p.toolId}`));
-            return [...mappedLicenses, ...localOnly];
-          });
+          if (mappedLicenses.length > 0) {
+            setLicenses(prev => {
+              const cloudMap = new Map(mappedLicenses.map(l => [`${l.tenantId}:${l.toolId}`, l]));
+              const localOnly = prev
+                .filter(p => !cloudMap.has(`${p.tenantId}:${p.toolId}`))
+                .filter(p => !LEGACY_MOCK_TENANT_IDS.has(p.tenantId));
+              return [...mappedLicenses, ...localOnly];
+            });
+          }
         }
 
         // Carregar Leads do Supabase apenas se estiver acessando a área administrativa

@@ -32,8 +32,11 @@ import {
   Award,
   ArrowRight,
   ChevronRight,
-  ListTodo
+  ListTodo,
+  FileSpreadsheet
 } from 'lucide-react';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 
 export default function OneOnOneModule() {
   const { currentUser, currentTenant } = useTenant();
@@ -45,6 +48,31 @@ export default function OneOnOneModule() {
   // Modais
   const [selectedMemberForMeeting, setSelectedMemberForMeeting] = useState<TeamMember1on1 | null>(null);
   const [selectedMeetingDetail, setSelectedMeetingDetail] = useState<OneOnOneMeeting | null>(null);
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  const handleImportOneOnOneExcel = (rows: Record<string, any>[]) => {
+    const newMembers: TeamMember1on1[] = rows.map((row, idx) => {
+      return {
+        id: `mem-imp-${Date.now()}-${idx}`,
+        name: (row.employeeName || 'Liderado').trim(),
+        role: (row.role || 'Operador').trim(),
+        department: (row.sector || 'Usinagem CNC').trim(),
+        avatarUrl: `https://images.unsplash.com/photo-${1534528741775 + (idx % 20)}?w=150&auto=format&fit=crop&q=80`,
+        lastMeetingDate: undefined,
+        meetingsCount: 0,
+        averageMood: 4.0,
+        openActionItemsCount: 0,
+        status: 'up_to_date'
+      };
+    });
+
+    saveMembersToStorage([...newMembers, ...members]);
+
+    return {
+      successCount: newMembers.length,
+      message: `${newMembers.length} liderados importados para a agenda de 1:1!`
+    };
+  };
 
   const saveMembersToStorage = (newMembers: TeamMember1on1[]) => {
     setMembers(newMembers);
@@ -126,8 +154,17 @@ export default function OneOnOneModule() {
           </p>
         </div>
 
-        {/* Botão de Iniciar 1:1 Rápido */}
-        <div className="flex items-center gap-3">
+        {/* Botões de Ação */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsExcelImporterOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer"
+            title="Importar liderados e pautas do Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Importar Excel
+          </button>
+
           <button
             onClick={() => setSelectedMemberForMeeting(members[0])}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-rose-600/25 cursor-pointer"
@@ -371,6 +408,18 @@ export default function OneOnOneModule() {
           </div>
         </div>
       )}
+
+      {/* Modal de Importação de Excel Inteligente */}
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['one-on-one'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['one-on-one'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['one-on-one'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['one-on-one'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['one-on-one'].sampleRows}
+        onImport={handleImportOneOnOneExcel}
+      />
     </div>
   );
 }

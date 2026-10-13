@@ -23,8 +23,11 @@ import {
   Cpu,
   ShieldCheck,
   Send,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 import {
   ClientContractor,
   Equipment,
@@ -104,6 +107,88 @@ export const ServiceProModule: React.FC = () => {
   const [portalSimulationClient, setPortalSimulationClient] = useState<ClientContractor | null>(
     null
   );
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  const handleImportServiceProExcel = (rows: Record<string, any>[]) => {
+    const updatedClients = [...clients];
+    const newEquipments: Equipment[] = rows.map((row, idx) => {
+      const clientName = (row.clientName || 'Cliente Industrial').trim();
+      let client = updatedClients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
+      if (!client) {
+        client = {
+          id: `client-imp-${Date.now()}-${idx}`,
+          name: clientName,
+          tradeName: clientName,
+          cnpj: '00.000.000/0001-00',
+          segment: 'Manufatura / Usinagem',
+          slaHours: 4,
+          contractValueMonthly: 5500,
+          contractStartDate: new Date().toISOString().split('T')[0],
+          contractStatus: 'active',
+          branches: [
+            {
+              id: `br-1-${idx}`,
+              name: 'Planta Principal',
+              address: 'Av. Industrial, 1000',
+              city: 'São Paulo',
+              state: 'SP'
+            }
+          ],
+          contacts: [
+            {
+              id: `ct-1-${idx}`,
+              name: 'Gestor da Planta',
+              role: 'Gerente de Manutenção',
+              email: 'manutencao@empresa.com.br',
+              phone: '(11) 98765-4321',
+              isPrimary: true
+            }
+          ]
+        };
+        updatedClients.push(client);
+      }
+
+      const rawCrit = (row.criticality || '').trim().toLowerCase();
+      let criticality: 'low' | 'medium' | 'high' = 'medium';
+      if (rawCrit.includes('crit') || rawCrit.includes('alt')) criticality = 'high';
+      else if (rawCrit.includes('baix')) criticality = 'low';
+
+      const branch = client.branches[0];
+
+      return {
+        id: `eq-imp-${Date.now()}-${idx}`,
+        clientId: client.id,
+        clientName: client.name,
+        branchId: branch?.id || 'branch-1',
+        branchName: branch?.name || 'Planta Principal',
+        name: (row.equipmentName || 'Equipamento').trim(),
+        tag: (row.tag || `TAG-${Date.now().toString().slice(-4)}-${idx + 1}`).trim(),
+        category: (row.sector || 'Geral').trim(),
+        brand: (row.manufacturer || 'Industrial').trim(),
+        model: 'Standard',
+        serialNumber: `SN-${Date.now().toString().slice(-6)}`,
+        locationInPlant: (row.sector || 'Chão de Fábrica').trim(),
+        criticality,
+        status: 'operational',
+        nextPreventiveDate: new Date(Date.now() + (Number(row.preventiveIntervalDays) || 60) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        specs: [],
+        maintenancePlan: {
+          intervalMonths: Math.round((Number(row.preventiveIntervalDays) || 60) / 30),
+          checklistItems: ['Checar lubrificação', 'Inspecionar correias e ruídos anômalos'],
+          recommendedParts: []
+        },
+        qrCodeId: `QR-${Date.now().toString().slice(-6)}`
+      };
+    });
+
+    setClients(updatedClients);
+    setEquipments(prev => [...newEquipments, ...prev]);
+
+    return {
+      successCount: newEquipments.length,
+      message: `${newEquipments.length} equipamentos e clientes importados com sucesso no catálogo!`
+    };
+  };
 
   // Equipment table filters
   const [equipmentSearch, setEquipmentSearch] = useState('');
@@ -274,6 +359,15 @@ export const ServiceProModule: React.FC = () => {
 
         {/* Global Action Shortcuts */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setIsExcelImporterOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer"
+            title="Importar catálogo de máquinas e clientes do Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Importar Excel
+          </button>
+
           <button
             onClick={() => setIsImporterOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer"
@@ -900,6 +994,18 @@ export const ServiceProModule: React.FC = () => {
         client={portalSimulationClient}
         equipments={equipments}
         workOrders={workOrders}
+      />
+
+      {/* Modal de Importação de Excel Inteligente */}
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['service-pro'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['service-pro'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['service-pro'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['service-pro'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['service-pro'].sampleRows}
+        onImport={handleImportServiceProExcel}
       />
     </div>
   );

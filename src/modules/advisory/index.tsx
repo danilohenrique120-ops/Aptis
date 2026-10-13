@@ -22,8 +22,11 @@ import {
   Calculator,
   Eye,
   FileCheck,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 import {
   ConsultingClient,
   MaturityPillar,
@@ -95,6 +98,66 @@ export const AdvisoryModule: React.FC = () => {
   const [isSponsorPortalOpen, setIsSponsorPortalOpen] = useState(false);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<ConsultingClient | null>(null);
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  const handleImportAdvisoryExcel = (rows: Record<string, any>[]) => {
+    const updatedClients = [...clients];
+    const newDeliverables: ProjectDeliverable[] = rows.map((row, idx) => {
+      const clientName = (row.clientName || 'Cliente de Consultoria').trim();
+      let client = updatedClients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
+      if (!client) {
+        client = {
+          id: `adv-client-${Date.now()}-${idx}`,
+          name: clientName,
+          tradeName: clientName,
+          cnpj: '00.000.000/0001-00',
+          segment: 'Manufatura',
+          sponsorName: (row.responsiblePerson || 'Diretor de Operações').trim(),
+          sponsorRole: 'Sponsor / CEO',
+          sponsorEmail: 'contato@empresa.com.br',
+          sponsorPhone: '(11) 98765-4321',
+          consultantLead: 'Carlos Silveira',
+          contractValueMonthly: 12500,
+          totalContractValue: 75000,
+          status: 'active',
+          startDate: new Date().toISOString().split('T')[0],
+          targetEndDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          inScopeSummary: ['Otimização de Linha', 'Governança WCM'],
+          outOfScopeSummary: ['TI Legada'],
+          clientTeam: [],
+          projectGoal: (row.projectName || 'Programa de Transformação Operacional').trim()
+        };
+        updatedClients.push(client);
+      }
+
+      const rawStatus = (row.status || '').trim().toLowerCase();
+      let status: DeliverableStatus = 'in_progress';
+      if (rawStatus.includes('bloq') || rawStatus.includes('aguard')) status = 'blocked_by_client';
+      else if (rawStatus.includes('conc') || rawStatus.includes('entreg')) status = 'completed';
+      else if (rawStatus.includes('revis')) status = 'review';
+
+      return {
+        id: `del-imp-${Date.now()}-${idx}`,
+        clientId: client.id,
+        title: (row.milestoneTitle || 'Marco de Consultoria').trim(),
+        phase: 'implantacao',
+        status,
+        responsibleConsultant: 'Carlos Silveira',
+        responsibleClientPeer: (row.responsiblePerson || 'Ponto Focal do Cliente').trim(),
+        dueDate: (row.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]).trim(),
+        deliverableSummary: `Entrega do pilar ${row.dimension || 'Operações'}`,
+        clientBlockerReason: status === 'blocked_by_client' ? 'Aguardando validação interna do cliente' : undefined
+      };
+    });
+
+    setClients(updatedClients);
+    setDeliverables(prev => [...newDeliverables, ...prev]);
+
+    return {
+      successCount: newDeliverables.length,
+      message: `${newDeliverables.length} entregáveis e marcos de consultoria importados com sucesso!`
+    };
+  };
 
   const activeClient = clients.find((c) => c.id === selectedClientId) || clients[0];
 
@@ -194,6 +257,15 @@ export const AdvisoryModule: React.FC = () => {
 
         {/* Global Action Shortcuts */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setIsExcelImporterOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer"
+            title="Importar entregáveis e marcos de consultoria do Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Importar Excel
+          </button>
+
           <button
             onClick={() => setIsExecutiveReportOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer"
@@ -809,6 +881,18 @@ export const AdvisoryModule: React.FC = () => {
         onClose={() => setIsClientModalOpen(false)}
         onSaveClient={handleSaveClient}
         editingClient={editingClient}
+      />
+
+      {/* Modal de Importação de Excel Inteligente */}
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['advisory'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['advisory'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['advisory'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['advisory'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['advisory'].sampleRows}
+        onImport={handleImportAdvisoryExcel}
       />
     </div>
   );

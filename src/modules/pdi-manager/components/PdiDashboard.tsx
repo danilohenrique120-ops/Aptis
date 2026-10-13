@@ -14,19 +14,22 @@ import {
   ArrowRight, 
   Award,
   Clock,
-  Sparkles
+  Sparkles,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface PdiDashboardProps {
   pdis: EmployeePdi[];
   onSelectPdi: (pdi: EmployeePdi) => void;
   onOpenCreateModal: () => void;
+  onOpenExcelImporter?: () => void;
 }
 
 export function PdiDashboard({
   pdis,
   onSelectPdi,
-  onOpenCreateModal
+  onOpenCreateModal,
+  onOpenExcelImporter
 }: PdiDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedShift, setSelectedShift] = useState('all');
@@ -80,13 +83,26 @@ export function PdiDashboard({
           </p>
         </div>
 
-        <button
-          onClick={onOpenCreateModal}
-          className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-purple-600/20 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Novo PDI de Colaborador
-        </button>
+        <div className="flex items-center gap-2.5">
+          {onOpenExcelImporter && (
+            <button
+              onClick={onOpenExcelImporter}
+              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
+              title="Importar metas e PDIs de colaboradores do Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              Importar Excel
+            </button>
+          )}
+
+          <button
+            onClick={onOpenCreateModal}
+            className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-purple-600/20 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Novo PDI de Colaborador
+          </button>
+        </div>
       </div>
 
       {/* KPI CARDS EXECUTIVOS */}

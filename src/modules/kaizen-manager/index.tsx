@@ -25,9 +25,12 @@ import {
   Clock, 
   ArrowRight, 
   Award, 
-  Trash2
+  Trash2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 
 const STAGES: { id: KaizenStage; label: string; dot: string }[] = [
   { id: 'ideation', label: '1. Ideação & Submissão', dot: 'bg-purple-500' },
@@ -55,6 +58,66 @@ export default function KaizenManagerModule() {
   // Modais
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selectedProjectForA3, setSelectedProjectForA3] = useState<KaizenProject | null>(null);
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  const handleImportKaizenExcel = (rows: Record<string, any>[]) => {
+    const newKaizens: KaizenProject[] = rows.map((row, idx) => {
+      const rawCat = (row.category || '').trim().toLowerCase();
+      let category: KaizenCategory = 'produtividade';
+      if (rawCat.includes('segur')) category = 'segurança';
+      else if (rawCat.includes('qual')) category = 'qualidade';
+      else if (rawCat.includes('cust')) category = 'custo';
+      else if (rawCat.includes('ergo')) category = 'ergonomia';
+
+      const rawStage = (row.stage || '').trim().toLowerCase();
+      let stage: KaizenStage = 'ideation';
+      if (rawStage.includes('anal')) stage = 'analysis';
+      else if (rawStage.includes('impl')) stage = 'implementation';
+      else if (rawStage.includes('conc') || rawStage.includes('padr')) stage = 'standardized';
+
+      const savings = Number(row.impactValue) || 5000;
+
+      return {
+        id: `kz-imp-${Date.now()}-${idx}`,
+        tenantId: currentTenant.id,
+        title: (row.title || 'Iniciativa Kaizen').trim(),
+        level: savings > 50000 ? 'major' : savings > 15000 ? 'standard' : 'quick',
+        category,
+        stage,
+        sector: (row.sector || 'Usinagem CNC').trim(),
+        area: 'Chão de Fábrica',
+        leaderName: (row.author || 'Líder Kaizen').trim(),
+        leaderRole: 'Operador / Melhoria Contínua',
+        teamMembers: [],
+        estimatedSavingsAnnual: savings,
+        hoursSavedMonthly: Math.round(savings / 500),
+        createdAt: new Date().toISOString().split('T')[0],
+        a3: {
+          background: (row.description || '').trim(),
+          problemStatement: 'Desvio identificado na rotina de chão de fábrica.',
+          currentCondition: '',
+          fiveWhys: { why1: '', why2: '', why3: '', why4: '', why5: '', rootCause: '' },
+          targetCondition: '',
+          targetKpiGoal: 'Otimização de processo',
+          actionPlan: [],
+          verificationResults: '',
+          savingsAnnual: savings,
+          hoursSavedMonthly: Math.round(savings / 500),
+          isTargetAchieved: stage === 'standardized',
+          standardizationSummary: '',
+          skillsMatrixUpdated: false,
+          lessonsLearned: ''
+        }
+      };
+    });
+
+    setProjects(prev => [...newKaizens, ...prev]);
+
+    return {
+      successCount: newKaizens.length,
+      message: `${newKaizens.length} projetos Kaizen importados e adicionados ao funil A3!`
+    };
+  };
 
   // Salvar no Supabase e LocalStorage via useTenantStorage
   const persistProjects = (newProjects: KaizenProject[]) => {
@@ -142,6 +205,15 @@ export default function KaizenManagerModule() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsExcelImporterOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer"
+            title="Importar ideias Kaizen a partir do Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Importar Excel
+          </button>
+
           <button
             onClick={() => setIsNewModalOpen(true)}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-600/25 cursor-pointer"
@@ -502,6 +574,18 @@ export default function KaizenManagerModule() {
           onSave={handleUpdateProject}
         />
       )}
+
+      {/* MODAL DE IMPORTAÇÃO DE EXCEL INTELIGENTE */}
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['kaizen-manager'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['kaizen-manager'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['kaizen-manager'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['kaizen-manager'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['kaizen-manager'].sampleRows}
+        onImport={handleImportKaizenExcel}
+      />
     </div>
   );
 }

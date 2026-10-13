@@ -8,11 +8,11 @@ export const USER_COOKIE_NAME = 'aptis_user_session';
 // Dicionário de senhas padrão para os usuários iniciais corporativos
 // Em produção, as senhas ficam hasheadas no banco Supabase
 const USER_PASSWORDS: Record<string, string> = {
-  'carlos.silveira@alfa.ind.br': 'alfa123',
-  'mariana.souza@alfa.ind.br': 'alfa123',
   'admin@ecossistemalider.com.br': 'aptis2026',
-  'diretoria@betalog.com.br': 'beta123',
-  'contato@gamaservicos.com': 'gama123'
+  'admin@aptis.com.br': 'aptis2026',
+  'gestao@dhp.ind.br': 'dhp123',
+  'supervisor@dhp.ind.br': 'dhp123',
+  'lucas.pinho@manumanutencao.com.br': 'manu2026'
 };
 
 export interface AuthSessionPayload {

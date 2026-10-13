@@ -24,6 +24,8 @@ import { InvestigationModal } from './components/InvestigationModal';
 import { ActionPlanPanel } from './components/ActionPlanPanel';
 import { OplModal } from './components/OplModal';
 import { InvestigationPdfReportModal } from './components/InvestigationPdfReportModal';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 
 export function TwttpHercaModule() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'investigations' | 'actions' | 'opls'>('dashboard');
@@ -46,6 +48,102 @@ export function TwttpHercaModule() {
 
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedPdfInvestigation, setSelectedPdfInvestigation] = useState<HercaInvestigation | null>(null);
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  const handleImportHercaExcel = (rows: Record<string, any>[]) => {
+    const newInvs: HercaInvestigation[] = rows.map((row, idx) => {
+      const id = `herca-imp-${Date.now()}-${idx}`;
+      const code = `WCM-IMP-${Date.now().toString().slice(-4)}-${idx + 1}`;
+      const incidentDate = (row.failureDate || new Date().toISOString().split('T')[0]).trim();
+      const sector = (row.sector || 'Usinagem CNC').trim();
+
+      const actions: HercaAction[] = [];
+      if (row.pokaYokeAction) {
+        actions.push({
+          id: `act-herca-${idx}`,
+          investigationId: id,
+          title: `Barreira Poka-Yoke: ${String(row.pokaYokeAction).trim()}`,
+          what: String(row.pokaYokeAction).trim(),
+          why: 'Eliminar a dependência de atenção humana no posto',
+          who: 'Engenharia de Processos',
+          where: sector,
+          whenDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          how: 'Desenvolvimento e validação de dispositivo físico',
+          hierarchy: 'poka_yoke',
+          status: 'in_progress'
+        });
+      }
+
+      return {
+        id,
+        code,
+        title: (row.title || 'Desvio Operacional Investigado').trim(),
+        incidentDate,
+        shift: 'Turno A',
+        sector,
+        station: 'Posto de Trabalho',
+        operatorName: 'Operador Envolvido',
+        operatorExperienceMonths: 12,
+        severity: 'medium',
+        impactCategory: 'quality',
+        estimatedLossReais: 1200,
+        incidentDescription: (row.title || 'Desvio Operacional Investigado').trim(),
+        immediateContainment: 'Bloqueio do lote e segregação para inspeção 100%.',
+        status: 'under_investigation',
+        leadInvestigator: 'Carlos Silveira',
+        twttp: {
+          knewWhat: true,
+          knewWhatDetails: 'Treinado no procedimento padrão.',
+          knewHow: true,
+          knewHowDetails: 'Executava a rotina habitualmente.',
+          knewWhy: true,
+          knewWhyDetails: 'Ciente dos riscos de desvio.',
+          hadConditions: false,
+          hadConditionsDetails: 'Condição ergonômica ou ritmo acelerado propiciou distração.',
+          leaderInstructionMethod: 3,
+          leaderNotes: 'Revisão do método no Gemba realizada.'
+        },
+        hercaErrorType: 'slip',
+        hercaSystemicFactors: ['Falta de barreira física Poka-Yoke', 'Gabarito simétrico'],
+        fiveWhys: {
+          why1: 'Operador realizou a etapa de forma invertida.',
+          why2: 'A peça permite encaixe bidirecional sem bloqueio.',
+          why3: 'Ausência de pino guia assimétrico (Poka-Yoke).',
+          why4: 'Gabarito legado sem barreira física.',
+          why5: 'Foco anterior apenas em instrução de trabalho e não em barreira à prova de tolos.',
+          rootCauseCategory: 'Maquina',
+          rootCauseStatement: 'Falta de barreira Poka-Yoke permitiu erro humano inadvertido.'
+        },
+        recurrenceCount: 1,
+        createdAt: incidentDate,
+        updatedAt: incidentDate,
+        actions,
+        opl: {
+          id: `opl-${idx}`,
+          investigationId: id,
+          code: `OPL-${code}`,
+          title: `Lição de Ponto Único: ${row.title || 'Bloqueio de Inversão'}`,
+          area: sector,
+          station: 'Operação',
+          classification: 'trouble_case',
+          problemScenario: (row.title || 'Falha humana na operação').trim(),
+          standardPractice: (row.pokaYokeAction || 'Utilizar gabarito com bloqueio físico').trim(),
+          keySafetyQualityPoint: 'Nunca forçar a peça sem conferir o batente guia.',
+          whyItMatters: 'Zero refugo e garantia de montagem 100% conforme.',
+          preparedBy: 'Carlos Silveira',
+          approvedBy: 'Coordenação WCM',
+          createdAt: incidentDate
+        }
+      };
+    });
+
+    setInvestigations((prev: HercaInvestigation[]) => [...newInvs, ...prev]);
+
+    return {
+      successCount: newInvs.length,
+      message: `${newInvs.length} investigações e OPLs importadas com sucesso no módulo WCM!`
+    };
+  };
 
   // Handlers
   const handleOpenNewInvestigation = () => {
@@ -149,6 +247,15 @@ export function TwttpHercaModule() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsExcelImporterOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer"
+            title="Importar investigações de desvios e falhas do Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Importar Excel
+          </button>
+
           <button
             onClick={handleOpenNewInvestigation}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-600/25 cursor-pointer"
@@ -301,6 +408,18 @@ export function TwttpHercaModule() {
         isOpen={isPdfModalOpen}
         onClose={() => setIsPdfModalOpen(false)}
         tenantName={currentTenant?.name}
+      />
+
+      {/* Modal de Importação de Excel Inteligente */}
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['twttp-herca'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['twttp-herca'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['twttp-herca'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['twttp-herca'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['twttp-herca'].sampleRows}
+        onImport={handleImportHercaExcel}
       />
     </div>
   );

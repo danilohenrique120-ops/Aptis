@@ -48,8 +48,11 @@ import {
   GraduationCap,
   Trash2,
   LayoutDashboard,
-  UserCheck
+  UserCheck,
+  FileSpreadsheet
 } from 'lucide-react';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 
 export const SKILL_LEVEL_DEFINITIONS: Record<SkillLevel, SkillLevelInfo> = {
   1: {
@@ -419,6 +422,87 @@ export default function SkillsMatrixModule() {
   const [isSectorModalOpen, setIsSectorModalOpen] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
   const [isStationModalOpen, setIsStationModalOpen] = useState(false);
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  // Importação de Excel Inteligente
+  const handleImportSkillsExcel = (rows: Record<string, any>[]) => {
+    const updatedStations = [...stations];
+    const updatedEmployees = [...employees];
+
+    rows.forEach((row, idx) => {
+      const name = (row.employeeName || '').trim();
+      if (!name) return;
+
+      const rowSectorName = (row.sector || '').trim().toLowerCase();
+      const matchedSector = sectors.find(s => s.name.toLowerCase() === rowSectorName || s.code.toLowerCase() === rowSectorName) || activeSector;
+      const targetSectorId = matchedSector.id;
+
+      const stationName = (row.station || '').trim();
+      let targetStationId = '';
+      if (stationName) {
+        let foundStation = updatedStations.find(st => st.sectorId === targetSectorId && st.name.toLowerCase() === stationName.toLowerCase());
+        if (!foundStation) {
+          targetStationId = `st-import-${Date.now()}-${idx}`;
+          foundStation = {
+            id: targetStationId,
+            sectorId: targetSectorId,
+            name: stationName,
+            category: 'Operacional',
+            minOperatorsRequired: 1,
+            targetLevel: 3
+          };
+          updatedStations.push(foundStation);
+        } else {
+          targetStationId = foundStation.id;
+        }
+      }
+
+      let parsedLevel: SkillLevel = 1;
+      const rawLvl = String(row.level || '').trim().toUpperCase();
+      if (rawLvl === '4' || rawLvl === 'O') parsedLevel = 4;
+      else if (rawLvl === '3' || rawLvl === 'U') parsedLevel = 3;
+      else if (rawLvl === '2' || rawLvl === 'L') parsedLevel = 2;
+      else parsedLevel = 1;
+
+      const empId = row.employeeId ? String(row.employeeId).trim() : `emp-imp-${Date.now()}-${idx}`;
+      const existingIdx = updatedEmployees.findIndex(e => 
+        (e.employeeId && e.employeeId === empId) || 
+        e.employeeName.toLowerCase() === name.toLowerCase()
+      );
+
+      if (existingIdx >= 0) {
+        if (targetStationId) {
+          updatedEmployees[existingIdx] = {
+            ...updatedEmployees[existingIdx],
+            role: row.role ? String(row.role).trim() : updatedEmployees[existingIdx].role,
+            shift: row.shift ? String(row.shift).trim() : updatedEmployees[existingIdx].shift,
+            skills: {
+              ...updatedEmployees[existingIdx].skills,
+              [targetStationId]: parsedLevel
+            }
+          };
+        }
+      } else {
+        const newRecord: EmployeeSkillRecord = {
+          employeeId: empId,
+          sectorId: targetSectorId,
+          employeeName: name,
+          role: row.role ? String(row.role).trim() : 'Operador',
+          shift: row.shift ? String(row.shift).trim() : 'Turno A',
+          skills: targetStationId ? { [targetStationId]: parsedLevel } : {}
+        };
+        updatedEmployees.push(newRecord);
+      }
+    });
+
+    setStations(updatedStations);
+    setEmployees(updatedEmployees);
+
+    return {
+      successCount: rows.length,
+      message: `${rows.length} registros processados! Base de operadores e competências ILUO atualizada.`
+    };
+  };
 
   // Simulador de Perfil para Teste de Restrição de Área
   const [simulatedAccessRole, setSimulatedAccessRole] = useState<string>('all_access');
@@ -790,6 +874,15 @@ export default function SkillsMatrixModule() {
               >
                 <PlusCircle className="w-4 h-4" />
                 Adicionar Posto
+              </button>
+
+              <button
+                onClick={() => setIsExcelImporterOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer border border-emerald-300"
+                title="Importar operadores e notas ILUO a partir do Excel"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                Importar Excel
               </button>
 
               <button
@@ -1199,6 +1292,17 @@ export default function SkillsMatrixModule() {
         sector={activeSector}
         employees={sectorEmployees}
         onAddSuccession={handleAddSuccession}
+      />
+
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['skills-matrix'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['skills-matrix'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['skills-matrix'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['skills-matrix'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['skills-matrix'].sampleRows}
+        onImport={handleImportSkillsExcel}
       />
     </div>
   );

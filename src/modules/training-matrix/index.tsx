@@ -27,7 +27,8 @@ import {
   Grid,
   List,
   FolderOpen,
-  Trash2
+  Trash2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { formatDate, getDaysUntil } from '@/lib/utils';
 import { DocumentManagerModal } from './components/DocumentManagerModal';
@@ -36,6 +37,8 @@ import { ComplianceMatrixView } from './components/ComplianceMatrixView';
 import { TrainingBatchModal } from './components/TrainingBatchModal';
 import { EmployeeDossierModal } from './components/EmployeeDossierModal';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 
 const INITIAL_DOCUMENTS: DocumentAttachment[] = [
   {
@@ -286,6 +289,50 @@ export default function TrainingMatrixModule() {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [dossierEmployee, setDossierEmployee] = useState<string | null>(null);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  const handleImportTrainingExcel = (rows: Record<string, any>[]) => {
+    const newRecords: TrainingRecord[] = rows.map((row, idx) => {
+      const code = (row.code || 'NR-12').trim().toUpperCase();
+      const rawType = (row.type || '').trim().toUpperCase();
+      const type: TrainingType = rawType.includes('POP') ? 'POP' : 'NR';
+      const completedDate = (row.completedDate || new Date().toISOString().split('T')[0]).trim();
+      const validityMonths = Number(row.validityMonths) || 24;
+
+      let expiryDate = '';
+      try {
+        const d = new Date(completedDate);
+        d.setMonth(d.getMonth() + validityMonths);
+        expiryDate = d.toISOString().split('T')[0];
+      } catch {
+        expiryDate = new Date(Date.now() + validityMonths * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      }
+
+      return {
+        id: `tr-imp-${Date.now()}-${idx}`,
+        tenantId: currentTenant.id,
+        type,
+        code,
+        employeeName: (row.employeeName || 'Colaborador').trim(),
+        employeeRole: (row.employeeRole || 'Operador').trim(),
+        department: (row.department || 'Usinagem CNC').trim(),
+        courseName: `${code} - Capacitação Operacional`,
+        completedDate,
+        expiryDate,
+        certificateCode: `CERT-${code}-${Date.now().toString().slice(-4)}`,
+        validityMonths,
+        instructorOrEntity: (row.instructorOrEntity || 'Treinamento e Capacitação Técnica').trim(),
+        attachments: []
+      };
+    });
+
+    setTrainings(prev => [...newRecords, ...prev]);
+
+    return {
+      successCount: newRecords.length,
+      message: `${newRecords.length} registros de treinamento importados com sucesso na matriz legal!`
+    };
+  };
 
   // New Record Form State
   const [newType, setNewType] = useState<TrainingType>('NR');
@@ -483,6 +530,15 @@ export default function TrainingMatrixModule() {
           >
             <Users className="w-4 h-4 text-blue-600" />
             Montar Turma
+          </button>
+
+          <button
+            onClick={() => setIsExcelImporterOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-300 shadow-xs transition-colors cursor-pointer"
+            title="Importar registros de treinamentos de NRs e POPs do Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Importar Excel
           </button>
 
           <button
@@ -973,6 +1029,18 @@ export default function TrainingMatrixModule() {
           </div>
         </div>
       )}
+
+      {/* Modal de Importação de Excel Inteligente */}
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['training-matrix'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['training-matrix'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['training-matrix'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['training-matrix'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['training-matrix'].sampleRows}
+        onImport={handleImportTrainingExcel}
+      />
     </div>
   );
 }

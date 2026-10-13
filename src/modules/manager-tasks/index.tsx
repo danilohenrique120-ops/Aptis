@@ -31,7 +31,8 @@ import {
   GripVertical,
   Sparkles,
   Eye,
-  Building2
+  Building2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { EisenhowerMatrix } from './components/EisenhowerMatrix';
@@ -40,6 +41,8 @@ import { ShiftHandoverModal } from './components/ShiftHandoverModal';
 import { TaskDetailsModal } from './components/TaskDetailsModal';
 import { ManagerFollowUpPanel } from './components/ManagerFollowUpPanel';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
+import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
+import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 
 const INITIAL_FOLLOW_UPS: ManagerFollowUpItem[] = [
   {
@@ -234,6 +237,50 @@ export default function ManagerTasksModule() {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<ManagerTask | null>(null);
   const [isShiftHandoverOpen, setIsShiftHandoverOpen] = useState(false);
+  const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+
+  const handleImportTasksExcel = (rows: Record<string, any>[]) => {
+    const newTasks: ManagerTask[] = rows.map((row, idx) => {
+      const rawPriority = (row.priority || '').trim().toLowerCase();
+      let priority: TaskPriority = 'medium';
+      if (rawPriority.includes('crit')) priority = 'critical';
+      else if (rawPriority.includes('alt')) priority = 'high';
+      else if (rawPriority.includes('baix')) priority = 'low';
+
+      const rawStatus = (row.status || '').trim().toLowerCase();
+      let status: TaskStatus = 'todo';
+      if (rawStatus.includes('andam') || rawStatus.includes('prog')) status = 'in_progress';
+      else if (rawStatus.includes('revis') || rawStatus.includes('valid')) status = 'review';
+      else if (rawStatus.includes('conc') || rawStatus.includes('feito')) status = 'done';
+
+      let quadrant: EisenhowerQuadrant = 'q2_schedule';
+      if (priority === 'critical') quadrant = 'q1_do';
+      else if (priority === 'high') quadrant = 'q1_do';
+      else if (priority === 'low') quadrant = 'q3_delegate';
+
+      return {
+        id: `task-imp-${Date.now()}-${idx}`,
+        tenantId: currentTenant.id,
+        title: (row.title || 'Tarefa Importada').trim(),
+        description: (row.description || '').trim(),
+        priority,
+        status,
+        quadrant,
+        assignee: (row.assignee || 'Carlos Silveira').trim(),
+        sector: (row.sector || selectedSector || 'Usinagem CNC').trim(),
+        dueDate: (row.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]).trim(),
+        createdAt: new Date().toISOString().split('T')[0],
+        subtasks: []
+      };
+    });
+
+    setTasks(prev => [...newTasks, ...prev]);
+
+    return {
+      successCount: newTasks.length,
+      message: `${newTasks.length} tarefas importadas com sucesso no quadro de rotina!`
+    };
+  };
 
   // Follow-up Handlers
   const handleSaveFollowUp = (data: Omit<ManagerFollowUpItem, 'id' | 'createdAt' | 'updatedAt' | 'history' | 'tenantId'> & { id?: string; history?: FollowUpUpdate[] }) => {
@@ -505,6 +552,15 @@ export default function ManagerTasksModule() {
               Limpar Tarefas
             </button>
           )}
+
+          <button
+            onClick={() => setIsExcelImporterOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-300 shadow-xs transition-colors cursor-pointer"
+            title="Importar tarefas a partir de planilha Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Importar Excel
+          </button>
 
           <button
             onClick={() => setIsShiftHandoverOpen(true)}
@@ -904,6 +960,18 @@ export default function ManagerTasksModule() {
         onClose={() => setIsShiftHandoverOpen(false)}
         tasks={tasks}
         selectedSector={selectedSector}
+      />
+
+      {/* Modal de Importação de Excel Inteligente */}
+      <SmartExcelImporterModal
+        isOpen={isExcelImporterOpen}
+        onClose={() => setIsExcelImporterOpen(false)}
+        toolTitle={EXCEL_IMPORT_CONFIGS['manager-tasks'].toolTitle}
+        subtitle={EXCEL_IMPORT_CONFIGS['manager-tasks'].subtitle}
+        templateFilename={EXCEL_IMPORT_CONFIGS['manager-tasks'].templateFilename}
+        columns={EXCEL_IMPORT_CONFIGS['manager-tasks'].columns}
+        sampleRows={EXCEL_IMPORT_CONFIGS['manager-tasks'].sampleRows}
+        onImport={handleImportTasksExcel}
       />
     </div>
   );
