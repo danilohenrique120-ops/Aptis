@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   ArrowRight,
   X,
+  Trash2,
 } from 'lucide-react';
 import { MasterCatalogItem, ClientContractor, Equipment } from '../types';
 
@@ -21,12 +22,14 @@ interface MasterCatalogPanelProps {
   catalog: MasterCatalogItem[];
   clients: ClientContractor[];
   onDeployToClient: (model: MasterCatalogItem, clientId: string, tag: string) => void;
+  onDeleteItem?: (itemId: string) => void;
 }
 
 export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
   catalog,
   clients,
   onDeployToClient,
+  onDeleteItem,
 }) => {
   const [selectedItem, setSelectedItem] = useState<MasterCatalogItem | null>(null);
   const [deployModalOpen, setDeployModalOpen] = useState(false);
@@ -144,15 +147,29 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
               </div>
             </div>
 
-            {/* Quick Deploy Button */}
-            <div className="pt-3 border-t border-slate-100">
+            {/* Quick Deploy & Delete Buttons */}
+            <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
               <button
                 onClick={() => handleOpenDeploy(item)}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 cursor-pointer"
+                className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                Implantar Modelo em um Cliente
+                Implantar Modelo
               </button>
+
+              {onDeleteItem && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Deseja realmente remover o modelo "${item.brand} ${item.model}" do Catálogo Mestre?`)) {
+                      onDeleteItem(item.id);
+                    }
+                  }}
+                  className="p-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition shadow-2xs cursor-pointer"
+                  title="Excluir Modelo do Catálogo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}

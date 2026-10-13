@@ -38,6 +38,15 @@ export function useTenantStorage<T>(
   const localCacheKey = `aptis_${tenantId}_${toolId}_${dataKey}`;
 
   const getDefault = (): T => {
+    // Requisito Essencial: Todo novo cliente (qualquer tenant diferente do sandbox 'tenant-dhp')
+    // deve inicializar 100% limpo, sem nenhum dado fictício de exemplo, pronto para cadastro do zero!
+    if (tenantId !== 'tenant-dhp') {
+      const rawDefault = typeof defaultValue === 'function' ? (defaultValue as () => T)() : defaultValue;
+      if (Array.isArray(rawDefault)) {
+        return [] as unknown as T;
+      }
+    }
+
     return typeof defaultValue === 'function'
       ? (defaultValue as () => T)()
       : defaultValue;

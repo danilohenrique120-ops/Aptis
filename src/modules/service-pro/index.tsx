@@ -23,7 +23,8 @@ import {
   Cpu,
   ShieldCheck,
   Send,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Trash2
 } from 'lucide-react';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
@@ -219,6 +220,29 @@ export const ServiceProModule: React.FC = () => {
       }
       return [savedOrder, ...prev];
     });
+  };
+
+  const handleDeleteEquipment = (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o equipamento "${name}"? Esta ação removerá o ativo e seus agendamentos.`)) {
+      setEquipments((prev) => prev.filter((eq) => eq.id !== id));
+    }
+  };
+
+  const handleDeleteWorkOrder = (id: string, orderNumber: string) => {
+    if (window.confirm(`Deseja realmente excluir a Ordem de Serviço "${orderNumber}"?`)) {
+      setWorkOrders((prev) => prev.filter((wo) => wo.id !== id));
+    }
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    const client = clients.find((c) => c.id === clientId);
+    if (window.confirm(`Tem certeza que deseja excluir a empresa contratante "${client?.name || clientId}"?`)) {
+      setClients((prev) => prev.filter((c) => c.id !== clientId));
+    }
+  };
+
+  const handleDeleteCatalogItem = (itemId: string) => {
+    setMasterCatalog((prev) => prev.filter((m) => m.id !== itemId));
   };
 
   const handleDeployCatalogModel = (
@@ -813,6 +837,14 @@ export const ServiceProModule: React.FC = () => {
                     <Calendar className="w-3.5 h-3.5" />
                     Agendar OS
                   </button>
+
+                  <button
+                    onClick={() => handleDeleteEquipment(eq.id, eq.name)}
+                    className="p-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition shadow-2xs cursor-pointer"
+                    title="Excluir equipamento"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -924,6 +956,14 @@ export const ServiceProModule: React.FC = () => {
                     <Smartphone className="w-3.5 h-3.5" />
                     Abrir App do Técnico
                   </button>
+
+                  <button
+                    onClick={() => handleDeleteWorkOrder(order.id, order.orderNumber)}
+                    className="p-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition shadow-2xs cursor-pointer"
+                    title="Excluir Ordem de Serviço"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -945,6 +985,7 @@ export const ServiceProModule: React.FC = () => {
           catalog={masterCatalog}
           clients={clients}
           onDeployToClient={handleDeployCatalogModel}
+          onDeleteItem={handleDeleteCatalogItem}
         />
       )}
 
@@ -954,6 +995,7 @@ export const ServiceProModule: React.FC = () => {
           clients={clients}
           onAddClient={(newClient) => setClients((prev) => [newClient, ...prev])}
           onOpenPortalSimulation={(client) => setPortalSimulationClient(client)}
+          onDeleteClient={handleDeleteClient}
         />
       )}
 

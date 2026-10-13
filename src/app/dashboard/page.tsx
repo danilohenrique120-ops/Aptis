@@ -460,59 +460,16 @@ export default function DashboardHomePage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="pt-2">
                 <Link
                   href={tool.route}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-2xs"
                 >
                   Conhecer Módulo
                 </Link>
-
-                {/* Atalho de Ativação Rápida no Modo Demo */}
-                {(currentUser.role === 'superadmin' || currentUser.role === 'tenant_admin') && (
-                  <button
-                    onClick={() => toggleLicense(currentTenant.id, tool.id, true)}
-                    className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                    title="Ativar licença de demonstração instantaneamente"
-                  >
-                    Ativar (Demo)
-                  </button>
-                )}
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* SEÇÃO DE GESTÃO DE DADOS & ESTADO DA PLANTA */}
-      <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-            <Database className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-800">
-              Controle de Dados da Organização ({currentTenant.name})
-            </h3>
-            <p className="text-xs text-slate-500">
-              {hasAnyData
-                ? `Dados ativos gravados localmente: ${stats.totalTasks} tarefas, ${stats.totalEmployees} operadores, ${stats.totalTrainings} treinamentos/POPs e ${stats.totalKaizens} Kaizens.`
-                : 'A plataforma está 100% limpa e pronta para receber os primeiros dados reais da sua fábrica.'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {hasAnyData && (
-            <button
-              onClick={handleResetAllData}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 hover:border-rose-600 rounded-lg transition-colors cursor-pointer"
-              title="Zerar todos os dados e começar do zero"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Zerar Todos os Dados
-            </button>
-          )}
         </div>
       </section>
 

@@ -170,25 +170,12 @@ export default function MarketplacePage() {
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 ) : (
-                  <>
-                    <Link
-                      href={tool.route}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
-                    >
-                      Detalhes
-                    </Link>
-
-                    {/* Botão de Toggle para Testes / Admins */}
-                    {(currentUser.role === 'superadmin' || currentUser.role === 'tenant_admin') && (
-                      <button
-                        onClick={() => handleToggle(tool.id, tool.name)}
-                        className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                        title="Ativar licença de teste para esta empresa"
-                      >
-                        Ativar Licença
-                      </button>
-                    )}
-                  </>
+                  <Link
+                    href={tool.route}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-2xs"
+                  >
+                    Detalhes
+                  </Link>
                 )}
               </div>
             </div>

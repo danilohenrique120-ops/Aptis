@@ -15,6 +15,7 @@ import {
   X,
   CheckCircle2,
   Users,
+  Trash2,
 } from 'lucide-react';
 import { ClientContractor } from '../types';
 
@@ -22,12 +23,14 @@ interface ClientManagerProps {
   clients: ClientContractor[];
   onAddClient: (newClient: ClientContractor) => void;
   onOpenPortalSimulation: (client: ClientContractor) => void;
+  onDeleteClient?: (clientId: string) => void;
 }
 
 export const ClientManager: React.FC<ClientManagerProps> = ({
   clients,
   onAddClient,
   onOpenPortalSimulation,
+  onDeleteClient,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -244,18 +247,34 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
               <span className="text-[10px] text-slate-500 font-medium">
                 Início: {new Date(client.contractStartDate).toLocaleDateString('pt-BR')}
               </span>
 
-              <button
-                onClick={() => onOpenPortalSimulation(client)}
-                className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-white hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5 border border-slate-300 shadow-2xs cursor-pointer"
-              >
-                <Eye className="w-3.5 h-3.5 text-blue-600" />
-                Simular Portal VIP do Cliente
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onOpenPortalSimulation(client)}
+                  className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-white hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5 border border-slate-300 shadow-2xs cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+                  Simular Portal VIP
+                </button>
+
+                {onDeleteClient && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Tem certeza que deseja excluir o cliente "${client.name}"? Esta ação removerá os dados do contrato.`)) {
+                        onDeleteClient(client.id);
+                      }
+                    }}
+                    className="p-1.5 text-xs font-bold rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition shadow-2xs cursor-pointer"
+                    title="Excluir Cliente"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

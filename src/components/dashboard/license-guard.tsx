@@ -22,13 +22,41 @@ interface LicenseGuardProps {
 
 export function LicenseGuard({ toolId, children }: LicenseGuardProps) {
   const [isMounted, setIsMounted] = useState(false);
-  const { currentTenant, currentUser, hasLicense, toggleLicense } = useTenant();
+  const { currentTenant, currentUser, hasLicense, toggleLicense, submitLead } = useTenant();
   const [requestedActivation, setRequestedActivation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const tool = getToolById(toolId);
 
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const handleRequestLicense = async () => {
+    setIsSubmitting(true);
+    try {
+      await submitLead({
+        companyName: currentTenant.name,
+        contactName: currentUser.name,
+        email: currentUser.email,
+        phone: '(WhatsApp Corporativo)',
+        teamSize: `${currentTenant.employeeCount || 50} colaboradores`,
+        toolId: tool?.id || toolId,
+        toolName: tool?.name || 'Módulo Aptis',
+        notes: `Solicitação direta de desbloqueio do módulo realizada pelo usuário ${currentUser.name} (${currentUser.role}) no tenant ${currentTenant.name}.`
+      });
+    } catch (e) {
+      console.warn('Erro ao registrar lead:', e);
+    } finally {
+      setIsSubmitting(false);
+      setRequestedActivation(true);
+    }
+  };
+
+  const whatsappMessage = encodeURIComponent(
+    `Olá Danilo! Sou ${currentUser.name} da empresa *${currentTenant.name}* e gostaria de solicitar a liberação do módulo *${tool?.name || toolId}* na plataforma Aptis.`
+  );
+  // Número comercial de atendimento da Aptis Tecnologia (alterável conforme necessidade)
+  const whatsappUrl = `https://wa.me/5511987654321?text=${whatsappMessage}`;
 
   if (!isMounted) {
     return (
@@ -106,16 +134,29 @@ export function LicenseGuard({ toolId, children }: LicenseGuardProps) {
         {/* Ações */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
           {requestedActivation ? (
-            <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-semibold">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-              Solicitação enviada ao time comercial! Entraremos em contato em breve.
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-semibold">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+                Solicitação registrada no sistema!
+              </div>
+
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                Falar no WhatsApp Comercial
+                <ArrowRight className="w-4 h-4" />
+              </a>
             </div>
           ) : (
             <button
-              onClick={() => setRequestedActivation(true)}
-              className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              onClick={handleRequestLicense}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
-              Solicitar Liberação de Licença
+              {isSubmitting ? 'Registrando...' : 'Solicitar Liberação de Licença'}
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
