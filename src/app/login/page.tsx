@@ -56,12 +56,6 @@ function LoginFormContent() {
     }
   };
 
-  const handleQuickFill = (quickEmail: string, quickPass: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-    setErrorMessage('');
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
       {/* Glow e Efeitos de Fundo */}
@@ -156,38 +150,8 @@ function LoginFormContent() {
           </button>
         </form>
 
-        {/* Perfis de Acesso Rápido para Validação e Testes */}
-        <div className="pt-4 border-t border-slate-800/80 space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            <span className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              Perfis de Acesso Rápido para Teste:
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-[11px]">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('carlos.silveira@alfa.ind.br', 'alfa123')}
-              className="p-2 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 rounded-lg text-left transition-colors cursor-pointer group"
-            >
-              <div className="font-bold text-slate-200 group-hover:text-cyan-300 truncate">Carlos Silveira</div>
-              <div className="text-[10px] text-slate-500">Gestor Industrial</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickFill('mariana.souza@alfa.ind.br', 'alfa123')}
-              className="p-2 bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 rounded-lg text-left transition-colors cursor-pointer group"
-            >
-              <div className="font-bold text-slate-200 group-hover:text-cyan-300 truncate">Mariana Souza</div>
-              <div className="text-[10px] text-slate-500">Supervisora de Turno</div>
-            </button>
-          </div>
-        </div>
-
         {/* Rodapé do Card */}
-        <div className="text-center text-[11px] text-slate-500 pt-1">
+        <div className="text-center text-[11px] text-slate-500 pt-2 border-t border-slate-800/80">
           <span>Ambiente seguro protegido por criptografia de ponta a ponta.</span>
         </div>
       </div>
