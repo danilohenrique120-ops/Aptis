@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useTenant } from '@/context/tenant-context';
 import { 
   Building2, 
-  ShieldCheck, 
   ExternalLink,
   LogOut,
   Crown
@@ -63,34 +62,10 @@ export function DashboardHeader() {
             </div>
           </div>
         </div>
-
-        <div className="hidden md:flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            {isMasterWorkspace ? 'Console Global Ativo' : 'Planta 100% Operacional'}
-          </span>
-          {!isMasterWorkspace && currentTenant.document && (
-            <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-medium border border-slate-200">
-              CNPJ: {currentTenant.document}
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Lado Direito: Perfil do Gestor & Ações */}
       <div className="flex items-center gap-3">
-        {/* Badge Corporativo de Função */}
-        <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
-          <ShieldCheck className="w-4 h-4 text-cyan-600" />
-          <div className="flex flex-col text-left">
-            <span className="text-[9px] uppercase font-bold text-slate-400 leading-none">
-              Nível de Acesso
-            </span>
-            <span className="text-xs font-bold text-slate-800">
-              {isSuperAdmin ? 'Fundador / SuperAdmin' : 'Gestor da Empresa'}
-            </span>
-          </div>
-        </div>
 
         {/* Link para Vitrine Pública */}
         <Link

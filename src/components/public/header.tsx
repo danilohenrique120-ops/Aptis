@@ -29,9 +29,6 @@ export function PublicHeader() {
           <a href="#planos" className="hover:text-cyan-400 transition-colors text-cyan-300 font-bold">
             Planos & Valores
           </a>
-          <a href="#arquitetura" className="hover:text-cyan-400 transition-colors">
-            Arquitetura
-          </a>
         </nav>
 
         {/* CTA Principal */}
