@@ -115,31 +115,33 @@ export default function SuperAdminPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-slate-800/80 p-5 rounded-xl border border-slate-700">
           <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Empresas Cadastradas</span>
+            <span>Empresas Clientes Ativas</span>
             <Building2 className="w-4 h-4 text-blue-400" />
           </div>
-          <p className="text-3xl font-bold text-white mt-2">{tenants.length}</p>
-          <span className="text-[11px] text-slate-400">Tenants ativos na infraestrutura</span>
+          <p className="text-3xl font-bold text-white mt-2">
+            {tenants.filter(t => t.id !== 'tenant-dhp').length}
+          </p>
+          <span className="text-[11px] text-slate-400">Clientes B2B + 1 Ambiente Admin Master</span>
         </div>
 
         <div className="bg-slate-800/80 p-5 rounded-xl border border-slate-700">
           <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Licenças Concedidas</span>
+            <span>Licenças Concedidas a Clientes</span>
             <Key className="w-4 h-4 text-amber-400" />
           </div>
           <p className="text-3xl font-bold text-white mt-2">
-            {licenses.filter(l => l.isActive).length}
+            {licenses.filter(l => l.isActive && l.tenantId !== 'tenant-dhp').length}
           </p>
-          <span className="text-[11px] text-emerald-400">Módulos operando em produção</span>
+          <span className="text-[11px] text-emerald-400">Módulos operando em clientes</span>
         </div>
 
         <div className="bg-slate-800/80 p-5 rounded-xl border border-slate-700">
           <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Leads da Vitrine Pública</span>
+            <span>Solicitações & Leads</span>
             <Mail className="w-4 h-4 text-purple-400" />
           </div>
           <p className="text-3xl font-bold text-white mt-2">{leads.length}</p>
-          <span className="text-[11px] text-slate-400">Solicitações de demonstração</span>
+          <span className="text-[11px] text-slate-400">Pedidos de licença e demonstração</span>
         </div>
       </div>
 
@@ -163,7 +165,7 @@ export default function SuperAdminPage() {
               <thead>
                 <tr className="bg-slate-900 border-b border-slate-800 text-slate-300">
                   <th className="py-4 px-4 font-semibold text-xs uppercase tracking-wider sticky left-0 bg-slate-900 z-10 min-w-[240px]">
-                    Empresa Cliente (Tenant)
+                    Organização / Cliente (Tenant)
                   </th>
                   <th className="py-4 px-3 font-semibold text-xs uppercase tracking-wider text-center w-28">
                     Plano
@@ -184,17 +186,33 @@ export default function SuperAdminPage() {
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
                 {tenants.map(tenant => {
+                  const isMaster = tenant.id === 'tenant-dhp';
                   return (
                     <tr key={tenant.id} className="hover:bg-slate-900/60 transition-colors">
                       <td className="py-4 px-4 sticky left-0 bg-slate-950 group-hover:bg-slate-900/60 z-10 border-r border-slate-800">
-                        <div className="font-bold text-white text-sm">{tenant.name}</div>
-                        <div className="text-xs text-slate-400 font-mono mt-0.5">CNPJ: {tenant.document}</div>
-                        <div className="text-[11px] text-slate-500">{tenant.segment} • {tenant.employeeCount} colaboradores</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-sm">{tenant.name}</span>
+                          {isMaster && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              Seu Ambiente Master
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-400 font-mono mt-0.5">
+                          {isMaster ? 'Uso Interno / Diretoria Aptis' : `CNPJ: ${tenant.document}`}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {isMaster ? tenant.segment : `${tenant.segment} • ${tenant.employeeCount} colaboradores`}
+                        </div>
                       </td>
 
                       <td className="py-4 px-3 text-center">
-                        <span className="px-2.5 py-0.5 rounded text-xs font-semibold capitalize font-mono bg-blue-950 text-blue-300 border border-blue-800">
-                          {tenant.plan}
+                        <span className={`px-2.5 py-0.5 rounded text-xs font-semibold capitalize font-mono border ${
+                          isMaster
+                            ? 'bg-amber-950/60 text-amber-300 border-amber-700/60'
+                            : 'bg-blue-950 text-blue-300 border-blue-800'
+                        }`}>
+                          {isMaster ? 'Master' : tenant.plan}
                         </span>
                       </td>
 

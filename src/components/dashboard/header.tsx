@@ -7,29 +7,58 @@ import {
   Building2, 
   ShieldCheck, 
   ExternalLink,
-  Activity,
-  LogOut
+  LogOut,
+  Crown
 } from 'lucide-react';
 
 export function DashboardHeader() {
-  const { currentTenant, currentUser, logout } = useTenant();
+  const { currentTenant, currentUser, tenants, switchTenant, logout } = useTenant();
+
+  const isMasterWorkspace = currentTenant.id === 'tenant-dhp';
+  const isSuperAdmin = currentUser.role === 'superadmin';
 
   return (
     <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
-      {/* Lado Esquerdo: Seletor Multi-Tenant & Status da Planta */}
+      {/* Lado Esquerdo: Identidade do Cliente ou Ambiente Master do Admin */}
       <div className="flex items-center gap-3.5">
         <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
-          <Building2 className="w-4 h-4 text-cyan-600 shrink-0" />
+          {isMasterWorkspace ? (
+            <Crown className="w-4 h-4 text-amber-600 shrink-0" />
+          ) : (
+            <Building2 className="w-4 h-4 text-cyan-600 shrink-0" />
+          )}
           <div className="flex flex-col text-left">
             <span className="text-[9px] uppercase font-bold text-slate-400 leading-none">
-              Unidade Fabril
+              {isMasterWorkspace ? 'Administração Central' : 'Unidade Fabril'}
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-xs font-black text-slate-900 leading-none">
-                {currentTenant.name}
-              </span>
-              <span className="text-[10px] font-bold bg-cyan-100 text-cyan-800 px-1.5 py-0.2 rounded border border-cyan-200 leading-tight">
-                {currentTenant.plan.toUpperCase()}
+              {isSuperAdmin && tenants.length > 1 ? (
+                <select
+                  value={currentTenant.id}
+                  onChange={(e) => switchTenant(e.target.value)}
+                  className="text-xs font-black text-slate-900 bg-transparent outline-none cursor-pointer pr-1"
+                  title="Alternar visualização entre seu Ambiente Master e Empresas Clientes"
+                >
+                  {tenants.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.id === 'tenant-dhp' ? 'Aptis Tecnologia (Admin Master)' : t.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-xs font-black text-slate-900 leading-none">
+                  {isMasterWorkspace ? 'Aptis Tecnologia (Admin Master)' : currentTenant.name}
+                </span>
+              )}
+
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.2 rounded border leading-tight ${
+                  isMasterWorkspace
+                    ? 'bg-amber-100 text-amber-800 border-amber-200'
+                    : 'bg-cyan-100 text-cyan-800 border-cyan-200'
+                }`}
+              >
+                {isMasterWorkspace ? 'MASTER' : currentTenant.plan.toUpperCase()}
               </span>
             </div>
           </div>
@@ -38,11 +67,13 @@ export function DashboardHeader() {
         <div className="hidden md:flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Planta 100% Operacional
+            {isMasterWorkspace ? 'Console Global Ativo' : 'Planta 100% Operacional'}
           </span>
-          <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-medium border border-slate-200">
-            CNPJ: {currentTenant.document}
-          </span>
+          {!isMasterWorkspace && currentTenant.document && (
+            <span className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-medium border border-slate-200">
+              CNPJ: {currentTenant.document}
+            </span>
+          )}
         </div>
       </div>
 
@@ -53,10 +84,10 @@ export function DashboardHeader() {
           <ShieldCheck className="w-4 h-4 text-cyan-600" />
           <div className="flex flex-col text-left">
             <span className="text-[9px] uppercase font-bold text-slate-400 leading-none">
-              Nível Operacional
+              Nível de Acesso
             </span>
             <span className="text-xs font-bold text-slate-800">
-              Gestor Industrial (Admin)
+              {isSuperAdmin ? 'Fundador / SuperAdmin' : 'Gestor da Empresa'}
             </span>
           </div>
         </div>
@@ -82,7 +113,7 @@ export function DashboardHeader() {
               {currentUser.name}
             </div>
             <div className="text-[10px] text-slate-400 leading-tight font-medium">
-              {currentUser.department || 'Liderança'}
+              {currentUser.department || (isMasterWorkspace ? 'Diretoria Aptis' : currentTenant.name)}
             </div>
           </div>
 

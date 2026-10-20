@@ -44,6 +44,12 @@ function LoginFormContent() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (data.user) {
+          try {
+            localStorage.setItem('ecossistema_lider_current_user_id', data.user.id);
+            localStorage.setItem('ecossistema_lider_current_tenant_id', data.user.tenantId);
+          } catch {}
+        }
         // Redireciona para o dashboard com recarregamento para sincronizar cookies
         window.location.href = redirectUrl;
       } else {

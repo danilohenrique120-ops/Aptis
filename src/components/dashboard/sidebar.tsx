@@ -44,18 +44,20 @@ export function DashboardSidebar() {
           <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-400 tracking-wider">
             <span className="flex items-center gap-1">
               <Building2 className="w-3 h-3 text-cyan-400" />
-              Unidade Fabril
+              {currentTenant.id === 'tenant-dhp' ? 'Ambiente Master' : 'Unidade Fabril'}
             </span>
             <span className="flex items-center gap-1 text-emerald-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Apta
+              {currentTenant.id === 'tenant-dhp' ? 'Global' : 'Apta'}
             </span>
           </div>
-          <div className="text-xs font-bold text-white truncate mt-1" title={currentTenant.name}>
-            {currentTenant.name}
+          <div className="text-xs font-bold text-white truncate mt-1" title={currentTenant.id === 'tenant-dhp' ? 'Aptis Tecnologia (Admin Master)' : currentTenant.name}>
+            {currentTenant.id === 'tenant-dhp' ? 'Aptis Tecnologia (Admin Master)' : currentTenant.name}
           </div>
           <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-slate-800/60 text-[11px]">
-            <span className="capitalize font-mono text-cyan-400 text-[10px]">Plano {currentTenant.plan}</span>
+            <span className="capitalize font-mono text-cyan-400 text-[10px]">
+              {currentTenant.id === 'tenant-dhp' ? 'Acesso Fundador' : `Plano ${currentTenant.plan}`}
+            </span>
             <span className="text-[10px] bg-cyan-950/60 text-cyan-300 px-1.5 py-0.2 rounded border border-cyan-800/40 font-semibold font-mono">
               {licensedTools.length} módulos
             </span>

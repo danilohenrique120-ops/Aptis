@@ -8,15 +8,6 @@ import { TOOLS_REGISTRY } from './tools-registry';
  * 
  * Este arquivo é a ÚNICA fonte da verdade para o provisionamento de clientes
  * e módulos no ecossistema Aptis.
- * 
- * Vantagens desta arquitetura:
- * 1. 100% Seguro: Nenhuma pessoa na internet ou visitante da landing page
- *    consegue criar, listar ou alterar seus clientes via formulários públicos.
- * 2. Sincronização Absoluta: Qualquer computador (ou servidor Vercel) que
- *    rodar o projeto terá exatamente os mesmos clientes ativos, sem depender
- *    do localStorage isolado do navegador.
- * 3. Controle Total: Para adicionar uma nova empresa contratada, basta
- *    duplicar o modelo abaixo e preencher os dados do contrato.
  */
 
 export interface RegisteredClientConfig {
@@ -28,44 +19,27 @@ export interface RegisteredClientConfig {
 
 export const REGISTERED_CLIENTS: RegisteredClientConfig[] = [
   // --------------------------------------------------------------------------
-  // CLIENTE 1: DHP (Ambiente Piloto / Principal)
+  // AMBIENTE MASTER DO FUNDADOR (Uso interno do Admin Aptis)
+  // Mantém o ID 'tenant-dhp' para preservar suas tarefas reais do Aptis Routine!
   // --------------------------------------------------------------------------
   {
     tenant: {
       id: 'tenant-dhp',
-      name: 'DHP',
-      document: '00.000.000/0001-00',
+      name: 'Aptis Tecnologia (Admin Master)',
+      document: 'Governança & Diretoria',
       plan: 'enterprise',
       status: 'active',
       createdAt: '2026-01-01',
-      segment: 'Indústria Geral',
-      employeeCount: 200,
-      contactEmail: 'danilohenrique120@gmail.com'
+      segment: 'Administração Central da Plataforma',
+      employeeCount: 1,
+      contactEmail: 'admin@aptis.com.br'
     },
-    users: [
-      {
-        id: 'user-dhp-admin',
-        tenantId: 'tenant-dhp',
-        name: 'Gestor de Operações DHP',
-        email: 'gestao@dhp.ind.br',
-        role: 'tenant_admin',
-        department: 'Gerência Geral de Operações'
-      },
-      {
-        id: 'user-dhp-supervisor',
-        tenantId: 'tenant-dhp',
-        name: 'Supervisor de Chão de Fábrica',
-        email: 'supervisor@dhp.ind.br',
-        role: 'member',
-        department: 'Supervisão de Linha'
-      }
-    ],
-    // DHP possui acesso completo a todas as ferramentas do ecossistema Aptis
+    users: [],
     activeTools: 'ALL'
   },
 
   // --------------------------------------------------------------------------
-  // CLIENTE 2: Manu Manutenções (Contrato de Manutenção - Módulo Único)
+  // CLIENTE 1: Manu Manutenções (Contrato de Manutenção - Módulo Único)
   // --------------------------------------------------------------------------
   {
     tenant: {
@@ -125,15 +99,27 @@ export const REGISTERED_CLIENTS: RegisteredClientConfig[] = [
   */
 ];
 
-// Superadmin global da Aptis Tecnologia (você)
-export const GLOBAL_SUPERADMIN_USER: User = {
-  id: 'user-superadmin',
-  tenantId: 'tenant-dhp',
-  name: 'Administrador Aptis (Fundador)',
-  email: 'admin@ecossistemalider.com.br',
-  role: 'superadmin',
-  department: 'Diretoria Executiva & Governança'
-};
+// Superadmins globais da Aptis Tecnologia (você)
+export const GLOBAL_SUPERADMIN_USERS: User[] = [
+  {
+    id: 'user-superadmin',
+    tenantId: 'tenant-dhp',
+    name: 'Danilo Henrique (Admin Aptis)',
+    email: 'admin@aptis.com.br',
+    role: 'superadmin',
+    department: 'Diretoria Executiva & Governança'
+  },
+  {
+    id: 'user-superadmin-legacy',
+    tenantId: 'tenant-dhp',
+    name: 'Danilo Henrique (Admin Aptis)',
+    email: 'admin@ecossistemalider.com.br',
+    role: 'superadmin',
+    department: 'Diretoria Executiva & Governança'
+  }
+];
+
+export const GLOBAL_SUPERADMIN_USER: User = GLOBAL_SUPERADMIN_USERS[0];
 
 // ============================================================================
 // GERADORES AUTOMÁTICOS DE TENANTS, USERS E LICENSES (Consumidos pela aplicação)
@@ -144,8 +130,8 @@ export function getRegisteredTenants(): Tenant[] {
 }
 
 export function getRegisteredUsers(): User[] {
-  const users = REGISTERED_CLIENTS.flatMap(c => c.users);
-  return [...users, GLOBAL_SUPERADMIN_USER];
+  const clientUsers = REGISTERED_CLIENTS.flatMap(c => c.users);
+  return [...GLOBAL_SUPERADMIN_USERS, ...clientUsers];
 }
 
 export function getRegisteredLicenses(): License[] {

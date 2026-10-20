@@ -54,7 +54,7 @@ function getLocalString(key: string, fallback: string): string {
 }
 
 // IDs de empresas mock antigas que devem ser expurgadas imediatamente de qualquer navegador
-const LEGACY_MOCK_TENANT_IDS = new Set(['tenant-1', 'tenant-2', 'tenant-3']);
+const LEGACY_MOCK_TENANT_IDS = new Set(['tenant-1', 'tenant-2', 'tenant-3', 'dhp-enterprise']);
 
 function getSanitizedTenants(fallback: Tenant[]): Tenant[] {
   if (typeof window === 'undefined') return fallback;
@@ -62,8 +62,11 @@ function getSanitizedTenants(fallback: Tenant[]): Tenant[] {
     const item = localStorage.getItem(STORAGE_KEYS.TENANTS);
     if (!item) return fallback;
     const parsed: Tenant[] = JSON.parse(item);
-    const valid = parsed.filter(t => !LEGACY_MOCK_TENANT_IDS.has(t.id));
-    return valid.length > 0 ? valid : fallback;
+    const fallbackIds = new Set(fallback.map(t => t.id));
+    const extraValid = parsed.filter(
+      t => !LEGACY_MOCK_TENANT_IDS.has(t.id) && !fallbackIds.has(t.id)
+    );
+    return [...fallback, ...extraValid];
   } catch {
     return fallback;
   }
@@ -75,8 +78,11 @@ function getSanitizedLicenses(fallback: License[]): License[] {
     const item = localStorage.getItem(STORAGE_KEYS.LICENSES);
     if (!item) return fallback;
     const parsed: License[] = JSON.parse(item);
-    const valid = parsed.filter(l => !LEGACY_MOCK_TENANT_IDS.has(l.tenantId));
-    return valid.length > 0 ? valid : fallback;
+    const fallbackKeys = new Set(fallback.map(l => `${l.tenantId}:${l.toolId}`));
+    const extraValid = parsed.filter(
+      l => !LEGACY_MOCK_TENANT_IDS.has(l.tenantId) && !fallbackKeys.has(`${l.tenantId}:${l.toolId}`)
+    );
+    return [...fallback, ...extraValid];
   } catch {
     return fallback;
   }
@@ -88,8 +94,11 @@ function getSanitizedUsers(fallback: User[]): User[] {
     const item = localStorage.getItem(STORAGE_KEYS.USERS);
     if (!item) return fallback;
     const parsed: User[] = JSON.parse(item);
-    const valid = parsed.filter(u => !LEGACY_MOCK_TENANT_IDS.has(u.tenantId));
-    return valid.length > 0 ? valid : fallback;
+    const fallbackIds = new Set(fallback.map(u => u.id));
+    const extraValid = parsed.filter(
+      u => !LEGACY_MOCK_TENANT_IDS.has(u.tenantId) && !fallbackIds.has(u.id)
+    );
+    return [...fallback, ...extraValid];
   } catch {
     return fallback;
   }
