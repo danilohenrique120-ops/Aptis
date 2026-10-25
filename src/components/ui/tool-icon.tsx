@@ -15,6 +15,7 @@ import {
   BrainCircuit,
   Wrench,
   Briefcase,
+  Flame,
   LucideProps
 } from 'lucide-react';
 
@@ -24,6 +25,8 @@ interface ToolIconProps extends LucideProps {
 
 export function ToolIcon({ name, ...props }: ToolIconProps) {
   switch (name) {
+    case 'Flame':
+      return <Flame {...props} />;
     case 'BrainCircuit':
       return <BrainCircuit {...props} />;
     case 'Wrench':

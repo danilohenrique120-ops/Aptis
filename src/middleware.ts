@@ -4,9 +4,95 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // 0. Neutralizador automático de Service Workers / Cache de outros projetos (ex: Cadence / Vite PWA na porta 3000)
+  if (
+    pathname === '/sw.js' ||
+    pathname === '/service-worker.js' ||
+    pathname === '/dev-sw.js' ||
+    pathname === '/workbox-sw.js'
+  ) {
+    const swKillScript = `
+      self.addEventListener('install', () => self.skipWaiting());
+      self.addEventListener('activate', async () => {
+        try {
+          if (typeof caches !== 'undefined') {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          }
+          await self.registration.unregister();
+          const clientList = await self.clients.matchAll({ type: 'window' });
+          for (const client of clientList) {
+            client.navigate(client.url);
+          }
+        } catch (e) {}
+      });
+    `;
+    return new NextResponse(swKillScript, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    });
+  }
+
+  if (
+    pathname === '/src/main.tsx' ||
+    pathname === '/@vite/client' ||
+    pathname === '/@react-refresh' ||
+    pathname === '/registerSW.js'
+  ) {
+    const clientHealScript = `
+      (async function() {
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const reg of regs) {
+              await reg.unregister();
+            }
+          }
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            for (const k of keys) {
+              await caches.delete(k);
+            }
+          }
+        } catch (e) {}
+        if (!window.__aptisSwCleared) {
+          window.__aptisSwCleared = true;
+          window.location.reload();
+        }
+      })();
+    `;
+    return new NextResponse(clientHealScript, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+    });
+  }
+
   // 1. Proteção de rotas do Dashboard (/dashboard): Redireciona para /login se não houver sessão ativa
   const userSession = request.cookies.get('aptis_user_session')?.value;
 
+  // 1A. Proteção exclusiva do Painel Fitness (/performance/painel): Redireciona para /performance/login
+  if (pathname.startsWith('/performance/painel')) {
+    if (!userSession) {
+      const perfLoginUrl = new URL('/performance/login', request.url);
+      perfLoginUrl.searchParams.set('redirect', pathname + request.nextUrl.search);
+      return NextResponse.redirect(perfLoginUrl);
+    }
+  }
+
+  // 1B. Se já estiver autenticado e acessar /performance/login, vai direto para /performance/painel
+  if (pathname === '/performance/login') {
+    if (userSession) {
+      return NextResponse.redirect(new URL('/performance/painel', request.url));
+    }
+  }
+
+  // 1. Proteção de rotas do Dashboard Industrial (/dashboard): Redireciona para /login se não houver sessão ativa
   if (pathname.startsWith('/dashboard')) {
     if (!userSession) {
       const loginUrl = new URL('/login', request.url);

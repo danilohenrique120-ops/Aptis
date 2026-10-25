@@ -43,7 +43,8 @@ export type ToolCategory =
   | 'Planejamento & PCP'
   | 'Qualidade & WCM'
   | 'Manutenção & Serviços'
-  | 'Consultoria & Estratégia';
+  | 'Consultoria & Estratégia'
+  | 'Alta Performance & Fitness';
 
 export type ToolStatus = 'active' | 'beta' | 'coming_soon';
 

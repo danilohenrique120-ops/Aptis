@@ -25,6 +25,7 @@ interface SmartDocumentImporterModalProps {
   clients: ClientContractor[];
   masterCatalog: MasterCatalogItem[];
   onImportEquipment: (equipment: Equipment) => void;
+  onSaveCatalogItem?: (item: MasterCatalogItem) => void;
 }
 
 interface DemoPreset {
@@ -157,12 +158,14 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
   clients,
   masterCatalog,
   onImportEquipment,
+  onSaveCatalogItem,
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<DemoPreset | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processStep, setProcessStep] = useState<string>('');
   const [parsedData, setParsedData] = useState<Partial<Equipment> | null>(null);
+  const [saveToMasterCatalog, setSaveToMasterCatalog] = useState<boolean>(true);
 
   // Form assignment state
   const [selectedClientId, setSelectedClientId] = useState<string>(clients[0]?.id || '');
@@ -188,7 +191,7 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
     setIsProcessing(true);
     setParsedData(null);
 
-    setProcessStep('Digitalizando documento e executando OCR...');
+    setProcessStep('Digitalizando documento e executando leitura local...');
     setTimeout(() => {
       setProcessStep('Localizando dados cadastrais: Marca, Modelo e Número de Série...');
       setTimeout(() => {
@@ -203,9 +206,9 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
               .toISOString()
               .split('T')[0],
           });
-        }, 800);
-      }, 700);
-    }, 600);
+        }, 700);
+      }, 600);
+    }, 500);
   };
 
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,13 +216,21 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
     if (!file) return;
 
     setUploadedFileName(file.name);
-    const preset = DEMO_PRESETS[0];
-    setSelectedPreset({
-      ...preset,
+    const lowerName = file.name.toLowerCase();
+    let basePreset = DEMO_PRESETS[0];
+    if (lowerName.includes('chiller') || lowerName.includes('ar') || lowerName.includes('hvac')) {
+      basePreset = DEMO_PRESETS[1];
+    } else if (lowerName.includes('gerador') || lowerName.includes('cummins') || lowerName.includes('weg')) {
+      basePreset = DEMO_PRESETS[2];
+    }
+
+    const customPreset: DemoPreset = {
+      ...basePreset,
       sourceDoc: file.name,
       type: file.type.includes('pdf') ? 'Documento PDF' : 'Imagem de Plaqueta',
-    });
-    runSimulatedOcr(preset);
+    };
+    setSelectedPreset(customPreset);
+    runSimulatedOcr(customPreset);
   };
 
   const handleConfirmAndSave = () => {
@@ -256,10 +267,32 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
         recommendedParts: [],
       },
       qrCodeId: `QR-${parsedData.tag || 'EQ'}-${Math.floor(1000 + Math.random() * 9000)}`,
-      notes: `Importado e interpretado via OCR IA em ${new Date().toLocaleDateString('pt-BR')}`,
+      notes: `Importado em ${new Date().toLocaleDateString('pt-BR')} (${uploadedFileName})`,
     };
 
     onImportEquipment(newEquipment);
+
+    // Se marcado, também cadastra/atualiza no Catálogo Mestre!
+    if (saveToMasterCatalog && onSaveCatalogItem) {
+      const catalogItem: MasterCatalogItem = {
+        id: `cat-imp-${Date.now()}`,
+        category: newEquipment.category,
+        brand: newEquipment.brand,
+        model: newEquipment.model,
+        capacity: newEquipment.capacity || 'Padrão Industrial',
+        manualPdfName: uploadedFileName || `manual_${newEquipment.brand.toLowerCase()}.pdf`,
+        activeDeploymentsCount: 1,
+        specs: newEquipment.specs,
+        maintenancePlan: newEquipment.maintenancePlan,
+        commonSpareParts: (newEquipment.maintenancePlan.recommendedParts || []).map((p, idx) => ({
+          code: `PEC-0${idx + 1}`,
+          description: p,
+          suggestedReplacementInterval: `A cada ${newEquipment.maintenancePlan.intervalMonths} meses`
+        }))
+      };
+      onSaveCatalogItem(catalogItem);
+    }
+
     onClose();
   };
 
@@ -573,6 +606,25 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
                   </ul>
                 </div>
               )}
+
+              {/* Opção de Homologação Automática no Catálogo Mestre */}
+              <label className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 flex items-start gap-3 cursor-pointer hover:bg-blue-100/60 transition">
+                <input
+                  type="checkbox"
+                  checked={saveToMasterCatalog}
+                  onChange={e => setSaveToMasterCatalog(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-blue-600 rounded cursor-pointer"
+                />
+                <div className="text-xs">
+                  <span className="font-bold text-blue-950 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-blue-600" />
+                    Homologar também este modelo no Catálogo Mestre
+                  </span>
+                  <span className="text-blue-700 block mt-0.5">
+                    Salva a ficha técnica, o plano preventivo e as peças de reposição como modelo padrão para reutilizar em futuras máquinas sem precisar recadastrar.
+                  </span>
+                </div>
+              </label>
             </div>
           )}
         </div>

@@ -212,7 +212,10 @@ export const ServiceProModule: React.FC = () => {
     setEquipments((prev) => [newEquipment, ...prev]);
   };
 
-  const handleSaveWorkOrder = (savedOrder: MaintenanceWorkOrder) => {
+  const handleSaveWorkOrder = (
+    savedOrder: MaintenanceWorkOrder,
+    shareToWaze: boolean = true
+  ) => {
     setWorkOrders((prev) => {
       const exists = prev.some((o) => o.id === savedOrder.id);
       if (exists) {
@@ -220,6 +223,127 @@ export const ServiceProModule: React.FC = () => {
       }
       return [savedOrder, ...prev];
     });
+
+    // Aprendizado Automático: Se a OS tiver Causa Raiz preenchida e shareToWaze ativo,
+    // alimenta ou atualiza a base do Copiloto IA (Waze da Manutenção) automaticamente!
+    if (shareToWaze && savedOrder.rootCauseFound && savedOrder.rootCauseFound.trim() !== '') {
+      const cleanSymptom = (
+        savedOrder.symptomsReported || `Falha em ${savedOrder.equipmentName}`
+      )
+        .replace(/^\[Sintoma Detectado via Copiloto IA\]:\s*/i, '')
+        .trim();
+
+      const partsList =
+        savedOrder.sparePartsUsed && savedOrder.sparePartsUsed.length > 0
+          ? savedOrder.sparePartsUsed.map((p) =>
+              p.partCode ? `${p.description} (${p.partCode})` : p.description
+            )
+          : ['Kit de Inspeção / Reparo Padrão'];
+
+      const modelName = savedOrder.equipmentModel || savedOrder.equipmentName;
+      const eqMatch = equipments.find((e) => e.id === savedOrder.equipmentId);
+      const categoryName = eqMatch?.category || 'Manutenção Industrial';
+
+      setDiagnostics((prev) => {
+        const existingIdx = prev.findIndex(
+          (d) =>
+            d.equipmentModel.toLowerCase() === modelName.toLowerCase() &&
+            (d.symptomTitle.toLowerCase() === cleanSymptom.toLowerCase() ||
+              cleanSymptom.toLowerCase().includes(d.symptomTitle.toLowerCase().slice(0, 18)))
+        );
+
+        if (existingIdx > -1) {
+          const updated = [...prev];
+          const target = { ...updated[existingIdx], causes: [...updated[existingIdx].causes] };
+
+          const causeIdx = target.causes.findIndex(
+            (c) => c.cause.toLowerCase() === savedOrder.rootCauseFound!.trim().toLowerCase()
+          );
+
+          if (causeIdx > -1) {
+            const existingCause = target.causes[causeIdx];
+            const updatedClients = Array.from(
+              new Set([...existingCause.clientsAffected, savedOrder.clientName])
+            );
+            const updatedParts = Array.from(
+              new Set([...existingCause.recommendedParts, ...partsList])
+            );
+            target.causes[causeIdx] = {
+              ...existingCause,
+              resolution: savedOrder.actionsTaken?.trim() || existingCause.resolution,
+              recommendedParts: updatedParts,
+              casesResolvedCount: (existingCause.casesResolvedCount || 1) + 1,
+              confidenceScore: Math.min(99, (existingCause.confidenceScore || 85) + 2),
+              clientsAffected: updatedClients,
+            };
+          } else {
+            target.causes.unshift({
+              cause: savedOrder.rootCauseFound!.trim(),
+              resolution:
+                savedOrder.actionsTaken?.trim() ||
+                'Intervenção corretiva validada em campo pelo técnico.',
+              recommendedParts: partsList,
+              confidenceScore: 88,
+              casesResolvedCount: 1,
+              clientsAffected: [savedOrder.clientName],
+            });
+          }
+
+          updated[existingIdx] = target;
+          return updated;
+        }
+
+        // Cria um novo card no Waze da Manutenção
+        const newDiagnostic: CrossClientDiagnostic = {
+          equipmentModel: modelName,
+          equipmentCategory: categoryName,
+          symptomTitle: cleanSymptom,
+          symptomKeywords: cleanSymptom
+            .toLowerCase()
+            .replace(/[^\w\sà-ú]/gi, '')
+            .split(/\s+/)
+            .filter((w) => w.length > 3)
+            .slice(0, 5),
+          averageRepairTimeHours: savedOrder.laborHours || 2,
+          causes: [
+            {
+              cause: savedOrder.rootCauseFound!.trim(),
+              resolution:
+                savedOrder.actionsTaken?.trim() ||
+                'Intervenção corretiva validada em campo pelo técnico.',
+              recommendedParts: partsList,
+              confidenceScore: 92,
+              casesResolvedCount: 1,
+              clientsAffected: [savedOrder.clientName],
+            },
+          ],
+        };
+
+        return [newDiagnostic, ...prev];
+      });
+    }
+  };
+
+  const handleSaveDiagnostic = (diag: CrossClientDiagnostic, editIndex?: number) => {
+    setDiagnostics((prev) => {
+      if (editIndex !== undefined && editIndex >= 0 && editIndex < prev.length) {
+        const updated = [...prev];
+        updated[editIndex] = diag;
+        return updated;
+      }
+      return [diag, ...prev];
+    });
+  };
+
+  const handleDeleteDiagnostic = (index: number) => {
+    const target = diagnostics[index];
+    if (
+      window.confirm(
+        `Deseja realmente remover o diagnóstico "${target?.symptomTitle || ''}" do Waze da Manutenção?`
+      )
+    ) {
+      setDiagnostics((prev) => prev.filter((_, idx) => idx !== index));
+    }
   };
 
   const handleDeleteEquipment = (id: string, name: string) => {
@@ -241,8 +365,82 @@ export const ServiceProModule: React.FC = () => {
     }
   };
 
+  const handleSaveCatalogItem = (savedItem: MasterCatalogItem) => {
+    setMasterCatalog((prev) => {
+      const exists = prev.some(
+        (m) =>
+          m.id === savedItem.id ||
+          (m.brand.toLowerCase() === savedItem.brand.toLowerCase() &&
+            m.model.toLowerCase() === savedItem.model.toLowerCase())
+      );
+      if (exists) {
+        return prev.map((m) =>
+          m.id === savedItem.id ||
+          (m.brand.toLowerCase() === savedItem.brand.toLowerCase() &&
+            m.model.toLowerCase() === savedItem.model.toLowerCase())
+            ? { ...savedItem, id: m.id }
+            : m
+        );
+      }
+      return [savedItem, ...prev];
+    });
+  };
+
   const handleDeleteCatalogItem = (itemId: string) => {
     setMasterCatalog((prev) => prev.filter((m) => m.id !== itemId));
+  };
+
+  const handleGenerateBatchWorkOrders = (model: MasterCatalogItem): number => {
+    const matchingEquipments = equipments.filter(
+      (eq) =>
+        eq.model.toLowerCase() === model.model.toLowerCase() ||
+        eq.brand.toLowerCase() === model.brand.toLowerCase()
+    );
+
+    const targets = matchingEquipments.length > 0 ? matchingEquipments : equipments.slice(0, 1);
+    const createdOrders: MaintenanceWorkOrder[] = targets.map((eq, idx) => ({
+      id: `wo-batch-${Date.now()}-${idx}`,
+      orderNumber: `OS-2026-${Math.floor(200 + Math.random() * 790)}`,
+      clientId: eq.clientId,
+      clientName: eq.clientName || 'Cliente Industrial',
+      branchId: eq.branchId,
+      branchName: eq.branchName || 'Planta Principal',
+      equipmentId: eq.id,
+      equipmentTag: eq.tag,
+      equipmentName: eq.name,
+      equipmentModel: `${model.brand} ${model.model}`,
+      type: 'preventive',
+      status: 'scheduled',
+      priority: 'normal',
+      scheduledDate:
+        eq.nextPreventiveDate ||
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      scheduledTimeWindow: '08:00 - 12:00',
+      technicianName: 'Carlos Silveira',
+      symptomsReported: `Manutenção Preventiva Programada via Catálogo Mestre (${
+        model.maintenancePlan.legalNorm || 'Padrão'
+      }).`,
+      checklist: (model.maintenancePlan.checklistItems || []).map((c, i) => ({
+        id: `chk-cat-${i}`,
+        description: c,
+        status: 'passed' as const,
+      })),
+      sparePartsUsed: (model.commonSpareParts || []).map((p) => ({
+        partCode: p.code,
+        description: p.description,
+        quantity: 1,
+        unitPrice: 220,
+      })),
+      laborHours: 2.5,
+      laborCost: 300,
+      totalCost: 300 + (model.commonSpareParts?.length || 1) * 220,
+      beforePhotos: [],
+      afterPhotos: [],
+      whatsappConfirmationSent: false,
+    }));
+
+    setWorkOrders((prev) => [...createdOrders, ...prev]);
+    return createdOrders.length;
   };
 
   const handleDeployCatalogModel = (
@@ -279,6 +477,13 @@ export const ServiceProModule: React.FC = () => {
     };
 
     setEquipments((prev) => [newEquip, ...prev]);
+    setMasterCatalog((prev) =>
+      prev.map((m) =>
+        m.id === model.id
+          ? { ...m, activeDeploymentsCount: (m.activeDeploymentsCount || 0) + 1 }
+          : m
+      )
+    );
     setActiveTab('equipments');
   };
 
@@ -480,7 +685,7 @@ export const ServiceProModule: React.FC = () => {
           { key: 'equipments', label: 'Parque de Máquinas', icon: Cpu, count: equipments.length },
           { key: 'calendar', label: 'Agenda & Visitas', icon: Calendar, count: pendingOrders },
           { key: 'work_orders', label: 'Ordens de Serviço (OS)', icon: FileText, count: workOrders.length },
-          { key: 'diagnostics', label: 'Copiloto IA (Waze)', icon: Sparkles },
+          { key: 'diagnostics', label: 'Copiloto IA (Waze)', icon: Sparkles, count: diagnostics.length },
           { key: 'catalog', label: 'Catálogo Mestre', icon: Layers, count: masterCatalog.length },
           { key: 'clients', label: 'Clientes & Contratos', icon: Building2, count: clients.length },
         ].map((tab) => {
@@ -975,7 +1180,11 @@ export const ServiceProModule: React.FC = () => {
       {activeTab === 'diagnostics' && (
         <CrossClientAiDiagnostics
           diagnostics={diagnostics}
+          equipments={equipments}
+          masterCatalog={masterCatalog}
           onApplyDiagnosticToOrder={handleApplyDiagnosticToOrder}
+          onSaveDiagnostic={handleSaveDiagnostic}
+          onDeleteDiagnostic={handleDeleteDiagnostic}
         />
       )}
 
@@ -984,8 +1193,11 @@ export const ServiceProModule: React.FC = () => {
         <MasterCatalogPanel
           catalog={masterCatalog}
           clients={clients}
+          equipments={equipments}
           onDeployToClient={handleDeployCatalogModel}
+          onSaveCatalogItem={handleSaveCatalogItem}
           onDeleteItem={handleDeleteCatalogItem}
+          onGenerateBatchWorkOrders={handleGenerateBatchWorkOrders}
         />
       )}
 
@@ -1006,6 +1218,7 @@ export const ServiceProModule: React.FC = () => {
         clients={clients}
         masterCatalog={masterCatalog}
         onImportEquipment={handleImportEquipment}
+        onSaveCatalogItem={handleSaveCatalogItem}
       />
 
       <QRCodeManagerModal

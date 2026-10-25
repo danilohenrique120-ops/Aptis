@@ -116,6 +116,14 @@ export const GLOBAL_SUPERADMIN_USERS: User[] = [
     email: 'admin@ecossistemalider.com.br',
     role: 'superadmin',
     department: 'Diretoria Executiva & Governança'
+  },
+  {
+    id: 'user-trainer-drz',
+    tenantId: 'tenant-dhp',
+    name: 'Treinador Head (DRZ TEAM)',
+    email: 'treinador@aptis.com.br',
+    role: 'superadmin',
+    department: 'Consultoria Online & Alta Performance'
   }
 ];
 

@@ -64,7 +64,7 @@ export default function HomePage() {
     };
   }, []);
 
-  const allTools = getAllTools();
+  const allTools = getAllTools().filter(t => t.id !== 'performance-pro');
 
   const filteredTools = allTools.filter(tool => {
     const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;

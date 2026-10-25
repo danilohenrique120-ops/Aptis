@@ -18,6 +18,7 @@ import {
   Share2,
   Check,
   FileCheck,
+  Sparkles,
 } from 'lucide-react';
 import { MaintenanceWorkOrder, ChecklistItemState, SparePartUsed } from '../types';
 
@@ -25,7 +26,7 @@ interface DigitalOSMobileModalProps {
   isOpen: boolean;
   onClose: () => void;
   workOrder: MaintenanceWorkOrder | null;
-  onSaveWorkOrder: (updatedOrder: MaintenanceWorkOrder) => void;
+  onSaveWorkOrder: (updatedOrder: MaintenanceWorkOrder, shareToWaze?: boolean) => void;
 }
 
 export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
@@ -44,6 +45,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   const [hasSignature, setHasSignature] = useState(false);
   const [status, setStatus] = useState<MaintenanceWorkOrder['status']>('in_progress');
   const [whatsappSent, setWhatsappSent] = useState(false);
+  const [shareToWaze, setShareToWaze] = useState(true);
 
   // Photos state
   const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
@@ -204,7 +206,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
       whatsappConfirmationSent: whatsappSent,
     };
 
-    onSaveWorkOrder(updated);
+    onSaveWorkOrder(updated, shareToWaze);
     onClose();
   };
 
@@ -510,6 +512,26 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 mt-1 resize-none text-slate-800"
                 />
               </div>
+
+              {/* Automatic Waze Knowledge Base Sync Checkbox */}
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-50/80 border border-blue-200 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={shareToWaze}
+                  onChange={(e) => setShareToWaze(e.target.checked)}
+                  className="mt-0.5 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="text-[11px] leading-relaxed">
+                  <span className="font-bold text-blue-900 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                    Compartilhar solução automaticamente no Waze da Manutenção
+                  </span>
+                  <span className="text-slate-600 block">
+                    Ao salvar com a Causa Raiz preenchida, o sistema atualizará a base inteligente
+                    do modelo <strong>{workOrder.equipmentModel}</strong> para orientar toda a equipe.
+                  </span>
+                </div>
+              </label>
 
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1">

@@ -12,6 +12,7 @@ import BacterialGanttModule from '@/modules/bacterial-gantt';
 import TwttpHercaModule from '@/modules/twttp-herca';
 import ServiceProModule from '@/modules/service-pro';
 import AdvisoryModule from '@/modules/advisory';
+import PerformanceProModule from '@/modules/performance-pro';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +57,8 @@ export default async function ToolPage({
         return <ServiceProModule />;
       case 'advisory':
         return <AdvisoryModule />;
+      case 'performance-pro':
+        return <PerformanceProModule />;
       default:
         return (
           <div className="bg-white p-12 rounded-xl border border-slate-200 text-center">

@@ -10,6 +10,7 @@ export const USER_COOKIE_NAME = 'aptis_user_session';
 const USER_PASSWORDS: Record<string, string> = {
   'admin@ecossistemalider.com.br': 'aptis2026',
   'admin@aptis.com.br': 'aptis2026',
+  'treinador@aptis.com.br': 'drz2026',
   'gestao@dhp.ind.br': 'dhp123',
   'supervisor@dhp.ind.br': 'dhp123',
   'lucas.pinho@manumanutencao.com.br': 'manu2026'

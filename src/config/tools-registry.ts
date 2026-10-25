@@ -257,6 +257,32 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
       hover: 'hover:border-indigo-500',
       lightBg: 'bg-indigo-50'
     }
+  },
+  {
+    id: 'performance-pro',
+    name: 'Aptis Performance Pro',
+    shortDescription: 'Sistema operacional de vendas, diagnóstico de Score, check-in 1:1 anti-cancelamento e gamificação de alunos para Treinadores e Consultorias Online.',
+    fullDescription: 'A cabine de comando definitiva para Treinadores, Consultorias Fitness Online e Mentores de Alta Performance. Una captação previsível de leads via Quiz de Prontidão Física (Score 0-100%), gestão de carteira de alunos com alerta de renovação no WhatsApp, fila de Check-in Semanal 1:1 com semáforo anti-churn e sistema gamificado de patentes para viralização nos Stories.',
+    category: 'Alta Performance & Fitness',
+    route: '/dashboard/tools/performance-pro',
+    iconName: 'Flame',
+    status: 'active',
+    badge: 'Consultoria Fitness & Performance',
+    recommendedPlan: 'pro',
+    keyFeatures: [
+      'Radar de Leads & Calculadora de Score de Prontidão Física para Link da Bio',
+      'Gestão de Alunos, Planos (Mensal/Trimestral/Semestral) e Alertas de Renovação',
+      'Fila de Check-in Semanal 1:1 com Semáforo Anti-Cancelamento (Zero Churn)',
+      'Matriz Gamificada de Patentes do Aluno com Card Oficial para Instagram Stories',
+      'Scripts prontos de abordagem comercial e feedback 1:1 integrados ao WhatsApp'
+    ],
+    colorTheme: {
+      bg: 'bg-cyan-600',
+      text: 'text-cyan-600',
+      border: 'border-cyan-200',
+      hover: 'hover:border-cyan-500',
+      lightBg: 'bg-cyan-50'
+    }
   }
 ];
 
@@ -272,11 +298,11 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
 ];
 
 export function getAllTools(): ToolDefinition[] {
-  return TOOLS_REGISTRY;
+  return TOOLS_REGISTRY.filter(t => t.id !== 'performance-pro');
 }
 
 export function getActiveTools(): ToolDefinition[] {
-  return TOOLS_REGISTRY.filter(t => t.status === 'active');
+  return TOOLS_REGISTRY.filter(t => t.status === 'active' && t.id !== 'performance-pro');
 }
 
 export function getToolById(id: string): ToolDefinition | undefined {
