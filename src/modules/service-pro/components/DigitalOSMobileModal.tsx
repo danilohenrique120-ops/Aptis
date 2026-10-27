@@ -2,37 +2,46 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Smartphone,
+  ClipboardCheck,
   CheckCircle2,
-  AlertTriangle,
   Camera,
   Wrench,
   PenTool,
   Clock,
   RotateCcw,
-  Send,
   X,
   Plus,
   Trash2,
-  Building2,
   Share2,
   Check,
-  FileCheck,
   Sparkles,
+  Calendar,
 } from 'lucide-react';
 import { MaintenanceWorkOrder, ChecklistItemState, SparePartUsed } from '../types';
+
+export interface PreventiveCycleOptions {
+  nextCycleMonths: number;
+  nextPreventiveDate: string;
+  autoCreateNextOS: boolean;
+}
 
 interface DigitalOSMobileModalProps {
   isOpen: boolean;
   onClose: () => void;
   workOrder: MaintenanceWorkOrder | null;
-  onSaveWorkOrder: (updatedOrder: MaintenanceWorkOrder, shareToWaze?: boolean) => void;
+  defaultCycleMonths?: number;
+  onSaveWorkOrder: (
+    updatedOrder: MaintenanceWorkOrder,
+    shareToWaze?: boolean,
+    preventiveCycle?: PreventiveCycleOptions
+  ) => void;
 }
 
 export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   isOpen,
   onClose,
   workOrder,
+  defaultCycleMonths = 3,
   onSaveWorkOrder,
 }) => {
   const [checklist, setChecklist] = useState<ChecklistItemState[]>([]);
@@ -47,6 +56,11 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   const [whatsappSent, setWhatsappSent] = useState(false);
   const [shareToWaze, setShareToWaze] = useState(true);
 
+  // Preventive cycle scheduling state
+  const [nextCycleMonths, setNextCycleMonths] = useState<number>(3);
+  const [nextPreventiveDate, setNextPreventiveDate] = useState<string>('');
+  const [autoCreateNextOS, setAutoCreateNextOS] = useState<boolean>(false);
+
   // Photos state
   const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
   const [afterPhotos, setAfterPhotos] = useState<string[]>([]);
@@ -54,6 +68,12 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   // Canvas ref for digital signature
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
+
+  const computeNextDate = (months: number): string => {
+    const dt = new Date();
+    dt.setMonth(dt.getMonth() + months);
+    return dt.toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     if (workOrder) {
@@ -89,8 +109,13 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
       setStatus(workOrder.status);
       setHasSignature(!!workOrder.clientSignatureBase64);
       setWhatsappSent(workOrder.whatsappConfirmationSent);
+
+      const initialMonths = defaultCycleMonths || 3;
+      setNextCycleMonths(initialMonths);
+      setNextPreventiveDate(computeNextDate(initialMonths));
+      setAutoCreateNextOS(false);
     }
-  }, [workOrder]);
+  }, [workOrder, defaultCycleMonths]);
 
   // Set up canvas when opened
   useEffect(() => {
@@ -109,7 +134,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   if (!isOpen || !workOrder) return null;
 
   // Drawing event handlers
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const startDrawing = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     isDrawingRef.current = true;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -184,13 +211,20 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   const laborTotal = laborHours * laborHourlyRate;
   const grandTotal = partsTotal + laborTotal;
 
+  const handleCycleChange = (months: number) => {
+    setNextCycleMonths(months);
+    setNextPreventiveDate(computeNextDate(months));
+  };
+
   const handleSave = (markCompleted: boolean = false) => {
     const signatureBase64 = canvasRef.current ? canvasRef.current.toDataURL() : undefined;
 
     const updated: MaintenanceWorkOrder = {
       ...workOrder,
       status: markCompleted ? 'completed' : status,
-      completedDate: markCompleted ? new Date().toISOString().split('T')[0] : workOrder.completedDate,
+      completedDate: markCompleted
+        ? new Date().toISOString().split('T')[0]
+        : workOrder.completedDate,
       checklist,
       sparePartsUsed: spareParts,
       rootCauseFound: rootCause,
@@ -206,13 +240,23 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
       whatsappConfirmationSent: whatsappSent,
     };
 
-    onSaveWorkOrder(updated, shareToWaze);
+    onSaveWorkOrder(
+      updated,
+      shareToWaze,
+      markCompleted
+        ? {
+            nextCycleMonths,
+            nextPreventiveDate,
+            autoCreateNextOS,
+          }
+        : undefined
+    );
     onClose();
   };
 
   const handleSendWhatsAppNotification = () => {
     const msg = encodeURIComponent(
-      `*APTIS SERVICE PRO - RELATÓRIO DE MANUTENÇÃO*\n\nOlá, a Ordem de Serviço *${workOrder.orderNumber}* do equipamento *${workOrder.equipmentTag}* (${workOrder.equipmentName}) na unidade *${workOrder.branchName}* foi concluída com sucesso pelo técnico *${workOrder.technicianName}*.\n\nAssinada digitalmente por: ${signedByName || 'Responsável'}\nStatus: Concluída e Operacional.\nConsulte o laudo completo no Portal do Cliente.`
+      `*APTIS SERVICE PRO - LAUDO DE MANUTENÇÃO*\n\nOlá, a Ordem de Serviço *${workOrder.orderNumber}* do equipamento *${workOrder.equipmentTag}* (${workOrder.equipmentName}) na unidade *${workOrder.branchName}* foi concluída com sucesso.\n\n📅 *Próxima Preventiva Programada:* ${nextPreventiveDate}\n✍️ *Responsável:* ${signedByName || 'Responsável'}\nStatus: Concluída e Operacional.`
     );
     window.open(`https://wa.me/?text=${msg}`, '_blank');
     setWhatsappSent(true);
@@ -220,17 +264,19 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-      {/* Mobile Device Container Frame - Solid White */}
-      <div className="bg-white border border-slate-300 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
-        {/* Mobile Header Bar - Solid Dark Industrial Header */}
+      {/* Container Frame - Solid White */}
+      <div className="bg-white border border-slate-300 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+        {/* Header Bar - Solid Dark Industrial Header */}
         <div className="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center shadow-xs">
-              <Smartphone className="w-5 h-5" />
+              <ClipboardCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black text-white">{workOrder.orderNumber}</span>
+                <span className="text-sm font-black text-white">
+                  Ficha de Execução & Baixa • {workOrder.orderNumber}
+                </span>
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     status === 'completed'
@@ -238,7 +284,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                   }`}
                 >
-                  {status === 'completed' ? 'CONCLUÍDA' : 'EM ANDAMENTO'}
+                  {status === 'completed' ? 'CONCLUÍDA' : 'EM ABERTO'}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -248,7 +294,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -263,7 +309,8 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             </span>
           </div>
           <span className="text-[11px] font-mono text-slate-500">
-            Técnico: <strong className="text-slate-800 font-bold">{workOrder.technicianName}</strong>
+            Responsável Execução:{' '}
+            <strong className="text-slate-800 font-bold">{workOrder.technicianName}</strong>
           </span>
         </div>
 
@@ -357,7 +404,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                 ) : (
                   <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white">
                     <Camera className="w-6 h-6 mb-1 opacity-50" />
-                    <span className="text-[10px]">Tirar foto</span>
+                    <span className="text-[10px]">Anexar foto</span>
                   </div>
                 )}
               </div>
@@ -381,7 +428,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                 ) : (
                   <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white">
                     <Camera className="w-6 h-6 mb-1 opacity-50" />
-                    <span className="text-[10px]">Tirar foto</span>
+                    <span className="text-[10px]">Anexar foto</span>
                   </div>
                 )}
               </div>
@@ -426,9 +473,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                         }}
                         className="w-full text-xs bg-transparent border-none font-bold text-slate-900 focus:outline-none"
                       />
-                      <span className="text-[10px] text-slate-500 font-mono">
-                        {part.partCode}
-                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">{part.partCode}</span>
                     </div>
 
                     <div className="w-16">
@@ -528,7 +573,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   </span>
                   <span className="text-slate-600 block">
                     Ao salvar com a Causa Raiz preenchida, o sistema atualizará a base inteligente
-                    do modelo <strong>{workOrder.equipmentModel}</strong> para orientar toda a equipe.
+                    do modelo <strong>{workOrder.equipmentModel}</strong>.
                   </span>
                 </div>
               </label>
@@ -536,7 +581,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1">
                   <label className="text-[11px] font-bold text-slate-700">
-                    Horas de Mão de Obra (Técnico):
+                    Horas de Mão de Obra:
                   </label>
                   <input
                     type="number"
@@ -558,12 +603,76 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             </div>
           </div>
 
-          {/* Section 5: Digital Signature Canvas */}
+          {/* Section 5: Programação Automática da Próxima Preventiva */}
+          <div className="space-y-3 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+            <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+              <h3 className="font-bold text-emerald-950 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-emerald-600" />
+                5. Cálculo Automático da Próxima Preventiva
+              </h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                Ciclo Recorrente
+              </span>
+            </div>
+
+            <p className="text-[11px] text-emerald-900 leading-relaxed">
+              Ao concluir esta OS hoje, o sistema atualizará automaticamente a{' '}
+              <strong>Última Preventiva</strong> do equipamento{' '}
+              <span className="font-mono font-bold">[{workOrder.equipmentTag}]</span> e já definirá
+              a data do próximo vencimento:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                  Periodicidade / Ciclo da Máquina:
+                </label>
+                <select
+                  value={nextCycleMonths}
+                  onChange={(e) => handleCycleChange(Number(e.target.value))}
+                  className="w-full text-xs bg-white border border-emerald-300 rounded-xl p-2 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <option value={1}>Mensal (daqui a 30 dias)</option>
+                  <option value={2}>Bimestral (daqui a 2 meses)</option>
+                  <option value={3}>Trimestral (daqui a 3 meses)</option>
+                  <option value={6}>Semestral (daqui a 6 meses)</option>
+                  <option value={12}>Anual (daqui a 12 meses)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                  Data da Próxima Preventiva (Editável):
+                </label>
+                <input
+                  type="date"
+                  value={nextPreventiveDate}
+                  onChange={(e) => setNextPreventiveDate(e.target.value)}
+                  className="w-full text-xs bg-white border border-emerald-300 rounded-xl p-2 font-mono font-bold text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 pt-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoCreateNextOS}
+                onChange={(e) => setAutoCreateNextOS(e.target.checked)}
+                className="rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="text-[11px] font-bold text-emerald-950">
+                Já deixar a próxima Ordem de Serviço Preventiva agendada no calendário para{' '}
+                <span className="underline font-mono">{nextPreventiveDate}</span>
+              </span>
+            </label>
+          </div>
+
+          {/* Section 6: Digital Signature Canvas */}
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200 pb-2">
               <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
                 <PenTool className="w-4 h-4 text-blue-600" />
-                5. Aceite & Assinatura Digital do Cliente
+                6. Aceite & Assinatura de Conformidade
               </h3>
               {hasSignature && (
                 <button
@@ -579,7 +688,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-600">Nome do Responsável:</label>
+                  <label className="text-[10px] font-bold text-slate-600">
+                    Nome do Responsável:
+                  </label>
                   <input
                     type="text"
                     value={signedByName}
@@ -592,7 +703,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   <label className="text-[10px] font-bold text-slate-600">Cargo / Setor:</label>
                   <input
                     type="text"
-                    defaultValue="Supervisor de Manutenção"
+                    defaultValue="Gestor / Supervisor de Manutenção"
                     className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 mt-1 text-slate-800"
                   />
                 </div>
@@ -615,7 +726,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                 />
                 {!hasSignature && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 font-medium text-xs">
-                    Desenhe ou assine com o dedo ou mouse aqui
+                    Assine com o mouse ou toque aqui para registrar a conformidade
                   </div>
                 )}
                 <div className="absolute bottom-1 right-2 text-[9px] text-slate-400 font-mono pointer-events-none">
@@ -626,7 +737,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
           </div>
         </div>
 
-        {/* Mobile Footer Action Bar */}
+        {/* Footer Action Bar */}
         <div className="p-4 border-t border-slate-200 bg-slate-50 flex flex-col gap-2">
           {/* Quick WhatsApp Share Button */}
           <button
@@ -637,7 +748,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             <Share2 className="w-4 h-4" />
             {whatsappSent
               ? 'Comprovante Enviado no WhatsApp!'
-              : 'Enviar Laudo / Notificação por WhatsApp'}
+              : 'Enviar Laudo / Próxima Data por WhatsApp'}
           </button>
 
           <div className="flex items-center gap-2">
@@ -654,7 +765,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/25 cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              Concluir & Baixar OS
+              Concluir OS & Atualizar Próxima Preventiva
             </button>
           </div>
         </div>

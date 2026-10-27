@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   Send,
   FileSpreadsheet,
-  Trash2
+  Trash2,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
@@ -48,7 +49,7 @@ import {
 
 import { SmartDocumentImporterModal } from './components/SmartDocumentImporterModal';
 import { QRCodeManagerModal } from './components/QRCodeManagerModal';
-import { DigitalOSMobileModal } from './components/DigitalOSMobileModal';
+import { DigitalOSMobileModal, PreventiveCycleOptions } from './components/DigitalOSMobileModal';
 import { WorkOrderModal } from './components/WorkOrderModal';
 import { ScheduleCalendarView } from './components/ScheduleCalendarView';
 import { CrossClientAiDiagnostics } from './components/CrossClientAiDiagnostics';
@@ -195,6 +196,62 @@ export const ServiceProModule: React.FC = () => {
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [equipmentClientFilter, setEquipmentClientFilter] = useState('all');
   const [equipmentCriticalityFilter, setEquipmentCriticalityFilter] = useState('all');
+  const [equipmentDueFilter, setEquipmentDueFilter] = useState<
+    'all' | 'overdue' | 'due_15' | 'due_30' | 'ok'
+  >('all');
+
+  // Helper para calcular dias restantes e semáforo de vencimento da preventiva
+  const getPreventiveStatusInfo = (nextDateStr: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(`${nextDateStr}T00:00:00`);
+    const diffMs = target.getTime() - today.getTime();
+    const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (daysLeft < 0) {
+      return {
+        daysLeft,
+        status: 'overdue' as const,
+        label: `Vencida há ${Math.abs(daysLeft)} dia(s)`,
+        badgeClass: 'bg-red-100 text-red-800 border-red-300',
+        dotClass: 'bg-red-600',
+      };
+    }
+    if (daysLeft === 0) {
+      return {
+        daysLeft,
+        status: 'overdue' as const,
+        label: 'Vence Hoje!',
+        badgeClass: 'bg-red-100 text-red-800 border-red-300',
+        dotClass: 'bg-red-600',
+      };
+    }
+    if (daysLeft <= 15) {
+      return {
+        daysLeft,
+        status: 'due_15' as const,
+        label: `Vence em ${daysLeft} dia(s)`,
+        badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
+        dotClass: 'bg-amber-500',
+      };
+    }
+    if (daysLeft <= 30) {
+      return {
+        daysLeft,
+        status: 'due_30' as const,
+        label: `Próxima: faltam ${daysLeft} dias`,
+        badgeClass: 'bg-blue-50 text-blue-800 border-blue-200',
+        dotClass: 'bg-blue-500',
+      };
+    }
+    return {
+      daysLeft,
+      status: 'ok' as const,
+      label: `Em dia (${daysLeft} dias)`,
+      badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      dotClass: 'bg-emerald-500',
+    };
+  };
 
   // Work order filters
   const [woSearch, setWoSearch] = useState('');
@@ -214,15 +271,89 @@ export const ServiceProModule: React.FC = () => {
 
   const handleSaveWorkOrder = (
     savedOrder: MaintenanceWorkOrder,
-    shareToWaze: boolean = true
+    shareToWaze: boolean = true,
+    preventiveCycle?: PreventiveCycleOptions
   ) => {
-    setWorkOrders((prev) => {
-      const exists = prev.some((o) => o.id === savedOrder.id);
-      if (exists) {
-        return prev.map((o) => (o.id === savedOrder.id ? savedOrder : o));
+    // Se a OS foi concluída e veio com o cálculo da próxima preventiva, atualiza o equipamento
+    // e opcionalmente já agenda a próxima OS no calendário!
+    if (savedOrder.status === 'completed' && preventiveCycle) {
+      const completedDateStr =
+        savedOrder.completedDate || new Date().toISOString().split('T')[0];
+
+      setEquipments((prev) =>
+        prev.map((eq) =>
+          eq.id === savedOrder.equipmentId
+            ? {
+                ...eq,
+                lastServiceDate: completedDateStr,
+                nextPreventiveDate: preventiveCycle.nextPreventiveDate,
+                status: 'operational',
+                maintenancePlan: {
+                  ...eq.maintenancePlan,
+                  intervalMonths: preventiveCycle.nextCycleMonths,
+                },
+              }
+            : eq
+        )
+      );
+
+      if (preventiveCycle.autoCreateNextOS) {
+        const nextAutoOrder: MaintenanceWorkOrder = {
+          id: `wo-auto-${Date.now()}`,
+          orderNumber: `OS-2026-${Math.floor(100 + Math.random() * 899)}`,
+          clientId: savedOrder.clientId,
+          clientName: savedOrder.clientName,
+          branchId: savedOrder.branchId,
+          branchName: savedOrder.branchName,
+          equipmentId: savedOrder.equipmentId,
+          equipmentTag: savedOrder.equipmentTag,
+          equipmentName: savedOrder.equipmentName,
+          equipmentModel: savedOrder.equipmentModel,
+          type: 'preventive',
+          status: 'scheduled',
+          priority: 'normal',
+          scheduledDate: preventiveCycle.nextPreventiveDate,
+          scheduledTimeWindow: savedOrder.scheduledTimeWindow || '08:00 - 12:00',
+          technicianName: savedOrder.technicianName,
+          symptomsReported: `Preventiva programada automaticamente após baixa da ${savedOrder.orderNumber} (Ciclo de ${preventiveCycle.nextCycleMonths} mês/meses).`,
+          checklist: savedOrder.checklist.map((item) => ({
+            ...item,
+            status: 'passed' as const,
+          })),
+          sparePartsUsed: [],
+          laborHours: savedOrder.laborHours || 2.5,
+          laborCost: (savedOrder.laborHours || 2.5) * 120,
+          totalCost: (savedOrder.laborHours || 2.5) * 120,
+          beforePhotos: [],
+          afterPhotos: [],
+          whatsappConfirmationSent: false,
+        };
+
+        setWorkOrders((prev) => {
+          const exists = prev.some((o) => o.id === savedOrder.id);
+          const updatedList = exists
+            ? prev.map((o) => (o.id === savedOrder.id ? savedOrder : o))
+            : [savedOrder, ...prev];
+          return [nextAutoOrder, ...updatedList];
+        });
+      } else {
+        setWorkOrders((prev) => {
+          const exists = prev.some((o) => o.id === savedOrder.id);
+          if (exists) {
+            return prev.map((o) => (o.id === savedOrder.id ? savedOrder : o));
+          }
+          return [savedOrder, ...prev];
+        });
       }
-      return [savedOrder, ...prev];
-    });
+    } else {
+      setWorkOrders((prev) => {
+        const exists = prev.some((o) => o.id === savedOrder.id);
+        if (exists) {
+          return prev.map((o) => (o.id === savedOrder.id ? savedOrder : o));
+        }
+        return [savedOrder, ...prev];
+      });
+    }
 
     // Aprendizado Automático: Se a OS tiver Causa Raiz preenchida e shareToWaze ativo,
     // alimenta ou atualiza a base do Copiloto IA (Waze da Manutenção) automaticamente!
@@ -541,6 +672,26 @@ export const ServiceProModule: React.FC = () => {
     if (equipmentClientFilter !== 'all' && eq.clientId !== equipmentClientFilter) return false;
     if (equipmentCriticalityFilter !== 'all' && eq.criticality !== equipmentCriticalityFilter)
       return false;
+
+    if (equipmentDueFilter !== 'all') {
+      const dueInfo = getPreventiveStatusInfo(eq.nextPreventiveDate);
+      if (equipmentDueFilter === 'overdue' && dueInfo.status !== 'overdue') return false;
+      if (
+        equipmentDueFilter === 'due_15' &&
+        dueInfo.status !== 'overdue' &&
+        dueInfo.status !== 'due_15'
+      )
+        return false;
+      if (
+        equipmentDueFilter === 'due_30' &&
+        dueInfo.status !== 'overdue' &&
+        dueInfo.status !== 'due_15' &&
+        dueInfo.status !== 'due_30'
+      )
+        return false;
+      if (equipmentDueFilter === 'ok' && dueInfo.status !== 'ok') return false;
+    }
+
     if (!equipmentSearch.trim()) return true;
 
     const term = equipmentSearch.toLowerCase();
@@ -579,10 +730,10 @@ export const ServiceProModule: React.FC = () => {
             <span className="text-xs text-slate-500 font-medium">Plataforma Aptis</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            Aptis Service Pro • Manutenção Terceirizada & Mobile OS
+            Aptis Service Pro • Gestão de Manutenção & Contratos
           </h1>
           <p className="text-sm text-slate-600 max-w-3xl mt-1">
-            Gestão integrada para empresas terceirizadas de manutenção industrial: contratos B2B, inventário de ativos, QR Code, OS digital com assinatura em tela e copiloto preditivo.
+            Controle centralizado para gestores de manutenção industrial: contratos B2B, inventário de ativos com controle automático de vencimento preventivo, baixa de OS com laudo e inteligência preditiva.
           </p>
         </div>
 
@@ -761,7 +912,7 @@ export const ServiceProModule: React.FC = () => {
                 Agendar Visita Preventiva / Corretiva
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Selecione o cliente, a máquina e o técnico. O cliente receberá lembretes automáticos no WhatsApp antes da visita.
+                Selecione o cliente, a máquina e o responsável. O cliente receberá lembretes automáticos no WhatsApp antes da visita.
               </p>
             </div>
 
@@ -781,7 +932,7 @@ export const ServiceProModule: React.FC = () => {
                 Consultar Copiloto Preditivo de Falhas
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Veja o histórico cruzado de falhas em modelos idênticos em outros clientes e saiba quais peças levar na van.
+                Veja o histórico cruzado de falhas em modelos idênticos em outros clientes e saiba quais peças separar antes da visita.
               </p>
             </div>
           </div>
@@ -794,7 +945,7 @@ export const ServiceProModule: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-blue-600" />
                   <h3 className="text-sm font-bold text-slate-900">
-                    Próximas Visitas Técnicas no Calendário
+                    Próximas Ordens de Serviço no Calendário
                   </h3>
                 </div>
                 <button
@@ -825,8 +976,8 @@ export const ServiceProModule: React.FC = () => {
                       onClick={() => setMobileOSModalOrder(wo)}
                       className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center gap-1.5 transition text-[11px] shadow-2xs cursor-pointer"
                     >
-                      <Smartphone className="w-3.5 h-3.5 text-blue-600" />
-                      OS Digital
+                      <ClipboardCheck className="w-3.5 h-3.5 text-blue-600" />
+                      Baixar / Laudo OS
                     </button>
                   </div>
                 ))}
@@ -839,7 +990,7 @@ export const ServiceProModule: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
                   <h3 className="text-sm font-bold text-slate-900">
-                    Vencimentos Preventivos & Criticidade
+                    Radar de Vencimentos Preventivos (Próximas Datas)
                   </h3>
                 </div>
                 <button
@@ -851,30 +1002,50 @@ export const ServiceProModule: React.FC = () => {
               </div>
 
               <div className="space-y-2.5">
-                {equipments.slice(0, 4).map((eq) => (
-                  <div
-                    key={eq.id}
-                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition flex items-center justify-between gap-3 text-xs shadow-2xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-slate-900">[{eq.tag}]</span>
-                        <span className="font-bold text-slate-800 line-clamp-1">{eq.name}</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {eq.clientName} • Próx: <strong className="text-blue-700">{eq.nextPreventiveDate}</strong>
-                      </p>
-                    </div>
+                {[...equipments]
+                  .sort((a, b) => a.nextPreventiveDate.localeCompare(b.nextPreventiveDate))
+                  .slice(0, 4)
+                  .map((eq) => {
+                    const dueInfo = getPreventiveStatusInfo(eq.nextPreventiveDate);
+                    return (
+                      <div
+                        key={eq.id}
+                        className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition flex items-center justify-between gap-3 text-xs shadow-2xs"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono font-bold text-slate-900">[{eq.tag}]</span>
+                            <span className="font-bold text-slate-800 line-clamp-1">{eq.name}</span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${dueInfo.badgeClass}`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${dueInfo.dotClass}`} />
+                              {dueInfo.label}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {eq.clientName} • Vencimento:{' '}
+                            <strong className="text-blue-700 font-mono">
+                              {eq.nextPreventiveDate}
+                            </strong>
+                            {eq.lastServiceDate && (
+                              <span className="ml-2 text-slate-400">
+                                (Última: {eq.lastServiceDate})
+                              </span>
+                            )}
+                          </p>
+                        </div>
 
-                    <button
-                      onClick={() => setQRCodeModalEquipment(eq)}
-                      className="p-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 transition shadow-2xs cursor-pointer"
-                      title="Ver Etiqueta QR Code"
-                    >
-                      <QrCode className="w-4 h-4 text-blue-600" />
-                    </button>
-                  </div>
-                ))}
+                        <button
+                          onClick={() => setQRCodeModalEquipment(eq)}
+                          className="p-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 transition shadow-2xs cursor-pointer"
+                          title="Ver Etiqueta QR Code"
+                        >
+                          <QrCode className="w-4 h-4 text-blue-600" />
+                        </button>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -898,6 +1069,18 @@ export const ServiceProModule: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={equipmentDueFilter}
+                onChange={(e) => setEquipmentDueFilter(e.target.value as any)}
+                className="text-xs bg-blue-50/70 border border-blue-300 focus:bg-white rounded-xl px-3 py-2 text-blue-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-bold"
+              >
+                <option value="all">📅 Todos os Vencimentos</option>
+                <option value="overdue">🔴 Vencidas / Atrasadas</option>
+                <option value="due_15">🟡 Vencendo em até 15 dias</option>
+                <option value="due_30">🔵 Vencendo em até 30 dias</option>
+                <option value="ok">🟢 Em dia (&gt; 30 dias)</option>
+              </select>
+
               <select
                 value={equipmentClientFilter}
                 onChange={(e) => setEquipmentClientFilter(e.target.value)}
@@ -934,125 +1117,131 @@ export const ServiceProModule: React.FC = () => {
 
           {/* Equipments Table / Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredEquipments.map((eq) => (
-              <div
-                key={eq.id}
-                className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-md transition shadow-sm space-y-3 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
-                      {eq.tag}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                        eq.criticality === 'high'
-                          ? 'bg-red-50 text-red-700 border border-red-200'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {eq.criticality === 'high' ? '🚨 Parada Severa' : 'Produção Regular'}
-                    </span>
-                  </div>
-
-                  <h3 className="text-sm font-bold text-slate-900 mt-2 line-clamp-1">{eq.name}</h3>
-                  <p className="text-xs text-slate-500">
-                    {eq.brand} • {eq.model} {eq.capacity ? `(${eq.capacity})` : ''}
-                  </p>
-
-                  <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 shadow-2xs">
-                    <div className="flex justify-between text-slate-500">
-                      <span>Cliente:</span>
-                      <strong className="text-slate-900">{eq.clientName}</strong>
-                    </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Localização:</span>
-                      <span className="text-slate-800 truncate max-w-[160px]">
-                        {eq.locationInPlant}
+            {filteredEquipments.map((eq) => {
+              const dueInfo = getPreventiveStatusInfo(eq.nextPreventiveDate);
+              return (
+                <div
+                  key={eq.id}
+                  className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-md transition shadow-sm space-y-3 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                        {eq.tag}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${dueInfo.badgeClass}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${dueInfo.dotClass}`} />
+                        {dueInfo.label}
                       </span>
                     </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Série:</span>
-                      <span className="font-mono text-slate-800">{eq.serialNumber}</span>
+
+                    <h3 className="text-sm font-bold text-slate-900 mt-2 line-clamp-1">{eq.name}</h3>
+                    <p className="text-xs text-slate-500">
+                      {eq.brand} • {eq.model} {eq.capacity ? `(${eq.capacity})` : ''}
+                    </p>
+
+                    <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 shadow-2xs">
+                      <div className="flex justify-between text-slate-500">
+                        <span>Cliente:</span>
+                        <strong className="text-slate-900">{eq.clientName}</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-500">
+                        <span>Localização:</span>
+                        <span className="text-slate-800 truncate max-w-[160px]">
+                          {eq.locationInPlant}
+                        </span>
+                      </div>
+                      {eq.lastServiceDate && (
+                        <div className="flex justify-between text-slate-500">
+                          <span>Última Preventiva:</span>
+                          <span className="font-mono font-semibold text-emerald-700">
+                            {eq.lastServiceDate}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-slate-500">
+                        <span>Próx. Preventiva:</span>
+                        <strong className="text-blue-700 font-mono">
+                          {eq.nextPreventiveDate} (a cada {eq.maintenancePlan?.intervalMonths || 3}m)
+                        </strong>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Próx. Preventiva:</span>
-                      <strong className="text-blue-700 font-mono">{eq.nextPreventiveDate}</strong>
-                    </div>
+
+                    {/* Norm Badge */}
+                    {eq.maintenancePlan?.legalNorm && (
+                      <div className="mt-2 text-[10px] font-bold text-amber-700 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                        Regulamentado por {eq.maintenancePlan.legalNorm}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Norm Badge */}
-                  {eq.maintenancePlan?.legalNorm && (
-                    <div className="mt-2 text-[10px] font-bold text-amber-700 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                      Regulamentado por {eq.maintenancePlan.legalNorm}
-                    </div>
-                  )}
+                  {/* Bottom Actions */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <button
+                      onClick={() => setQRCodeModalEquipment(eq)}
+                      className="flex-1 py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold flex items-center justify-center gap-1.5 text-xs transition shadow-2xs cursor-pointer"
+                    >
+                      <QrCode className="w-3.5 h-3.5 text-blue-600" />
+                      Etiqueta QR
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const newOrder: MaintenanceWorkOrder = {
+                          id: `wo-${Date.now()}`,
+                          orderNumber: `OS-2026-${Math.floor(100 + Math.random() * 900)}`,
+                          clientId: eq.clientId,
+                          clientName: eq.clientName || 'Cliente',
+                          branchId: eq.branchId,
+                          branchName: eq.branchName || 'Matriz',
+                          equipmentId: eq.id,
+                          equipmentTag: eq.tag,
+                          equipmentName: eq.name,
+                          equipmentModel: `${eq.brand} ${eq.model}`,
+                          type: 'preventive',
+                          status: 'scheduled',
+                          priority: 'normal',
+                          scheduledDate: eq.nextPreventiveDate,
+                          scheduledTimeWindow: '08:00 - 12:00',
+                          technicianName: 'Carlos Silveira',
+                          symptomsReported: `Manutenção preventiva periódica baseada no plano ${eq.maintenancePlan?.legalNorm || 'industrial'}.`,
+                          checklist:
+                            eq.maintenancePlan?.checklistItems.map((c, i) => ({
+                              id: `chk-${i}`,
+                              description: c,
+                              status: 'passed' as const,
+                            })) || [],
+                          sparePartsUsed: [],
+                          laborHours: 2.5,
+                          laborCost: 300,
+                          totalCost: 450,
+                          beforePhotos: [],
+                          afterPhotos: [],
+                          whatsappConfirmationSent: false,
+                        };
+                        setEditingWorkOrder(newOrder);
+                        setIsWorkOrderModalOpen(true);
+                      }}
+                      className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold flex items-center justify-center gap-1.5 text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Agendar OS
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteEquipment(eq.id, eq.name)}
+                      className="p-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition shadow-2xs cursor-pointer"
+                      title="Excluir equipamento"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-
-                {/* Bottom Actions */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => setQRCodeModalEquipment(eq)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold flex items-center justify-center gap-1.5 text-xs transition shadow-2xs cursor-pointer"
-                  >
-                    <QrCode className="w-3.5 h-3.5 text-blue-600" />
-                    Etiqueta QR
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const newOrder: MaintenanceWorkOrder = {
-                        id: `wo-${Date.now()}`,
-                        orderNumber: `OS-2026-${Math.floor(100 + Math.random() * 900)}`,
-                        clientId: eq.clientId,
-                        clientName: eq.clientName || 'Cliente',
-                        branchId: eq.branchId,
-                        branchName: eq.branchName || 'Matriz',
-                        equipmentId: eq.id,
-                        equipmentTag: eq.tag,
-                        equipmentName: eq.name,
-                        equipmentModel: `${eq.brand} ${eq.model}`,
-                        type: 'preventive',
-                        status: 'scheduled',
-                        priority: 'normal',
-                        scheduledDate: eq.nextPreventiveDate,
-                        scheduledTimeWindow: '08:00 - 12:00',
-                        technicianName: 'Carlos Silveira',
-                        symptomsReported: `Manutenção preventiva periódica baseada no plano ${eq.maintenancePlan?.legalNorm || 'industrial'}.`,
-                        checklist:
-                          eq.maintenancePlan?.checklistItems.map((c, i) => ({
-                            id: `chk-${i}`,
-                            description: c,
-                            status: 'passed' as const,
-                          })) || [],
-                        sparePartsUsed: [],
-                        laborHours: 2.5,
-                        laborCost: 300,
-                        totalCost: 450,
-                        beforePhotos: [],
-                        afterPhotos: [],
-                        whatsappConfirmationSent: false,
-                      };
-                      setEditingWorkOrder(newOrder);
-                      setIsWorkOrderModalOpen(true);
-                    }}
-                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold flex items-center justify-center gap-1.5 text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    Agendar OS
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteEquipment(eq.id, eq.name)}
-                    className="p-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition shadow-2xs cursor-pointer"
-                    title="Excluir equipamento"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -1082,7 +1271,7 @@ export const ServiceProModule: React.FC = () => {
                 type="text"
                 value={woSearch}
                 onChange={(e) => setWoSearch(e.target.value)}
-                placeholder="Buscar por OS, cliente, equipamento ou técnico..."
+                placeholder="Buscar por OS, cliente, equipamento ou responsável..."
                 className="w-full text-xs pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 focus:bg-white rounded-xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
               />
             </div>
@@ -1142,7 +1331,7 @@ export const ServiceProModule: React.FC = () => {
                       [{order.equipmentTag}] • {order.equipmentName}
                     </h4>
                     <p className="text-xs text-slate-500">
-                      {order.clientName} • Data: {order.scheduledDate} • Técnico: {order.technicianName}
+                      {order.clientName} • Data: {order.scheduledDate} • Responsável: {order.technicianName}
                     </p>
                   </div>
                 </div>
@@ -1150,7 +1339,7 @@ export const ServiceProModule: React.FC = () => {
                 <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end">
                   {order.clientSignatureBase64 && (
                     <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Assinado Digitalmente
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Laudo Assinado
                     </span>
                   )}
 
@@ -1158,8 +1347,8 @@ export const ServiceProModule: React.FC = () => {
                     onClick={() => setMobileOSModalOrder(order)}
                     className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
                   >
-                    <Smartphone className="w-3.5 h-3.5" />
-                    Abrir App do Técnico
+                    <ClipboardCheck className="w-3.5 h-3.5" />
+                    {order.status === 'completed' ? 'Ver Laudo da OS' : 'Registrar Execução / Baixar OS'}
                   </button>
 
                   <button
@@ -1231,6 +1420,10 @@ export const ServiceProModule: React.FC = () => {
         isOpen={!!mobileOSModalOrder}
         onClose={() => setMobileOSModalOrder(null)}
         workOrder={mobileOSModalOrder}
+        defaultCycleMonths={
+          equipments.find((e) => e.id === mobileOSModalOrder?.equipmentId)?.maintenancePlan
+            ?.intervalMonths || 3
+        }
         onSaveWorkOrder={handleSaveWorkOrder}
       />
 

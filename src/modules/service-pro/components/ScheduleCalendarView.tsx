@@ -286,7 +286,7 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
                     className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    Ver OS / Digital
+                    {order.status === 'completed' ? 'Ver Laudo' : 'Baixar / Laudo OS'}
                   </button>
                 </div>
               </div>
