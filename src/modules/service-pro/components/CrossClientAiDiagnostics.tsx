@@ -223,10 +223,10 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
               Copiloto de Diagnósticos Cruzados Entre Clientes
             </h2>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Toda vez que um técnico conclui uma Ordem de Serviço preenchendo a{' '}
-              <strong>Causa Raiz</strong> e as <strong>Peças Utilizadas</strong>, ou quando o gestor
-              cadastra um defeito recorrente abaixo, este painel aprende automaticamente e orienta
-              quais peças levar na van no próximo chamado!
+              Toda vez que você conclui uma Ordem de Serviço preenchendo a{' '}
+              <strong>Causa Raiz</strong> e as <strong>Peças Utilizadas</strong>, ou quando cadastra
+              um defeito recorrente abaixo, este painel aprende automaticamente e orienta quais
+              peças separar no almoxarifado antes do próximo atendimento!
             </p>
           </div>
 
@@ -390,7 +390,7 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                         <div className="pt-1">
                           <span className="text-[10px] font-bold text-blue-700 flex items-center gap-1 mb-1">
                             <Package className="w-3 h-3 text-blue-600" />
-                            Peças recomendadas para levar na van:
+                            Peças recomendadas para separar antes do reparo:
                           </span>
                           <div className="flex flex-wrap gap-1">
                             {c.recommendedParts.map((part, pIdx) => (
@@ -449,7 +449,7 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                       : 'Novo Diagnóstico / Defeito Conhecido no Waze'}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Compartilhe a solução técnica e as peças de van para toda a equipe de campo
+                    Registre a causa raiz, o procedimento de solução e as peças recomendadas
                   </p>
                 </div>
               </div>
@@ -545,7 +545,7 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
               <div className="space-y-3 pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
-                    Causas Raízes Conhecidas & Peças para Levar na Van
+                    Causas Raízes Conhecidas & Peças Recomendadas
                   </span>
                   <button
                     type="button"
@@ -616,7 +616,7 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
 
                     <div>
                       <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Procedimento / Resolução Padrão para o Técnico
+                        Procedimento / Resolução Padrão
                       </label>
                       <textarea
                         rows={2}
@@ -633,7 +633,7 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
 
                     <div>
                       <label className="block text-[11px] font-bold text-blue-700 mb-1">
-                        Peças Recomendadas para Levar na Van (separadas por vírgula)
+                        Peças Recomendadas para o Reparo (separadas por vírgula)
                       </label>
                       <input
                         type="text"

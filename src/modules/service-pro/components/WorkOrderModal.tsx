@@ -250,7 +250,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 mb-1.5 block">Técnico Responsável</label>
+              <label className="font-bold text-slate-700 mb-1.5 block">Responsável pela Execução</label>
               <select
                 value={technicianName}
                 onChange={(e) => setTechnicianName(e.target.value)}

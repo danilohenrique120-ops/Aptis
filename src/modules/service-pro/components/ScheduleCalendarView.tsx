@@ -263,7 +263,7 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
                     <span>Janela: <strong className="text-slate-800">{order.scheduledTimeWindow || '08:00 - 12:00'}</strong></span>
                   </div>
                   <div>
-                    Técnico: <strong className="text-slate-800">{order.technicianName}</strong>
+                    Responsável: <strong className="text-slate-800">{order.technicianName}</strong>
                   </div>
                   <p className="text-[11px] line-clamp-1 italic text-slate-500">
                     &quot;{order.symptomsReported}&quot;

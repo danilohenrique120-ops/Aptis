@@ -30,7 +30,7 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
   equipment,
   emergencyPhone = '(11) 98765-4321',
 }) => {
-  const [activeTab, setActiveTab] = useState<'label' | 'client_flow' | 'tech_flow'>('label');
+  const [activeTab, setActiveTab] = useState<'label' | 'client_flow'>('label');
   const [copied, setCopied] = useState(false);
 
   if (!isOpen || !equipment) return null;
@@ -92,17 +92,6 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
             Etiqueta Industrial Imprimível
           </button>
           <button
-            onClick={() => setActiveTab('tech_flow')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
-              activeTab === 'tech_flow'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Wrench className="w-3.5 h-3.5" />
-            Fluxo do Técnico em Campo
-          </button>
-          <button
             onClick={() => setActiveTab('client_flow')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'client_flow'
@@ -111,7 +100,7 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            Fluxo do Cliente / Operador
+            Abertura de Chamado via QR Code (Cliente)
           </button>
         </div>
 
@@ -258,56 +247,6 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
                     <Printer className="w-3.5 h-3.5" />
                     Imprimir Etiqueta
                   </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'tech_flow' && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-1.5">
-                <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
-                  <Wrench className="w-4 h-4 text-blue-600" />
-                  Experiência do Técnico ao Escanear em Campo
-                </div>
-                <p className="text-xs text-blue-700">
-                  Quando o técnico da sua empresa de manutenção chega ao cliente e aponta a câmera
-                  do celular para o QR Code fixado na carcaça:
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 shadow-2xs">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
-                    1
-                  </div>
-                  <h4 className="text-xs font-bold text-slate-900">Identificação Instantânea</h4>
-                  <p className="text-[11px] text-slate-500">
-                    Abre direto a ficha da máquina ({equipment.tag}), com histórico de atendimentos,
-                    peças trocadas e manutenções anteriores.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 shadow-2xs">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
-                    2
-                  </div>
-                  <h4 className="text-xs font-bold text-slate-900">Checklist Interativo</h4>
-                  <p className="text-[11px] text-slate-500">
-                    Carrega automaticamente o checklist preventivo configurado para o modelo{' '}
-                    {equipment.model} (norma {equipment.maintenancePlan?.legalNorm || 'vigente'}).
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 shadow-2xs">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
-                    3
-                  </div>
-                  <h4 className="text-xs font-bold text-slate-900">Assinatura Digital & Baixa</h4>
-                  <p className="text-[11px] text-slate-500">
-                    Tira fotos antes/depois, anota peças utilizadas e coleta a assinatura do
-                    responsável da fábrica na tela do celular.
-                  </p>
                 </div>
               </div>
             </div>
