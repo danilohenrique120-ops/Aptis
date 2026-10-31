@@ -26,6 +26,7 @@ import {
   FileSpreadsheet,
   Trash2,
   ClipboardCheck,
+  Edit3,
 } from 'lucide-react';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
@@ -102,6 +103,7 @@ export const ServiceProModule: React.FC = () => {
 
   // Modals state
   const [isImporterOpen, setIsImporterOpen] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [qrCodeModalEquipment, setQRCodeModalEquipment] = useState<Equipment | null>(null);
   const [mobileOSModalOrder, setMobileOSModalOrder] = useState<MaintenanceWorkOrder | null>(null);
   const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
@@ -266,7 +268,13 @@ export const ServiceProModule: React.FC = () => {
 
   // Handlers
   const handleImportEquipment = (newEquipment: Equipment) => {
-    setEquipments((prev) => [newEquipment, ...prev]);
+    setEquipments((prev) => {
+      const exists = prev.some((e) => e.id === newEquipment.id);
+      if (exists) {
+        return prev.map((e) => (e.id === newEquipment.id ? newEquipment : e));
+      }
+      return [newEquipment, ...prev];
+    });
   };
 
   const handleSaveWorkOrder = (
@@ -749,11 +757,14 @@ export const ServiceProModule: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setIsImporterOpen(true)}
+            onClick={() => {
+              setEditingEquipment(null);
+              setIsImporterOpen(true);
+            }}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-blue-600" />
-            Importador OCR IA
+            <Cpu className="w-4 h-4 text-blue-600" />
+            + Cadastrar Máquina
           </button>
 
           <button
@@ -874,22 +885,25 @@ export const ServiceProModule: React.FC = () => {
           {/* Quick Action Shortcuts Banner */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div
-              onClick={() => setIsImporterOpen(true)}
+              onClick={() => {
+                setEditingEquipment(null);
+                setIsImporterOpen(true);
+              }}
               className="p-5 rounded-2xl bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border border-blue-200/80 hover:border-blue-400 hover:shadow-md transition cursor-pointer shadow-sm group"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20">
-                  <Sparkles className="w-5 h-5" />
+                  <Cpu className="w-5 h-5" />
                 </div>
                 <span className="text-[10px] font-bold text-blue-700 px-2.5 py-0.5 rounded-full bg-blue-100 border border-blue-200">
-                  OCR IA
+                  NOVO ATIVO
                 </span>
               </div>
               <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition">
-                Importar Equipamento via Foto ou PDF
+                Cadastrar Nova Máquina no Parque
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Tire foto da plaqueta do motor/compressor ou anexe o manual. A IA cadastra todas as especificações e o plano preventivo.
+                Cadastre máquinas por formulário direto, herde dados do Catálogo Mestre ou anexe foto/PDF opcional.
               </p>
             </div>
 
@@ -1106,11 +1120,14 @@ export const ServiceProModule: React.FC = () => {
               </select>
 
               <button
-                onClick={() => setIsImporterOpen(true)}
+                onClick={() => {
+                  setEditingEquipment(null);
+                  setIsImporterOpen(true);
+                }}
                 className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-md shadow-blue-600/25 transition flex items-center gap-1.5 cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                Importar via OCR IA
+                <Plus className="w-3.5 h-3.5" />
+                Cadastrar Máquina
               </button>
             </div>
           </div>
@@ -1229,6 +1246,17 @@ export const ServiceProModule: React.FC = () => {
                     >
                       <Calendar className="w-3.5 h-3.5" />
                       Agendar OS
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setEditingEquipment(eq);
+                        setIsImporterOpen(true);
+                      }}
+                      className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition shadow-2xs cursor-pointer"
+                      title="Editar equipamento"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
                     </button>
 
                     <button
@@ -1403,11 +1431,15 @@ export const ServiceProModule: React.FC = () => {
       {/* Modals */}
       <SmartDocumentImporterModal
         isOpen={isImporterOpen}
-        onClose={() => setIsImporterOpen(false)}
+        onClose={() => {
+          setIsImporterOpen(false);
+          setEditingEquipment(null);
+        }}
         clients={clients}
         masterCatalog={masterCatalog}
         onImportEquipment={handleImportEquipment}
         onSaveCatalogItem={handleSaveCatalogItem}
+        editingEquipment={editingEquipment}
       />
 
       <QRCodeManagerModal

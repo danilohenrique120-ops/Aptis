@@ -1,23 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   UploadCloud,
-  FileText,
   Sparkles,
   CheckCircle2,
-  AlertTriangle,
   X,
-  FileCheck,
   Building2,
   Wrench,
   Cpu,
   Layers,
   Calendar,
-  ArrowRight,
   ShieldCheck,
+  Plus,
+  Trash2,
+  FileText,
+  Edit3,
 } from 'lucide-react';
-import { Equipment, ClientContractor, MasterCatalogItem } from '../types';
+import { Equipment, ClientContractor, MasterCatalogItem, EquipmentSpec } from '../types';
 
 interface SmartDocumentImporterModalProps {
   isOpen: boolean;
@@ -26,131 +26,8 @@ interface SmartDocumentImporterModalProps {
   masterCatalog: MasterCatalogItem[];
   onImportEquipment: (equipment: Equipment) => void;
   onSaveCatalogItem?: (item: MasterCatalogItem) => void;
+  editingEquipment?: Equipment | null;
 }
-
-interface DemoPreset {
-  title: string;
-  type: string;
-  sourceDoc: string;
-  preview: Partial<Equipment>;
-}
-
-const DEMO_PRESETS: DemoPreset[] = [
-  {
-    title: 'Plaqueta Compressor Schulz SRP 4030',
-    type: 'Foto de Plaqueta Metálica',
-    sourceDoc: 'placa_schulz_srp4030.jpg',
-    preview: {
-      tag: 'COMP-03',
-      name: 'Compressor Rotativo de Parafuso 30HP',
-      category: 'Compressor de Ar',
-      brand: 'Schulz',
-      model: 'SRP 4030',
-      serialNumber: 'SCH-2025-9921',
-      manufacturingYear: 2024,
-      capacity: '30 HP / 132 CFM',
-      locationInPlant: 'Sala de Compressores - Galpão 3',
-      criticality: 'high',
-      specs: [
-        { key: 'power', label: 'Potência', value: '30 HP (22 kW)' },
-        { key: 'pressure', label: 'Pressão Máx', value: '10 bar (145 psi)' },
-        { key: 'voltage', label: 'Tensão', value: '380V Trifásico' },
-        { key: 'current', label: 'Corrente', value: '42 A' },
-      ],
-      maintenancePlan: {
-        intervalMonths: 3,
-        intervalHours: 1000,
-        legalNorm: 'NR-13',
-        checklistItems: [
-          'Verificação e troca do filtro de óleo',
-          'Limpeza e substituição do elemento do filtro de ar',
-          'Drenagem de condensado e teste da válvula de retenção',
-          'Medição da corrente e aperto de bornes elétricos',
-        ],
-        recommendedParts: [
-          'Elemento Filtro de Ar Schulz (Cód: FL-0402)',
-          'Filtro de Óleo Sintético (Cód: FO-9081)',
-          'Óleo Sintético ISO VG 46 (5L)',
-        ],
-      },
-    },
-  },
-  {
-    title: 'Manual Técnico Chiller Hitachi Samurai',
-    type: 'Documento PDF (Manual)',
-    sourceDoc: 'manual_hitachi_chiller_samurai.pdf',
-    preview: {
-      tag: 'CHILL-02',
-      name: 'Chiller de Condensação a Ar 150 TR',
-      category: 'Climatização & Refrigeração',
-      brand: 'Hitachi',
-      model: 'RCU-150-SY',
-      serialNumber: 'HIT-2023-44120',
-      manufacturingYear: 2023,
-      capacity: '150 TR / 528 kW',
-      locationInPlant: 'Cobertura Técnica - Bloco A',
-      criticality: 'high',
-      specs: [
-        { key: 'cooling', label: 'Capacidade Térmica', value: '150 TR' },
-        { key: 'refrigerant', label: 'Fluido Refrigerante', value: 'R-134a (28 kg)' },
-        { key: 'compressors', label: 'Compressores', value: '2x Duplo Parafuso Semi-hermético' },
-        { key: 'voltage', label: 'Alimentação', value: '380V / 60Hz' },
-      ],
-      maintenancePlan: {
-        intervalMonths: 1,
-        legalNorm: 'PMOC',
-        checklistItems: [
-          'Análise de acidez e umidade do fluido refrigerante R-134a',
-          'Inspeção do superaquecimento e sub-resfriamento',
-          'Limpeza química e desincrustação da serpentina',
-          'Calibração de transdutores de pressão de alta e baixa',
-        ],
-        recommendedParts: [
-          'Filtro Secador Núcleo Sólido 48-DN',
-          'Válvula de Expansão Eletrônica Danfoss ETS',
-        ],
-      },
-    },
-  },
-  {
-    title: 'NF de Entrega Gerador Cummins 250 kVA',
-    type: 'Nota Fiscal / Fatura Digital',
-    sourceDoc: 'danfe_gerador_cummins_250kva.pdf',
-    preview: {
-      tag: 'GER-01',
-      name: 'Grupo Gerador Silenciado 250 kVA',
-      category: 'Geração de Energia',
-      brand: 'Cummins',
-      model: 'C250 D6',
-      serialNumber: 'CUM-BR-88219-X',
-      manufacturingYear: 2024,
-      capacity: '250 kVA / 200 kW',
-      locationInPlant: 'Subestação Principal',
-      criticality: 'high',
-      specs: [
-        { key: 'engine', label: 'Motor', value: 'Cummins QSB7-G5 Diesel' },
-        { key: 'alternator', label: 'Alternador', value: 'Stamford UCI274' },
-        { key: 'tank', label: 'Tanque Base', value: '500 Litros Diesel S10' },
-        { key: 'governor', label: 'Controlador', value: 'PowerCommand 1.1' },
-      ],
-      maintenancePlan: {
-        intervalMonths: 6,
-        intervalHours: 250,
-        legalNorm: 'NR-10',
-        checklistItems: [
-          'Teste de partida automática em rampa de carga simulada',
-          'Troca de óleo mineral SAE 15W-40 e filtros de combustível',
-          'Verificação da densidade e carga do banco de baterias',
-          'Inspeção de mangotes, correia do alternador e líquido de arrefecimento',
-        ],
-        recommendedParts: [
-          'Filtro Separador de Água Fleetguard FS1242',
-          'Filtro de Óleo LF16015 Cummins',
-        ],
-      },
-    },
-  },
-];
 
 export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProps> = ({
   isOpen,
@@ -159,19 +36,124 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
   masterCatalog,
   onImportEquipment,
   onSaveCatalogItem,
+  editingEquipment,
 }) => {
-  const [selectedPreset, setSelectedPreset] = useState<DemoPreset | null>(null);
+  const [entryMode, setEntryMode] = useState<'manual' | 'ocr'>('manual');
+  const [selectedCatalogModelId, setSelectedCatalogModelId] = useState<string>('');
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processStep, setProcessStep] = useState<string>('');
-  const [parsedData, setParsedData] = useState<Partial<Equipment> | null>(null);
-  const [saveToMasterCatalog, setSaveToMasterCatalog] = useState<boolean>(true);
+  const [saveToMasterCatalog, setSaveToMasterCatalog] = useState<boolean>(false);
 
-  // Form assignment state
+  // Client & Branch
   const [selectedClientId, setSelectedClientId] = useState<string>(clients[0]?.id || '');
   const [selectedBranchId, setSelectedBranchId] = useState<string>(
     clients[0]?.branches[0]?.id || ''
   );
+
+  // Form fields
+  const [tag, setTag] = useState<string>('');
+  const [name, setName] = useState<string>('');
+  const [category, setCategory] = useState<string>('Compressor de Ar');
+  const [brand, setBrand] = useState<string>('');
+  const [model, setModel] = useState<string>('');
+  const [serialNumber, setSerialNumber] = useState<string>('');
+  const [manufacturingYear, setManufacturingYear] = useState<number>(new Date().getFullYear());
+  const [capacity, setCapacity] = useState<string>('');
+  const [locationInPlant, setLocationInPlant] = useState<string>('');
+  const [criticality, setCriticality] = useState<'high' | 'medium' | 'low'>('medium');
+  const [intervalMonths, setIntervalMonths] = useState<number>(3);
+  const [legalNorm, setLegalNorm] = useState<'PMOC' | 'NR-10' | 'NR-12' | 'NR-13' | 'Outro'>(
+    'NR-12'
+  );
+  const [nextPreventiveDate, setNextPreventiveDate] = useState<string>(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  );
+
+  const [specs, setSpecs] = useState<EquipmentSpec[]>([
+    { key: 'power', label: 'Potência / Capacidade', value: '' },
+    { key: 'voltage', label: 'Tensão Elétrica', value: '380V Trifásico' },
+  ]);
+
+  const [checklistItems, setChecklistItems] = useState<string[]>([
+    'Inspeção visual geral, ruídos e vibrações',
+    'Verificação de conexões elétricas e reapertos',
+    'Limpeza e verificação de filtros/lubrificação',
+  ]);
+
+  const [recommendedParts, setRecommendedParts] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingEquipment) {
+        setEntryMode('manual');
+        setSelectedClientId(editingEquipment.clientId);
+        setSelectedBranchId(editingEquipment.branchId);
+        setTag(editingEquipment.tag);
+        setName(editingEquipment.name);
+        setCategory(editingEquipment.category);
+        setBrand(editingEquipment.brand);
+        setModel(editingEquipment.model);
+        setSerialNumber(editingEquipment.serialNumber);
+        setManufacturingYear(editingEquipment.manufacturingYear || new Date().getFullYear());
+        setCapacity(editingEquipment.capacity || '');
+        setLocationInPlant(editingEquipment.locationInPlant);
+        setCriticality(editingEquipment.criticality);
+        setNextPreventiveDate(editingEquipment.nextPreventiveDate);
+        setIntervalMonths(editingEquipment.maintenancePlan?.intervalMonths || 3);
+        setLegalNorm(editingEquipment.maintenancePlan?.legalNorm || 'NR-12');
+        setSpecs(
+          editingEquipment.specs && editingEquipment.specs.length > 0
+            ? [...editingEquipment.specs]
+            : [{ key: 'power', label: 'Potência', value: '' }]
+        );
+        setChecklistItems(
+          editingEquipment.maintenancePlan?.checklistItems?.length
+            ? [...editingEquipment.maintenancePlan.checklistItems]
+            : ['Inspeção geral de segurança e funcionamento']
+        );
+        setRecommendedParts(
+          editingEquipment.maintenancePlan?.recommendedParts
+            ? [...editingEquipment.maintenancePlan.recommendedParts]
+            : []
+        );
+        setSaveToMasterCatalog(false);
+      } else {
+        setEntryMode('manual');
+        setSelectedCatalogModelId('');
+        setUploadedFileName('');
+        const defaultClient = clients[0];
+        setSelectedClientId(defaultClient?.id || '');
+        setSelectedBranchId(defaultClient?.branches[0]?.id || '');
+        setTag(`TAG-${Math.floor(100 + Math.random() * 900)}`);
+        setName('');
+        setCategory('Compressor de Ar');
+        setBrand('');
+        setModel('');
+        setSerialNumber('');
+        setManufacturingYear(new Date().getFullYear());
+        setCapacity('');
+        setLocationInPlant('Galpão Principal');
+        setCriticality('medium');
+        setIntervalMonths(3);
+        setLegalNorm('NR-12');
+        setNextPreventiveDate(
+          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        );
+        setSpecs([
+          { key: 'power', label: 'Potência / Capacidade', value: '' },
+          { key: 'voltage', label: 'Tensão Elétrica', value: '380V Trifásico' },
+        ]);
+        setChecklistItems([
+          'Inspeção visual geral, ruídos e vibrações',
+          'Verificação de conexões elétricas e reapertos',
+          'Limpeza e verificação de filtros/lubrificação',
+        ]);
+        setRecommendedParts([]);
+        setSaveToMasterCatalog(false);
+      }
+    }
+  }, [isOpen, editingEquipment, clients]);
 
   if (!isOpen) return null;
 
@@ -185,30 +167,44 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
     }
   };
 
-  const runSimulatedOcr = (preset: DemoPreset) => {
-    setSelectedPreset(preset);
-    setUploadedFileName(preset.sourceDoc);
-    setIsProcessing(true);
-    setParsedData(null);
+  const handleApplyCatalogTemplate = (catalogId: string) => {
+    setSelectedCatalogModelId(catalogId);
+    const item = masterCatalog.find((m) => m.id === catalogId);
+    if (!item) return;
 
-    setProcessStep('Digitalizando documento e executando leitura local...');
-    setTimeout(() => {
-      setProcessStep('Localizando dados cadastrais: Marca, Modelo e Número de Série...');
-      setTimeout(() => {
-        setProcessStep('Cruzando dados com o Catálogo Mestre Industrial e normas vigentes (PMOC / NR)...');
-        setTimeout(() => {
-          setIsProcessing(false);
-          setProcessStep('');
-          setParsedData({
-            ...preset.preview,
-            status: 'operational',
-            nextPreventiveDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split('T')[0],
-          });
-        }, 700);
-      }, 600);
-    }, 500);
+    setCategory(item.category);
+    setBrand(item.brand);
+    setModel(item.model);
+    setCapacity(item.capacity);
+    if (!name.trim()) {
+      setName(`${item.category} ${item.brand} ${item.model}`);
+    }
+    setSpecs(item.specs.length > 0 ? [...item.specs] : []);
+    setIntervalMonths(item.maintenancePlan.intervalMonths || 3);
+    if (item.maintenancePlan.legalNorm) {
+      setLegalNorm(item.maintenancePlan.legalNorm);
+    }
+    setChecklistItems(
+      item.maintenancePlan.checklistItems.length > 0
+        ? [...item.maintenancePlan.checklistItems]
+        : ['Inspeção geral preventiva']
+    );
+    setRecommendedParts(
+      item.commonSpareParts?.map((p) => `${p.description} (${p.code})`) ||
+        item.maintenancePlan.recommendedParts ||
+        []
+    );
+
+    const nextDt = new Date();
+    nextDt.setMonth(nextDt.getMonth() + (item.maintenancePlan.intervalMonths || 3));
+    setNextPreventiveDate(nextDt.toISOString().split('T')[0]);
+  };
+
+  const handleIntervalMonthsChange = (months: number) => {
+    setIntervalMonths(months);
+    const nextDt = new Date();
+    nextDt.setMonth(nextDt.getMonth() + months);
+    setNextPreventiveDate(nextDt.toISOString().split('T')[0]);
   };
 
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,79 +212,129 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
     if (!file) return;
 
     setUploadedFileName(file.name);
-    const lowerName = file.name.toLowerCase();
-    let basePreset = DEMO_PRESETS[0];
-    if (lowerName.includes('chiller') || lowerName.includes('ar') || lowerName.includes('hvac')) {
-      basePreset = DEMO_PRESETS[1];
-    } else if (lowerName.includes('gerador') || lowerName.includes('cummins') || lowerName.includes('weg')) {
-      basePreset = DEMO_PRESETS[2];
-    }
+    setIsProcessing(true);
 
-    const customPreset: DemoPreset = {
-      ...basePreset,
-      sourceDoc: file.name,
-      type: file.type.includes('pdf') ? 'Documento PDF' : 'Imagem de Plaqueta',
-    };
-    setSelectedPreset(customPreset);
-    runSimulatedOcr(customPreset);
+    const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+    const lowerName = baseName.toLowerCase();
+
+    setProcessStep('Lendo arquivo enviado e identificando parâmetros técnicos...');
+    setTimeout(() => {
+      setProcessStep('Preenchendo formulário cadastral para conferência...');
+      setTimeout(() => {
+        setIsProcessing(false);
+        setProcessStep('');
+
+        // Preenche com base no nome do arquivo ou no Catálogo Mestre se houver correspondência
+        const matchedCatalog = masterCatalog.find(
+          (m) =>
+            lowerName.includes(m.brand.toLowerCase()) ||
+            lowerName.includes(m.model.toLowerCase())
+        );
+
+        if (matchedCatalog) {
+          handleApplyCatalogTemplate(matchedCatalog.id);
+        } else {
+          if (!name.trim()) setName(baseName.charAt(0).toUpperCase() + baseName.slice(1));
+          if (lowerName.includes('chiller') || lowerName.includes('ar')) {
+            setCategory('Climatização & Refrigeração');
+            setLegalNorm('PMOC');
+          } else if (lowerName.includes('compressor') || lowerName.includes('vaso')) {
+            setCategory('Compressor de Ar');
+            setLegalNorm('NR-13');
+          } else if (lowerName.includes('gerador') || lowerName.includes('painel')) {
+            setCategory('Geração de Energia');
+            setLegalNorm('NR-10');
+          }
+        }
+
+        // Volta para a aba do formulário completo para o usuário revisar/editar livremente
+        setEntryMode('manual');
+      }, 650);
+    }, 500);
   };
 
-  const handleConfirmAndSave = () => {
-    if (!parsedData || !currentClient) return;
+  const handleAddSpec = () => {
+    setSpecs([...specs, { key: `spec-${Date.now()}`, label: '', value: '' }]);
+  };
+
+  const handleRemoveSpec = (idx: number) => {
+    setSpecs(specs.filter((_, i) => i !== idx));
+  };
+
+  const handleAddChecklistItem = () => {
+    setChecklistItems([...checklistItems, '']);
+  };
+
+  const handleRemoveChecklistItem = (idx: number) => {
+    if (checklistItems.length <= 1) return;
+    setChecklistItems(checklistItems.filter((_, i) => i !== idx));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentClient || !tag.trim() || !name.trim()) return;
 
     const branch =
       currentClient.branches.find((b) => b.id === selectedBranchId) ||
       currentClient.branches[0];
 
+    const cleanedSpecs = specs.filter((s) => s.label.trim() !== '' || s.value.trim() !== '');
+    const cleanedChecklist = checklistItems.map((c) => c.trim()).filter(Boolean);
+
     const newEquipment: Equipment = {
-      id: `eq-${Date.now()}`,
+      id: editingEquipment?.id || `eq-${Date.now()}`,
       clientId: currentClient.id,
       clientName: currentClient.name,
       branchId: branch?.id || 'branch-1',
       branchName: branch?.name || 'Matriz',
-      tag: parsedData.tag || 'EQ-01',
-      name: parsedData.name || 'Equipamento Importado',
-      category: parsedData.category || 'Geral',
-      brand: parsedData.brand || 'Marca',
-      model: parsedData.model || 'Modelo',
-      serialNumber: parsedData.serialNumber || `SN-${Date.now()}`,
-      manufacturingYear: parsedData.manufacturingYear || 2024,
-      capacity: parsedData.capacity || '',
-      locationInPlant: parsedData.locationInPlant || 'Galpão Principal',
-      criticality: parsedData.criticality || 'medium',
-      status: parsedData.status || 'operational',
-      nextPreventiveDate:
-        parsedData.nextPreventiveDate ||
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      specs: parsedData.specs || [],
-      maintenancePlan: parsedData.maintenancePlan || {
-        intervalMonths: 3,
-        checklistItems: ['Inspeção visual geral', 'Aperto de conexões'],
-        recommendedParts: [],
+      tag: tag.trim().toUpperCase(),
+      name: name.trim(),
+      category: category.trim() || 'Industrial',
+      brand: brand.trim() || 'Industrial',
+      model: model.trim() || 'Padrão',
+      serialNumber: serialNumber.trim() || `SN-${Date.now().toString().slice(-6)}`,
+      manufacturingYear: Number(manufacturingYear) || new Date().getFullYear(),
+      capacity: capacity.trim(),
+      locationInPlant: locationInPlant.trim() || 'Planta Principal',
+      criticality,
+      status: editingEquipment?.status || 'operational',
+      lastServiceDate: editingEquipment?.lastServiceDate,
+      nextPreventiveDate,
+      specs: cleanedSpecs,
+      maintenancePlan: {
+        intervalMonths: Number(intervalMonths) || 3,
+        legalNorm,
+        checklistItems:
+          cleanedChecklist.length > 0 ? cleanedChecklist : ['Inspeção preventiva periódica'],
+        recommendedParts: recommendedParts.filter(Boolean),
       },
-      qrCodeId: `QR-${parsedData.tag || 'EQ'}-${Math.floor(1000 + Math.random() * 9000)}`,
-      notes: `Importado em ${new Date().toLocaleDateString('pt-BR')} (${uploadedFileName})`,
+      qrCodeId:
+        editingEquipment?.qrCodeId ||
+        `QR-${tag.trim().toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      notes: uploadedFileName
+        ? `Documento anexado: ${uploadedFileName}`
+        : editingEquipment?.notes || `Cadastrado em ${new Date().toLocaleDateString('pt-BR')}`,
     };
 
     onImportEquipment(newEquipment);
 
-    // Se marcado, também cadastra/atualiza no Catálogo Mestre!
-    if (saveToMasterCatalog && onSaveCatalogItem) {
+    // Se marcado, também homologa no Catálogo Mestre
+    if (saveToMasterCatalog && onSaveCatalogItem && brand.trim() && model.trim()) {
       const catalogItem: MasterCatalogItem = {
         id: `cat-imp-${Date.now()}`,
         category: newEquipment.category,
         brand: newEquipment.brand,
         model: newEquipment.model,
         capacity: newEquipment.capacity || 'Padrão Industrial',
-        manualPdfName: uploadedFileName || `manual_${newEquipment.brand.toLowerCase()}.pdf`,
+        manualPdfName: uploadedFileName || undefined,
         activeDeploymentsCount: 1,
         specs: newEquipment.specs,
         maintenancePlan: newEquipment.maintenancePlan,
-        commonSpareParts: (newEquipment.maintenancePlan.recommendedParts || []).map((p, idx) => ({
+        commonSpareParts: newEquipment.maintenancePlan.recommendedParts.map((p, idx) => ({
           code: `PEC-0${idx + 1}`,
           description: p,
-          suggestedReplacementInterval: `A cada ${newEquipment.maintenancePlan.intervalMonths} meses`
-        }))
+          suggestedReplacementInterval: `A cada ${newEquipment.maintenancePlan.intervalMonths} meses`,
+        })),
       };
       onSaveCatalogItem(catalogItem);
     }
@@ -298,139 +344,155 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-6 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50/80 via-white to-slate-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20">
+              <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">
-                  Importador Inteligente de Equipamentos (OCR + IA)
-                </h2>
-                <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200 uppercase">
-                  Visão Computacional
-                </span>
-              </div>
+              <h2 className="text-lg font-black text-slate-900">
+                {editingEquipment
+                  ? `Editar Equipamento • [${editingEquipment.tag}]`
+                  : 'Cadastrar Nova Máquina no Parque'}
+              </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Fotografe a placa da máquina, anexe manual técnico em PDF ou nota fiscal. A IA extrai as especificações e gera o plano preventivo.
+                Preencha os dados diretamente, puxe um modelo do Catálogo Mestre ou anexe um documento/foto opcional
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content Area - Solid White Background */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-white">
-          {/* Step 1: Upload or Presets */}
-          {!parsedData && !isProcessing && (
-            <div className="space-y-6">
-              <div className="border-2 border-dashed border-blue-200 hover:border-blue-400 rounded-2xl p-8 text-center transition bg-blue-50/30 hover:bg-blue-50/60 relative cursor-pointer group">
-                <input
-                  type="file"
-                  accept="image/*,.pdf,.doc,.docx"
-                  onChange={handleCustomUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-100 group-hover:scale-105 border border-blue-200 flex items-center justify-center text-blue-600 mb-3 transition shadow-sm">
-                  <UploadCloud className="w-7 h-7" />
-                </div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Arraste ou clique para carregar o documento da máquina
-                </h4>
-                <p className="text-xs text-slate-500 mt-1">
-                  Formatos suportados: Fotos de plaqueta metálica (JPG, PNG) ou manuais e ordens em PDF
-                </p>
-              </div>
+        {/* Mode Switcher Bar */}
+        {!editingEquipment && (
+          <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setEntryMode('manual')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  entryMode === 'manual'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                1. Cadastro Direto (Formulário)
+              </button>
+              <button
+                type="button"
+                onClick={() => setEntryMode('ocr')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  entryMode === 'ocr'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                2. Anexar Plaqueta / PDF (Opcional)
+              </button>
+            </div>
 
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Ou teste com exemplos reais da indústria:
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {DEMO_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => runSimulatedOcr(preset)}
-                      className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:border-blue-500 hover:shadow-md transition group shadow-xs cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                          {preset.type}
-                        </span>
-                        <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition" />
-                      </div>
-                      <p className="text-xs font-bold text-slate-900 line-clamp-1">
-                        {preset.title}
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
-                        {preset.preview.brand} • {preset.preview.model} ({preset.preview.capacity})
-                      </p>
-                    </button>
+            {/* Puxar do Catálogo Mestre */}
+            {masterCatalog.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span className="text-[11px] font-bold text-slate-600">
+                  Puxar do Catálogo Mestre:
+                </span>
+                <select
+                  value={selectedCatalogModelId}
+                  onChange={(e) => handleApplyCatalogTemplate(e.target.value)}
+                  className="text-xs bg-white border border-blue-300 rounded-xl px-3 py-1.5 font-bold text-blue-800 outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="">-- Preencher manualmente --</option>
+                  {masterCatalog.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.brand} {m.model} ({m.capacity})
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Content Area */}
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 bg-white text-xs">
+          {entryMode === 'ocr' && (
+            <div className="space-y-4">
+              {isProcessing ? (
+                <div className="py-14 text-center space-y-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="relative mx-auto w-14 h-14">
+                    <div className="absolute inset-0 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center text-blue-600">
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-slate-900">Lendo Documento...</h4>
+                    <p className="text-xs text-blue-600 font-semibold">{processStep}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-2xl p-10 text-center transition bg-blue-50/30 hover:bg-blue-50/60 relative cursor-pointer group">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={handleCustomUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="mx-auto w-14 h-14 rounded-2xl bg-blue-100 group-hover:scale-105 border border-blue-200 flex items-center justify-center text-blue-600 mb-3 transition shadow-sm">
+                    <UploadCloud className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800">
+                    Clique ou arraste a foto da plaqueta, manual PDF ou nota fiscal
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Após selecionar o arquivo, você será levado automaticamente ao formulário para revisar e complementar os dados.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Processing Animation */}
-          {isProcessing && (
-            <div className="py-16 text-center space-y-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-              <div className="relative mx-auto w-16 h-16">
-                <div className="absolute inset-0 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center text-blue-600">
-                  <Sparkles className="w-6 h-6 animate-pulse" />
+          {entryMode === 'manual' && (
+            <div className="space-y-5">
+              {uploadedFileName && (
+                <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-blue-900 font-semibold">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <span>Arquivo vinculado: <strong>{uploadedFileName}</strong></span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUploadedFileName('')}
+                    className="text-[11px] font-bold text-slate-500 hover:text-red-600 cursor-pointer"
+                  >
+                    Remover anexo
+                  </button>
                 </div>
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-base font-bold text-slate-900">
-                  Processando com Inteligência Artificial
-                </h4>
-                <p className="text-sm text-blue-600 font-semibold">{processStep}</p>
-                <p className="text-xs text-slate-500">Documento: {uploadedFileName}</p>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* Step 2: Parsed Result Review & Assignment */}
-          {parsedData && !isProcessing && (
-            <div className="space-y-5 animate-in fade-in duration-300">
-              {/* Top Banner Alert */}
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="text-xs space-y-0.5">
-                  <p className="font-bold text-emerald-900">
-                    Dados extraídos com 99.4% de precisão!
-                  </p>
-                  <p className="text-emerald-700">
-                    A IA identificou a máquina, normalizou a capacidade e herdou o plano preventivo
-                    baseado na norma {parsedData.maintenancePlan?.legalNorm || 'industrial'}.
-                    Revise os campos e selecione o cliente contratante de destino.
-                  </p>
-                </div>
-              </div>
-
-              {/* Client & Branch Selection */}
+              {/* 1. Cliente e Planta */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div>
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1.5">
                     <Building2 className="w-3.5 h-3.5 text-blue-600" />
-                    Cliente Contratante:
+                    Cliente Proprietário / Contratante *
                   </label>
                   <select
                     value={selectedClientId}
                     onChange={(e) => handleClientChange(e.target.value)}
-                    className="w-full text-xs bg-white border border-slate-300 rounded-lg p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-xs"
+                    className="w-full text-xs bg-white border border-slate-300 rounded-xl p-2.5 font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-2xs"
                   >
                     {clients.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -443,12 +505,12 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
                 <div>
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1.5">
                     <Building2 className="w-3.5 h-3.5 text-blue-600" />
-                    Unidade / Planta Fabril:
+                    Unidade / Planta Fabril *
                   </label>
                   <select
                     value={selectedBranchId}
                     onChange={(e) => setSelectedBranchId(e.target.value)}
-                    className="w-full text-xs bg-white border border-slate-300 rounded-lg p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-xs"
+                    className="w-full text-xs bg-white border border-slate-300 rounded-xl p-2.5 font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none shadow-2xs"
                   >
                     {currentClient?.branches.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -459,210 +521,323 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
                 </div>
               </div>
 
-              {/* Machine Extracted Details */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {/* 2. Identificação do Equipamento */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3.5">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">TAG do Ativo</label>
+                  <label className="text-xs font-bold text-slate-700">TAG do Ativo *</label>
                   <input
                     type="text"
-                    value={parsedData.tag || ''}
-                    onChange={(e) => setParsedData({ ...parsedData, tag: e.target.value })}
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 font-mono font-bold text-slate-900 mt-1"
+                    required
+                    value={tag}
+                    onChange={(e) => setTag(e.target.value)}
+                    placeholder="Ex: COMP-01"
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-mono font-bold text-slate-900 mt-1 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600">Nome Identificador</label>
+                  <label className="text-xs font-bold text-slate-700">
+                    Nome / Descrição do Equipamento *
+                  </label>
                   <input
                     type="text"
-                    value={parsedData.name || ''}
-                    onChange={(e) => setParsedData({ ...parsedData, name: e.target.value })}
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 font-semibold text-slate-900 mt-1"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex: Compressor de Parafuso 40HP ou Chiller Central"
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-semibold text-slate-900 mt-1 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Marca</label>
+                  <label className="text-xs font-bold text-slate-700">Categoria</label>
                   <input
                     type="text"
-                    value={parsedData.brand || ''}
-                    onChange={(e) => setParsedData({ ...parsedData, brand: e.target.value })}
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 text-slate-800 mt-1"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Ex: Compressor, Chiller, Bomba..."
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 text-slate-800 mt-1 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Modelo</label>
+                  <label className="text-xs font-bold text-slate-700">Marca / Fabricante *</label>
                   <input
                     type="text"
-                    value={parsedData.model || ''}
-                    onChange={(e) => setParsedData({ ...parsedData, model: e.target.value })}
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 text-slate-800 mt-1"
+                    required
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    placeholder="Ex: Schulz, Atlas Copco, WEG..."
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 text-slate-800 mt-1 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Nº de Série</label>
+                  <label className="text-xs font-bold text-slate-700">Modelo *</label>
                   <input
                     type="text"
-                    value={parsedData.serialNumber || ''}
-                    onChange={(e) => setParsedData({ ...parsedData, serialNumber: e.target.value })}
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 font-mono text-slate-800 mt-1"
+                    required
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder="Ex: SRP 4030 E"
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 text-slate-800 mt-1 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Capacidade Nominal</label>
+                  <label className="text-xs font-bold text-slate-700">Nº de Série</label>
                   <input
                     type="text"
-                    value={parsedData.capacity || ''}
-                    onChange={(e) => setParsedData({ ...parsedData, capacity: e.target.value })}
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 text-slate-800 mt-1"
+                    value={serialNumber}
+                    onChange={(e) => setSerialNumber(e.target.value)}
+                    placeholder="Ex: SN-2025-8841"
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-mono text-slate-800 mt-1 outline-none focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-600">Localização na Fábrica</label>
+                  <label className="text-xs font-bold text-slate-700">Capacidade Nominal</label>
                   <input
                     type="text"
-                    value={parsedData.locationInPlant || ''}
-                    onChange={(e) =>
-                      setParsedData({ ...parsedData, locationInPlant: e.target.value })
-                    }
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 text-slate-800 mt-1"
+                    value={capacity}
+                    onChange={(e) => setCapacity(e.target.value)}
+                    placeholder="Ex: 40 HP / 150 TR / 250 kVA"
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 text-slate-800 mt-1 outline-none focus:border-blue-500"
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-600">Criticidade Operacional</label>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-bold text-slate-700">
+                    Localização Física na Planta *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={locationInPlant}
+                    onChange={(e) => setLocationInPlant(e.target.value)}
+                    placeholder="Ex: Galpão 02 - Sala de Utilidades"
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 text-slate-800 mt-1 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="text-xs font-bold text-slate-700">
+                    Criticidade Operacional
+                  </label>
                   <select
-                    value={parsedData.criticality || 'medium'}
+                    value={criticality}
                     onChange={(e) =>
-                      setParsedData({
-                        ...parsedData,
-                        criticality: e.target.value as 'high' | 'medium' | 'low',
-                      })
+                      setCriticality(e.target.value as 'high' | 'medium' | 'low')
                     }
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 font-semibold text-slate-800 mt-1"
+                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-2.5 font-semibold text-slate-800 mt-1 outline-none focus:border-blue-500"
                   >
-                    <option value="high">🚨 Alta (Parada Crítica da Linha)</option>
+                    <option value="high">🚨 Alta (Parada Severa de Linha)</option>
                     <option value="medium">Média (Produção Regular)</option>
-                    <option value="low">Baixa (Equipamento Auxiliar)</option>
+                    <option value="low">Baixa (Equipamento Auxiliar / Reserva)</option>
                   </select>
                 </div>
               </div>
 
-              {/* Technical Specifications Extracted */}
-              {parsedData.specs && parsedData.specs.length > 0 && (
-                <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/70 space-y-2.5">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                      Especificações Técnicas Detectadas pela IA
-                    </span>
+              {/* 3. Ciclo Preventivo e Próximo Vencimento */}
+              <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-950">
+                    Plano & Ciclo de Manutenção Preventiva
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                      Periodicidade Preventiva
+                    </label>
+                    <select
+                      value={intervalMonths}
+                      onChange={(e) => handleIntervalMonthsChange(Number(e.target.value))}
+                      className="w-full text-xs bg-white border border-emerald-300 rounded-xl p-2 font-bold text-slate-800 outline-none"
+                    >
+                      <option value={1}>Mensal (a cada 1 mês)</option>
+                      <option value={2}>Bimestral (a cada 2 meses)</option>
+                      <option value={3}>Trimestral (a cada 3 meses)</option>
+                      <option value={6}>Semestral (a cada 6 meses)</option>
+                      <option value={12}>Anual (a cada 12 meses)</option>
+                    </select>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {parsedData.specs.map((sp, idx) => (
-                      <div key={idx} className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-                        <p className="text-[10px] text-slate-500 font-semibold">{sp.label}</p>
-                        <p className="text-xs font-bold text-slate-900 truncate">{sp.value}</p>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                      Data da Próxima Preventiva *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={nextPreventiveDate}
+                      onChange={(e) => setNextPreventiveDate(e.target.value)}
+                      className="w-full text-xs bg-white border border-emerald-300 rounded-xl p-2 font-mono font-bold text-emerald-800 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                      Norma Técnica Aplicável
+                    </label>
+                    <select
+                      value={legalNorm}
+                      onChange={(e) => setLegalNorm(e.target.value as any)}
+                      className="w-full text-xs bg-white border border-emerald-300 rounded-xl p-2 font-bold text-slate-800 outline-none"
+                    >
+                      <option value="PMOC">PMOC (Climatização)</option>
+                      <option value="NR-13">NR-13 (Vasos de Pressão / Caldeiras)</option>
+                      <option value="NR-12">NR-12 (Segurança em Máquinas)</option>
+                      <option value="NR-10">NR-10 (Instalações Elétricas / Geradores)</option>
+                      <option value="Outro">Padrão Interno / Fabricante</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Checklist Items */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-emerald-950">
+                      Itens do Checklist Preventivo desta Máquina:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleAddChecklistItem}
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Adicionar Item
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {checklistItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={item}
+                          onChange={(e) => {
+                            const updated = [...checklistItems];
+                            updated[idx] = e.target.value;
+                            setChecklistItems(updated);
+                          }}
+                          placeholder="Ex: Verificar pressão de trabalho e vazamentos..."
+                          className="flex-1 text-xs bg-white border border-emerald-200 rounded-lg px-3 py-1.5 text-slate-800 outline-none focus:border-emerald-500"
+                        />
+                        {checklistItems.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveChecklistItem(idx)}
+                            className="p-1 text-slate-400 hover:text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Maintenance Plan Preview */}
-              {parsedData.maintenancePlan && (
-                <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/70 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Wrench className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                        Plano Preventivo Sugerido
-                      </span>
+              {/* 4. Especificações Técnicas */}
+              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/70 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Especificações Técnicas (Opcional)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddSpec}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Parâmetro
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {specs.map((sp, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={sp.label}
+                        onChange={(e) => {
+                          const updated = [...specs];
+                          updated[idx].label = e.target.value;
+                          setSpecs(updated);
+                        }}
+                        placeholder="Parâmetro (ex: Pressão Máx)"
+                        className="w-2/5 text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-semibold text-slate-700"
+                      />
+                      <input
+                        type="text"
+                        value={sp.value}
+                        onChange={(e) => {
+                          const updated = [...specs];
+                          updated[idx].value = e.target.value;
+                          setSpecs(updated);
+                        }}
+                        placeholder="Valor (ex: 10 bar)"
+                        className="flex-1 text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSpec(idx)}
+                        className="p-1 text-slate-400 hover:text-red-600 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    {parsedData.maintenancePlan.legalNorm && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3 text-amber-600" />
-                        Norma {parsedData.maintenancePlan.legalNorm}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-600">
-                    Periodicidade:{' '}
-                    <strong className="text-slate-900 font-bold">
-                      A cada {parsedData.maintenancePlan.intervalMonths} meses
-                    </strong>
-                    {parsedData.maintenancePlan.intervalHours &&
-                      ` ou ${parsedData.maintenancePlan.intervalHours} horas`}
-                  </div>
-                  <ul className="text-xs space-y-1 text-slate-700 list-disc pl-4">
-                    {parsedData.maintenancePlan.checklistItems.map((item, idx) => (
-                      <li key={idx}>
-                        <span className="text-slate-800">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  ))}
                 </div>
-              )}
+              </div>
 
-              {/* Opção de Homologação Automática no Catálogo Mestre */}
-              <label className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 flex items-start gap-3 cursor-pointer hover:bg-blue-100/60 transition">
-                <input
-                  type="checkbox"
-                  checked={saveToMasterCatalog}
-                  onChange={e => setSaveToMasterCatalog(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 accent-blue-600 rounded cursor-pointer"
-                />
-                <div className="text-xs">
-                  <span className="font-bold text-blue-950 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-blue-600" />
-                    Homologar também este modelo no Catálogo Mestre
-                  </span>
-                  <span className="text-blue-700 block mt-0.5">
-                    Salva a ficha técnica, o plano preventivo e as peças de reposição como modelo padrão para reutilizar em futuras máquinas sem precisar recadastrar.
-                  </span>
-                </div>
-              </label>
+              {/* Opção de Homologação no Catálogo Mestre */}
+              {!editingEquipment && (
+                <label className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 flex items-start gap-3 cursor-pointer hover:bg-blue-100/60 transition">
+                  <input
+                    type="checkbox"
+                    checked={saveToMasterCatalog}
+                    onChange={(e) => setSaveToMasterCatalog(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-blue-600 rounded cursor-pointer"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold text-blue-950 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-blue-600" />
+                      Salvar também este modelo no Catálogo Mestre
+                    </span>
+                    <span className="text-blue-700 block mt-0.5">
+                      Guarda a ficha técnica e o checklist deste modelo ({brand || 'Marca'}{' '}
+                      {model || 'Modelo'}) no Catálogo Mestre para reaproveitar em outros clientes.
+                    </span>
+                  </div>
+                </label>
+              )}
             </div>
           )}
-        </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
-          {parsedData ? (
+          {/* Footer */}
+          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
             <button
-              onClick={() => {
-                setParsedData(null);
-                setSelectedPreset(null);
-              }}
-              className="text-xs text-slate-600 hover:text-slate-900 font-bold px-3 py-2 rounded-lg hover:bg-slate-200 transition"
-            >
-              ← Carregar outro documento
-            </button>
-          ) : (
-            <div />
-          )}
-
-          <div className="flex items-center gap-3">
-            <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-xl transition"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
             >
               Cancelar
             </button>
-            {parsedData && (
+            {entryMode === 'manual' && (
               <button
-                onClick={handleConfirmAndSave}
+                type="submit"
                 className="px-5 py-2.5 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center gap-2 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Confirmar e Cadastrar Máquina
+                {editingEquipment ? 'Salvar Alterações da Máquina' : 'Cadastrar Máquina no Parque'}
               </button>
             )}
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
