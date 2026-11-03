@@ -420,253 +420,255 @@ export default function HomePage() {
                 </div>
                 <h3 className="font-bold text-base text-white">4. Aptis Kaizen</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Melhoria contínua orientada a A3 e Lean Manufacturing. Apontamento rápido de ideias da equipe com cálculo automático de ROI e horas salvas.
+                  Melhoria contínua orientada a A3 e Lean Manufacturing. Estruturação das ideias da equipe com acompanhamento de ações, ganhos operacionais e padronização.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* SEÇÃO DE PLANOS & VALORES DE ASSINATURA */}
-        <section id="planos" className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+        {/* SEÇÃO DE ARQUITETURA DE LICENCIAMENTO & ADESÃO SOB MEDIDA (SEM PREÇOS DE TABELA) */}
+        <section id="licenciamento" className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-3 relative z-10">
             <span className="text-xs font-bold uppercase tracking-wider text-cyan-300 bg-cyan-950/70 border border-cyan-500/40 px-3.5 py-1 rounded-full inline-flex items-center gap-1.5 font-mono">
-              <Sparkles className="w-3.5 h-3.5" /> Planos Transparentes & Modulares
+              <Sparkles className="w-3.5 h-3.5" /> Licenciamento Corporativo Exclusivo
             </span>
             <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-              Investimento em Prontidão Industrial
+              Arquitetura Sob Medida para a sua Operação
             </h2>
-            <p className="text-sm sm:text-base text-slate-300">
-              Contrate os módulos essenciais para o momento da sua fábrica ou adote a Suíte Completa 360º com ROI imediato e implantação guiada.
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+              Cada indústria e operação de serviços possui uma estrutura única de equipes, ativos e rituais de gestão. Por isso, não trabalhamos com pacotes engessados de prateleira: desenhamos o licenciamento exato para a realidade da sua planta.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-            {/* PLANO 1: MÓDULO INDIVIDUAL */}
-            <div className="bg-slate-950/80 backdrop-blur-xl rounded-3xl border border-slate-800/90 p-7 flex flex-col justify-between hover:border-cyan-500/50 transition-all hover:-translate-y-1.5 shadow-2xl">
-              <div className="space-y-4">
-                <div className="inline-block px-3 py-1 rounded-lg bg-slate-900 text-slate-300 text-[11px] font-bold uppercase tracking-wider border border-slate-800">
-                  Entrada Lean
+          {/* 3 Formatos de Escopo (Sem Valores Expostos) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-7 relative z-10">
+            {/* ESCOPO 1: MÓDULO ESPECIALISTA DIRECIONADO */}
+            <div className="bg-slate-950/80 backdrop-blur-xl rounded-3xl border border-slate-800/90 p-8 flex flex-col justify-between hover:border-cyan-500/50 transition-all hover:-translate-y-1.5 shadow-2xl">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-block px-3 py-1 rounded-lg bg-slate-900 text-slate-300 text-[11px] font-bold uppercase tracking-wider border border-slate-800 font-mono">
+                    Escopo 01 • Foco Tático
+                  </span>
+                  <span className="text-[11px] font-semibold text-cyan-400 font-mono">
+                    Sob Diagnóstico
+                  </span>
                 </div>
+
                 <div>
-                  <h3 className="text-xl font-black text-white">Módulo Individual</h3>
-                  <p className="text-xs text-slate-400 mt-1">Para plantas que precisam resolver um gargalo crítico imediato.</p>
+                  <h3 className="text-2xl font-black text-white">Licença Modular Direcionada</h3>
+                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                    Para operações que desejam iniciar estruturando uma frente prioritária específica antes de expandir para toda a suíte.
+                  </p>
                 </div>
 
-                <div className="pt-2 pb-4 border-b border-slate-800">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xs text-slate-400 font-semibold">R$</span>
-                    <span className="text-4xl font-black text-white">490</span>
-                    <span className="text-xs text-slate-400 font-semibold">/mês</span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 block mt-1">por planta • 1 ferramenta à escolha</span>
+                <div className="py-3.5 px-4 rounded-2xl bg-slate-900/90 border border-slate-800/90">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+                    Dimensionamento da Proposta
+                  </span>
+                  <span className="text-sm font-bold text-white mt-0.5 block">
+                    Por módulo selecionado & porte da equipe
+                  </span>
                 </div>
 
-                <ul className="space-y-2.5 text-xs text-slate-300">
-                  <li className="flex items-start gap-2">
+                <ul className="space-y-3 text-xs text-slate-300 pt-1">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>1 Módulo Aptis</strong> à sua escolha (Routine, Skills, Compliance ou Kaizen)</span>
+                    <span>Ativação individual dos módulos que você precisa agora (ex: <strong>Aptis Service Pro</strong>, <strong>Aptis Skills</strong> ou <strong>Aptis Routine</strong>)</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Usuários e operadores ilimitados</span>
+                    <span>Ambiente exclusivo e isolado da sua empresa (Multi-Tenant seguro)</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Exportação de relatórios em Excel/PDF</span>
+                    <span>Exportação de relatórios gerenciais e dossiês de auditoria</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Suporte via e-mail e comunidade</span>
+                    <span>Liberdade para acoplar novos módulos conforme a maturidade da operação evolui</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="pt-6">
+              <div className="pt-8">
                 <button
-                  onClick={() => handleOpenDemoModal(undefined, 'Módulo Individual (R$ 490/mês)')}
-                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:border-cyan-500/40 hover:text-white"
+                  onClick={() => handleOpenDemoModal(undefined, 'Licença Modular Direcionada (Sob Medida)')}
+                  className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:border-cyan-500/40 hover:text-white flex items-center justify-center gap-2"
                 >
-                  Solicitar Demonstração
+                  <span>Solicitar Proposta Modular</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
                 </button>
               </div>
             </div>
 
-            {/* PLANO 2: APTIS SUITE OPERACIONAL (DESTAQUE) */}
-            <div className="bg-gradient-to-b from-slate-950/90 via-cyan-950/35 to-slate-950/90 backdrop-blur-xl rounded-3xl border-2 border-cyan-400 p-7 flex flex-col justify-between shadow-[0_0_45px_rgba(6,182,212,0.2)] relative hover:-translate-y-1.5 transition-all">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-[10px] tracking-wider uppercase px-3 py-1 rounded-full shadow-md whitespace-nowrap">
-                Mais Escolhido pelas Indústrias ⭐
+            {/* ESCOPO 2: SUÍTE APTIS 360º (DESTAQUE) */}
+            <div className="bg-gradient-to-b from-slate-950/90 via-cyan-950/35 to-slate-950/90 backdrop-blur-xl rounded-3xl border-2 border-cyan-400 p-8 flex flex-col justify-between shadow-[0_0_45px_rgba(6,182,212,0.2)] relative hover:-translate-y-1.5 transition-all">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-[10px] tracking-wider uppercase px-3.5 py-1 rounded-full shadow-md whitespace-nowrap">
+                Arquitetura Mais Escolhida ⭐
               </div>
 
-              <div className="space-y-4">
-                <div className="inline-block px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[11px] font-bold uppercase tracking-wider border border-cyan-500/30">
-                  Operação & Pessoas
+              <div className="space-y-5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-block px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[11px] font-bold uppercase tracking-wider border border-cyan-500/30 font-mono">
+                    Escopo 02 • Planta Integrada
+                  </span>
+                  <span className="text-[11px] font-semibold text-cyan-300 font-mono">
+                    Condição Especial
+                  </span>
                 </div>
+
                 <div>
-                  <h3 className="text-xl font-black text-white">Aptis Suite Operacional</h3>
-                  <p className="text-xs text-slate-300 mt-1">O pacote central para garantir a estabilidade do chão de fábrica.</p>
+                  <h3 className="text-2xl font-black text-white">Suíte Aptis 360º</h3>
+                  <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                    Governança completa integrando Rotina de Turno, Pessoas, Conformidade, Manutenção e Liderança em um único ecossistema.
+                  </p>
                 </div>
 
-                <div className="pt-2 pb-4 border-b border-slate-800">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xs text-slate-400 font-semibold">R$</span>
-                    <span className="text-4xl font-black text-cyan-400">1.190</span>
-                    <span className="text-xs text-slate-400 font-semibold">/mês</span>
-                  </div>
-                  <span className="text-[11px] text-cyan-300/80 block mt-1">por planta • Economia de 25%</span>
+                <div className="py-3.5 px-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300/90 block font-mono">
+                    Dimensionamento da Proposta
+                  </span>
+                  <span className="text-sm font-bold text-white mt-0.5 block">
+                    Licenciamento unificado por planta operacional
+                  </span>
                 </div>
 
-                <ul className="space-y-2.5 text-xs text-slate-200">
-                  <li className="flex items-start gap-2">
+                <ul className="space-y-3 text-xs text-slate-200 pt-1">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Aptis Routine</strong> (Kamishibai & Turnos)</span>
+                    <span><strong>Acesso Integrado à Suíte Aptis</strong> (Routine, Skills, Compliance, Kaizen, 1:1 e Service Pro)</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Aptis Skills</strong> (Matriz ILUO & Sucessor)</span>
+                    <span>Painel executivo <strong>The Aptis Score</strong> em tempo real para a gestão</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Aptis Compliance</strong> (NRs & POPs)</span>
+                    <span>Parametrização inicial assistida (importação de matrizes, ativos e catálogos)</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Painel Executivo <strong>The Aptis Score</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Treinamento de Onboarding com a Equipe</span>
+                    <span>Treinamento de Onboarding ao vivo com supervisores, coordenadores e líderes</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="pt-6">
+              <div className="pt-8">
                 <button
-                  onClick={() => handleOpenDemoModal(undefined, 'Aptis Suite Operacional (R$ 1.190/mês)')}
-                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/25 cursor-pointer"
+                  onClick={() => handleOpenDemoModal(undefined, 'Suíte Aptis 360º - Planta Integrada')}
+                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/25 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Solicitar Demonstração & Orçamento
+                  <span>Agendar Demonstração & Proposta</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* PLANO 3: FÁBRICA SEMPRE APTA 360º */}
-            <div className="bg-slate-950/80 backdrop-blur-xl rounded-3xl border border-slate-800/90 p-7 flex flex-col justify-between hover:border-indigo-500/50 transition-all hover:-translate-y-1.5 shadow-2xl">
-              <div className="space-y-4">
-                <div className="inline-block px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider border border-indigo-500/30">
-                  Suíte Completa 360º
+            {/* ESCOPO 3: ENTERPRISE & MULTI-PLANTAS */}
+            <div className="bg-slate-950/80 backdrop-blur-xl rounded-3xl border border-slate-800/90 p-8 flex flex-col justify-between hover:border-amber-500/50 transition-all hover:-translate-y-1.5 shadow-2xl">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-block px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider border border-amber-500/30 font-mono">
+                    Escopo 03 • Corporativo
+                  </span>
+                  <span className="text-[11px] font-semibold text-amber-300 font-mono">
+                    Projeto Executivo
+                  </span>
                 </div>
+
                 <div>
-                  <h3 className="text-xl font-black text-white">Fábrica Sempre Apta</h3>
-                  <p className="text-xs text-slate-400 mt-1">Governança total: rotina, pessoas, conformidade e melhoria contínua.</p>
+                  <h3 className="text-2xl font-black text-white">Enterprise & Multi-Plantas</h3>
+                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                    Para grupos empresariais com múltiplas unidades fabris ou operações de campo de grande porte que exigem governança centralizada.
+                  </p>
                 </div>
 
-                <div className="pt-2 pb-4 border-b border-slate-800">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xs text-slate-400 font-semibold">R$</span>
-                    <span className="text-4xl font-black text-white">1.590</span>
-                    <span className="text-xs text-slate-400 font-semibold">/mês</span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 block mt-1">por planta • Acesso irrestrito a todos módulos</span>
+                <div className="py-3.5 px-4 rounded-2xl bg-slate-900/90 border border-slate-800/90">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">
+                    Dimensionamento da Proposta
+                  </span>
+                  <span className="text-sm font-bold text-white mt-0.5 block">
+                    Contrato corporativo para múltiplas unidades
+                  </span>
                 </div>
 
-                <ul className="space-y-2.5 text-xs text-slate-300">
-                  <li className="flex items-start gap-2">
+                <ul className="space-y-3 text-xs text-slate-300 pt-1">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Todos os 4 Módulos Aptis Integrados</strong></span>
+                    <span>Visão executiva consolidada entre diferentes plantas, filiais ou contratos</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Aptis Kaizen</strong> com Gestor de Ideias & ROI Lean</span>
+                    <span>Padronização corporativa de checklists, normas e catálogos mestres</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>The Aptis Score Completo com Radar Chart</span>
+                    <span>Acompanhamento consultivo na implantação e revisão de processos</span>
                   </li>
-                  <li className="flex items-start gap-2">
+                  <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Auditoria e OCR de POPs & Documentos</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Gerente de Contas & Suporte Prioritário VIP</span>
+                    <span>Atendimento prioritário dedicado à diretoria e gerência operacional</span>
                   </li>
                 </ul>
               </div>
 
-              <div className="pt-6">
+              <div className="pt-8">
                 <button
-                  onClick={() => handleOpenDemoModal(undefined, 'Fábrica Sempre Apta 360º (R$ 1.590/mês)')}
-                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:border-indigo-500/40 hover:text-white"
+                  onClick={() => handleOpenDemoModal(undefined, 'Enterprise & Multi-Plantas (Projeto Executivo)')}
+                  className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:border-amber-500/40 hover:text-white flex items-center justify-center gap-2"
                 >
-                  Solicitar Demonstração
-                </button>
-              </div>
-            </div>
-
-            {/* PLANO 4: ENTERPRISE MULTI-PLANTAS */}
-            <div className="bg-slate-950/80 backdrop-blur-xl rounded-3xl border border-slate-800/90 p-7 flex flex-col justify-between hover:border-amber-500/50 transition-all hover:-translate-y-1.5 shadow-2xl">
-              <div className="space-y-4">
-                <div className="inline-block px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider border border-amber-500/30">
-                  Corporativo
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white">Enterprise & Multi-Plantas</h3>
-                  <p className="text-xs text-slate-400 mt-1">Para grupos industriais com 2 ou mais fábricas e integrações dedicadas.</p>
-                </div>
-
-                <div className="pt-2 pb-4 border-b border-slate-800">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-white">Sob Consulta</span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 block mt-1">descontos progressivos por volume de plantas</span>
-                </div>
-
-                <ul className="space-y-2.5 text-xs text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Visão consolidada Multi-Plantas corporativa</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Integração ERP / MES / SAP / TOTVS</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Single Sign-On (SSO SAML / Azure AD)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>SLA de 99.9% e Consultoria Técnica Dedicada</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="pt-6">
-                <button
-                  onClick={() => handleOpenDemoModal(undefined, 'Enterprise Multi-Plantas (Sob Consulta)')}
-                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:border-amber-500/40 hover:text-white"
-                >
-                  Falar com Especialista
+                  <span>Falar com Diretor de Contas</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Banner de Garantia & Confiança */}
-          <div className="mt-12 p-6 rounded-2xl bg-slate-950/75 backdrop-blur-xl border border-slate-800/90 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-300 relative z-10">
-            <div className="flex items-center gap-3 text-center sm:text-left">
-              <ShieldCheck className="w-6 h-6 text-cyan-400 shrink-0" />
-              <span>
-                <strong>Sem taxa oculta de implantação:</strong> Todas as assinaturas incluem onboarding assistido, importação das planilhas legadas da sua fábrica e suporte direto aos supervisores.
-              </span>
+          {/* RITO DE ADESÃO EXECUTIVA EM 3 ETAPAS */}
+          <div className="mt-14 p-8 sm:p-10 rounded-3xl bg-slate-950/85 backdrop-blur-xl border border-slate-800/90 relative z-10 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-cyan-400 font-mono">
+                  Jornada de Implantação Assistida
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+                  Como funciona o processo para receber sua proposta?
+                </h3>
+              </div>
+              <button
+                onClick={() => handleOpenDemoModal(undefined, 'Diagnóstico Operacional & Proposta Personalizada')}
+                className="shrink-0 px-5 py-3 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 font-bold text-xs uppercase tracking-wider hover:bg-cyan-500/25 transition-colors cursor-pointer"
+              >
+                Iniciar Diagnóstico Agora
+              </button>
             </div>
-            <button
-              onClick={() => handleOpenDemoModal()}
-              className="shrink-0 px-4 py-2 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 font-bold hover:bg-cyan-500/25 transition-colors cursor-pointer"
-            >
-              Tirar Dúvidas Comerciais
-            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <span className="text-xs font-black text-cyan-400 font-mono">ETAPA 01 //</span>
+                <h4 className="text-sm font-bold text-white">Diagnóstico da Operação</h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Em uma conversa rápida, entendemos a estrutura da sua empresa, o tamanho da equipe e quais rotinas ou controles precisam de maior padronização.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <span className="text-xs font-black text-cyan-400 font-mono">ETAPA 02 //</span>
+                <h4 className="text-sm font-bold text-white">Demonstração Guiada na Prática</h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Apresentamos ao vivo os módulos mais aderentes à necessidade e ao momento da sua operação, simulando o uso real dos seus gestores e equipes.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2">
+                <span className="text-xs font-black text-cyan-400 font-mono">ETAPA 03 //</span>
+                <h4 className="text-sm font-bold text-white">Proposta Sob Medida & Go-Live</h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Entregamos a proposta comercial ajustada ao porte da sua unidade, com implantação guiada, migração das suas planilhas atuais e treinamento dos líderes.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -677,15 +679,21 @@ export default function HomePage() {
               Sua fábrica está pronta para operar com 100% de aptidão?
             </h2>
             <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
-              Experimente agora mesmo a suíte integrada da Aptis e meça o Índice de Aptidão da sua planta em tempo real.
+              Agende uma demonstração executiva para conhecer a arquitetura ideal para a sua operação ou acesse o ambiente corporativo da suíte.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => handleOpenDemoModal(undefined, 'Diagnóstico Executivo - CTA Final')}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm uppercase tracking-wider rounded-xl shadow-[0_0_35px_rgba(6,182,212,0.35)] transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                Solicitar Diagnóstico & Proposta
+                <ArrowRight className="w-4 h-4" />
+              </button>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm uppercase tracking-wider rounded-xl shadow-[0_0_35px_rgba(6,182,212,0.35)] transition-all hover:scale-105 active:scale-95"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-900/90 hover:bg-slate-800 text-slate-100 border border-cyan-500/40 hover:border-cyan-400 font-bold text-sm uppercase tracking-wider rounded-xl transition-all"
               >
-                Acessar Plataforma Aptis Agora
-                <ArrowRight className="w-4 h-4" />
+                Acessar Plataforma Aptis
               </Link>
             </div>
           </div>

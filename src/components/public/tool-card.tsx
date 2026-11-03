@@ -82,7 +82,7 @@ export function ToolCard({ tool, onRequestDemo, index = 0 }: ToolCardProps) {
               </span>
             )}
             <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700/80 font-mono">
-              {tool.recommendedPlan}
+              Acesso Corporativo
             </span>
           </div>
         </div>
@@ -119,12 +119,12 @@ export function ToolCard({ tool, onRequestDemo, index = 0 }: ToolCardProps) {
           className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500/20 via-blue-600/20 to-cyan-500/20 hover:from-cyan-500 hover:to-blue-500 text-cyan-200 hover:text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg border border-cyan-500/40 hover:border-cyan-300 transition-all flex items-center justify-center gap-2 group/btn cursor-pointer"
         >
           <Mail className="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-slate-950 group-hover/btn:scale-110 transition-transform" />
-          <span>Solicitar Demonstração & Orçamento</span>
+          <span>Agendar Demonstração Executiva</span>
           <ArrowRight className="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-slate-950 group-hover/btn:translate-x-1 transition-transform" />
         </button>
 
         <div className="flex items-center justify-between w-full text-[10px] text-slate-400 px-1 font-mono">
-          <span>Licenciamento modular por planta</span>
+          <span>Licenciamento sob medida</span>
           <span className="font-semibold text-cyan-400">Implantação guiada inclusa</span>
         </div>
       </div>

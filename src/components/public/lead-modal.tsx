@@ -16,7 +16,7 @@ interface LeadModalProps {
 
 export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps) {
   const { submitLead } = useTenant();
-  const allAvailableTools = getAllTools();
+  const allAvailableTools = getAllTools().filter(t => t.id !== 'performance-pro');
 
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
@@ -150,13 +150,13 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
             <div className="mb-5">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-cyan-800 text-[11px] font-bold uppercase tracking-wider mb-2">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
-                Demonstração Guiada & Proposta Comercial
+                Diagnóstico Operacional & Proposta Sob Medida
               </div>
               <h3 className="text-xl font-black text-slate-900 leading-tight">
-                {tool ? `Orçamento & Demonstração: ${tool.name}` : 'Solicitar Orçamento da Suíte Aptis'}
+                {tool ? `Demonstração Executiva: ${tool.name}` : 'Agendar Diagnóstico & Proposta Aptis'}
               </h3>
               <p className="text-xs text-slate-600 mt-1">
-                Preencha os dados da sua indústria para receber o orçamento detalhado de assinatura por planta e uma demonstração prática dos recursos.
+                Informe os dados da sua empresa para agendarmos uma apresentação guiada e desenharmos o formato de licenciamento ideal para a sua realidade operacional.
               </p>
             </div>
 
@@ -164,7 +164,7 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
               {/* Seleção de Módulos Desejados */}
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                  Selecione as Ferramentas para o Orçamento:
+                  Módulos de Interesse para Avaliação:
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {allAvailableTools.map(t => {
@@ -295,12 +295,12 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
                   className="w-full py-3.5 px-4 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 hover:from-cyan-950 hover:to-slate-900 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg border border-slate-800 hover:border-cyan-500/50 transition-all flex items-center justify-center gap-2 cursor-pointer group"
                 >
                   <Send className="w-4 h-4 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
-                  <span>Enviar Solicitação de Orçamento & Demonstração</span>
+                  <span>Solicitar Diagnóstico & Proposta Personalizada</span>
                 </button>
 
                 <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 mt-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Seus dados são confidenciais. Sem spam. Contato direto de consultor técnico.</span>
+                  <span>Atendimento consultivo e confidencial direto com especialista Aptis.</span>
                 </div>
               </div>
             </form>
