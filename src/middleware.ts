@@ -108,15 +108,16 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Proteção de rotas internas de API de administração
-  if (pathname.startsWith('/api/admin/') && !pathname.startsWith('/api/admin/login') && !pathname.startsWith('/api/admin/verify')) {
-    const adminSession = request.cookies.get('aptis_admin_session')?.value;
-    if (!adminSession) {
-      return NextResponse.json(
-        { success: false, error: 'Acesso não autorizado ao endpoint de controle.' },
-        { status: 401 }
-      );
-    }
+  // 3. Redireciona qualquer tentativa de acesso à antiga rota /admin para a Home (provisionamento 100% via código)
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  if (pathname.startsWith('/api/admin')) {
+    return NextResponse.json(
+      { success: false, error: 'Endpoint desativado.' },
+      { status: 404 }
+    );
   }
 
   const response = NextResponse.next();

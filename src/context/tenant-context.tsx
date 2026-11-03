@@ -172,27 +172,6 @@ export function TenantProvider({ children }: { children: ReactNode }) {
             });
           }
         }
-
-        // Carregar Leads do Supabase apenas se estiver acessando a área administrativa
-        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-          const { data: cloudLeads, error: ldErr } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-          if (!ldErr && cloudLeads && cloudLeads.length > 0) {
-            const mappedLeads: LeadRequest[] = cloudLeads.map((ld: any) => ({
-              id: ld.id,
-              companyName: ld.company_name,
-              contactName: ld.contact_name,
-              email: ld.email,
-              phone: ld.phone,
-              teamSize: ld.team_size,
-              toolId: ld.tool_id,
-              toolName: ld.tool_name,
-              notes: ld.notes,
-              status: ld.status,
-              createdAt: ld.created_at ? ld.created_at.split('T')[0] : '2026-01-01'
-            }));
-            setLeads(mappedLeads);
-          }
-        }
       } catch (err) {
         console.warn('Supabase offline ou sem conexão, utilizando fallback local:', err);
       } finally {
