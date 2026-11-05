@@ -122,11 +122,11 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
 
-  // 4. Headers globais de segurança (OWASP)
+  // 4. Headers globais de segurança (OWASP) - Permite microfone e câmera na própria origem (para Gravador 1:1 e QR Code)
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  response.headers.set('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
 
   return response;
 }
