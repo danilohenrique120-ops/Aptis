@@ -28,7 +28,9 @@ import {
   Edit3,
   ChevronDown,
   ChevronUp,
-  Users
+  Users,
+  Mic,
+  ArrowRight
 } from 'lucide-react';
 
 interface MeetingFormModalProps {
@@ -54,6 +56,7 @@ export function MeetingFormModal({
 }: MeetingFormModalProps) {
   const questionsList = customQuestions && customQuestions.length > 0 ? customQuestions : POWERFUL_QUESTIONS;
 
+  const [activeTab, setActiveTab] = useState<'conducao' | 'fechamento'>('conducao');
   const [selectedMember, setSelectedMember] = useState<TeamMember1on1>(initialMember);
   const [meetingDate, setMeetingDate] = useState(
     editingMeeting?.date || new Date().toISOString().split('T')[0]
@@ -272,7 +275,6 @@ export function MeetingFormModal({
                 </span>
               </div>
 
-              {/* Permite trocar o liderado caso seja uma nova reunião */}
               <div className="flex items-center gap-3 mt-1">
                 {!editingMeeting && allMembers.length > 1 ? (
                   <div className="flex items-center gap-2">
@@ -302,41 +304,9 @@ export function MeetingFormModal({
             </div>
           </div>
 
-          {/* Controles Rápidos no Topo: Data, Duração e Termômetro de Energia */}
+          {/* Controles Rápidos no Topo: Data e Duração */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Termômetro de Clima / Energia */}
-            <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-2xl border border-slate-800">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Energia / Clima:
-              </span>
-              <div className="flex items-center gap-1">
-                {([1, 2, 3, 4, 5] as EnergyMood[]).map(val => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setMoodRating(val)}
-                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      moodRating === val
-                        ? val <= 2
-                          ? 'bg-rose-600 text-white shadow-sm scale-105'
-                          : val === 3
-                          ? 'bg-amber-500 text-slate-950 shadow-sm scale-105'
-                          : 'bg-emerald-500 text-slate-950 shadow-sm scale-105'
-                        : 'text-slate-400 hover:bg-slate-800'
-                    }`}
-                  >
-                    {val === 1 && '😫 1'}
-                    {val === 2 && '😕 2'}
-                    {val === 3 && '😐 3'}
-                    {val === 4 && '🙂 4'}
-                    {val === 5 && '🚀 5'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Data e Duração */}
-            <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-2xl border border-slate-800 text-xs">
+            <div className="flex items-center gap-2 bg-slate-900 px-3.5 py-2 rounded-2xl border border-slate-800 text-xs">
               <Calendar className="w-3.5 h-3.5 text-rose-400" />
               <input
                 type="date"
@@ -369,32 +339,123 @@ export function MeetingFormModal({
           </div>
         </div>
 
-        {/* WORKSPACE INTEGRADO EM 2 COLUNAS AMPLAS (SEM ABAS ESCONDIDAS) */}
+        {/* BARRA DE NAVEGAÇÃO EM 2 ABAS AMPLAS */}
+        <div className="px-6 pt-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('conducao')}
+              className={`px-5 py-3 text-xs sm:text-sm font-black rounded-t-2xl border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'conducao'
+                  ? 'border-rose-600 text-rose-700 bg-rose-50/50'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Mic className="w-4 h-4 text-rose-600" />
+              <span>1. Clima, Pauta & Gravador ao Vivo</span>
+              <span className="bg-slate-200 text-slate-800 text-[10px] px-2 py-0.5 rounded-full font-mono">
+                {topics.filter(t => t.isDiscussed).length}/{topics.length} pauta • {transcripts.length} falas
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('fechamento')}
+              className={`px-5 py-3 text-xs sm:text-sm font-black rounded-t-2xl border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'fechamento'
+                  ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <ListTodo className="w-4 h-4 text-emerald-600" />
+              <span>2. Síntese Executiva & Plano de Ação</span>
+              <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-mono">
+                {actionItems.length} {actionItems.length === 1 ? 'ação' : 'ações'}
+              </span>
+            </button>
+          </div>
+
+          <div className="pb-2 hidden md:flex items-center gap-2 text-xs text-slate-500">
+            {activeTab === 'conducao' ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab('fechamento')}
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+              >
+                Ir para Síntese & Plano de Ação <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActiveTab('conducao')}
+                className="text-xs font-bold text-rose-700 hover:text-rose-800 flex items-center gap-1 cursor-pointer"
+              >
+                ← Voltar para Pauta & Gravador
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* CONTEÚDO DAS 2 ABAS (MANTENDO O GRAVADOR MONTADO EM BACKGROUND PARA NÃO INTERROMPER A GRAVAÇÃO) */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* COLUNA ESQUERDA (6 COLUNAS): PAUTA, PERGUNTAS GUIA & SÍNTESE DO GESTOR */}
+          {/* ABA 1: CLIMA, PAUTA & GRAVADOR AO VIVO */}
+          <div className={activeTab === 'conducao' ? 'grid grid-cols-1 lg:grid-cols-12 gap-6 items-start' : 'hidden'}>
+            {/* Coluna Esquerda da Aba 1: Clima + Pauta + Perguntas */}
             <div className="lg:col-span-6 space-y-5">
-              {/* Observação rápida sobre o Clima */}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
-                  Percepção Inicial de Clima & Motivação do Liderado
-                </label>
+              {/* Termômetro de Clima / Energia + Observação */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-800 block">
+                      Termômetro de Clima & Motivação do Liderado
+                    </label>
+                    <span className="text-[11px] text-slate-500">
+                      Avalie o nível de energia e estado emocional do colaborador nesta conversa.
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+                    {([1, 2, 3, 4, 5] as EnergyMood[]).map(val => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setMoodRating(val)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          moodRating === val
+                            ? val <= 2
+                              ? 'bg-rose-600 text-white shadow-xs'
+                              : val === 3
+                              ? 'bg-amber-500 text-white shadow-xs'
+                              : 'bg-emerald-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:bg-white'
+                        }`}
+                      >
+                        {val === 1 && '😫 1'}
+                        {val === 2 && '😕 2'}
+                        {val === 3 && '😐 3'}
+                        {val === 4 && '🙂 4'}
+                        {val === 5 && '🚀 5'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <input
                   type="text"
-                  placeholder="Ex: Motivado com as novas metas do setor, porém relatou sobrecarga no fechamento de turno..."
+                  placeholder="Observação sobre o clima/motivação (ex: Motivado com as novas metas, mas relatou cansaço no fechamento)..."
                   value={moodNote}
                   onChange={e => setMoodNote(e.target.value)}
                   className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white"
                 />
               </div>
 
-              {/* BLOCO 1: PAUTA DA CONVERSA (COM EDIÇÃO E EXCLUSÃO) */}
+              {/* Pauta da Reunião & Tópicos a Discutir */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
                       <FileText className="w-4 h-4 text-rose-600" />
-                      1. Pauta da Reunião & Tópicos a Discutir
+                      Pauta da Reunião & Tópicos a Discutir
                     </h3>
                     <p className="text-[11px] text-slate-500">
                       Marque os tópicos abordados, edite ou adicione novos pontos à conversa.
@@ -405,7 +466,6 @@ export function MeetingFormModal({
                   </span>
                 </div>
 
-                {/* Lista de Tópicos */}
                 <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                   {topics.map(t => (
                     <div
@@ -490,7 +550,6 @@ export function MeetingFormModal({
                   ))}
                 </div>
 
-                {/* Adicionar Tópico */}
                 <form onSubmit={handleAddTopic} className="flex gap-2">
                   <input
                     type="text"
@@ -508,13 +567,13 @@ export function MeetingFormModal({
                 </form>
               </div>
 
-              {/* BLOCO 2: BANCO DE PERGUNTAS PODEROSAS (PARA INJETAR NA PAUTA COM 1 CLIQUE) */}
+              {/* Banco de Perguntas Poderosas para Injetar na Pauta */}
               <div className="bg-gradient-to-br from-rose-50/90 via-pink-50/70 to-amber-50/70 p-5 rounded-2xl border border-rose-200/80 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-rose-600" />
                     <h4 className="text-xs font-black uppercase tracking-wider text-rose-950">
-                      Sugestões de Perguntas Estratégicas (Clique para incluir na Pauta)
+                      Perguntas Estratégicas Sugeridas (Clique para incluir na Pauta)
                     </h4>
                   </div>
                   <button
@@ -564,7 +623,7 @@ export function MeetingFormModal({
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
                       {filteredQuestions.map(q => (
                         <button
                           key={q.id}
@@ -584,29 +643,10 @@ export function MeetingFormModal({
                   </>
                 )}
               </div>
-
-              {/* BLOCO 3: SÍNTESE EXECUTIVA & ANOTAÇÕES DO GESTOR */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
-                <label className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-indigo-600" />
-                  2. Síntese Executiva, Feedbacks & Acordos da Reunião
-                </label>
-                <p className="text-[11px] text-slate-500">
-                  Registre o resumo da conversa, pontos fortes reconhecidos, pontos de desenvolvimento e direcionamentos que constarão na Ata oficial.
-                </p>
-                <textarea
-                  rows={5}
-                  placeholder="Digite aqui as anotações principais da reunião 1:1, feedbacks trocados e observações de carreira..."
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-slate-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white"
-                />
-              </div>
             </div>
 
-            {/* COLUNA DIREITA (6 COLUNAS): GRAVADOR ACÚSTICO AO VIVO + PLANO DE AÇÃO & METAS */}
-            <div className="lg:col-span-6 space-y-5">
-              {/* BLOCO 4: GRAVADOR & TRANSCRIÇÃO AO VIVO (SEMPRE VISÍVEL) */}
+            {/* Coluna Direita da Aba 1: Gravador & Transcrição Acústica ao Vivo */}
+            <div className="lg:col-span-6">
               <LiveMeetingRecorder
                 managerName={managerName}
                 employeeName={selectedMember.name}
@@ -614,37 +654,129 @@ export function MeetingFormModal({
                 onAddTranscript={block => setTranscripts(prev => [...prev, block])}
                 onUpdateTranscript={handleUpdateTranscript}
                 onDeleteTranscript={handleDeleteTranscript}
-                onCreateActionFromTranscript={handleCreateActionFromTranscript}
+                onCreateActionFromTranscript={(text, speaker) => {
+                  handleCreateActionFromTranscript(text, speaker);
+                }}
               />
+            </div>
+          </div>
 
-              {/* BLOCO 5: PLANO DE AÇÃO, COMPROMISSOS & METAS (COM EDIÇÃO E EXCLUSÃO) */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+          {/* ABA 2: SÍNTESE EXECUTIVA & PLANO DE AÇÃO */}
+          <div className={activeTab === 'fechamento' ? 'grid grid-cols-1 lg:grid-cols-12 gap-6 items-start' : 'hidden'}>
+            {/* Coluna Esquerda da Aba 2: Síntese Executiva & Feedbacks */}
+            <div className="lg:col-span-6 space-y-5">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                    Síntese Executiva, Feedbacks & Acordos da Reunião
+                  </label>
+                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                    Constará na Ata Oficial
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Registre o resumo executivo da conversa, pontos fortes reconhecidos, orientações de desenvolvimento e alinhamentos feitos com o liderado.
+                </p>
+                <textarea
+                  rows={12}
+                  placeholder="Digite aqui as anotações principais da reunião 1:1, feedbacks trocados, percepções de carreira e combinados..."
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  className="w-full text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white"
+                />
+              </div>
+
+              {/* Resumo Rápido dos Tópicos Abordados na Pauta */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Resumo da Pauta ({topics.filter(t => t.isDiscussed).length} de {topics.length} abordados)
+                </h4>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {topics.map(t => (
+                    <div key={t.id} className="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                      <span className={t.isDiscussed ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+                        {t.title}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        t.isDiscussed ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {t.isDiscussed ? '✓ Abordado' : 'Pendente'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Coluna Direita da Aba 2: Plano de Ação, Compromissos & Metas */}
+            <div className="lg:col-span-6 space-y-5">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                      <CheckSquare className="w-4 h-4 text-emerald-600" />
-                      3. Plano de Ação, Compromissos & Metas Acordadas
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <CheckSquare className="w-5 h-5 text-emerald-600" />
+                      Plano de Ação, Compromissos & Metas Acordadas
                     </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Defina claramente o que o Gestor e o Liderado farão até a próxima reunião 1:1.
+                    <p className="text-xs text-slate-500">
+                      Defina o que o Gestor e o Liderado farão até o próximo encontro 1:1.
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
                     {actionItems.length} {actionItems.length === 1 ? 'ação' : 'ações'}
                   </span>
                 </div>
 
+                {/* Formulário de Nova Ação / Meta */}
+                <form onSubmit={handleAddAction} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <span className="text-xs font-bold text-slate-700 block">
+                    + Adicionar Novo Compromisso ou Meta:
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Descreva a nova ação, meta ou entrega combinada..."
+                    value={newActionTitle}
+                    onChange={e => setNewActionTitle(e.target.value)}
+                    className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <select
+                      value={newActionAssignee}
+                      onChange={e => setNewActionAssignee(e.target.value as any)}
+                      className="w-full sm:flex-1 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2.5 font-semibold text-slate-700 cursor-pointer"
+                    >
+                      <option value="employee">👤 Responsável: {selectedMember.name} (Liderado)</option>
+                      <option value="manager">👔 Responsável: {managerName} (Gestor)</option>
+                    </select>
+
+                    <input
+                      type="date"
+                      value={newActionDueDate}
+                      onChange={e => setNewActionDueDate(e.target.value)}
+                      className="w-full sm:w-40 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2.5 font-semibold text-slate-700 cursor-pointer"
+                    />
+
+                    <button
+                      type="submit"
+                      className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Adicionar Ação
+                    </button>
+                  </div>
+                </form>
+
                 {/* Lista de Ações com Editar / Excluir / Concluir */}
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                   {actionItems.length === 0 ? (
-                    <div className="p-5 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                      Nenhuma meta ou compromisso registrado ainda. Adicione abaixo ou clique em "+ Ação" em qualquer fala gravada.
+                    <div className="p-8 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      Nenhuma meta ou compromisso registrado ainda. Adicione no formulário acima ou clique em "+ Ação" em qualquer fala gravada na Aba 1.
                     </div>
                   ) : (
                     actionItems.map(item => (
                       <div
                         key={item.id}
-                        className={`p-3 rounded-xl border transition-all ${
+                        className={`p-3.5 rounded-xl border transition-all ${
                           item.status === 'completed'
                             ? 'bg-slate-50 border-slate-200 opacity-70'
                             : 'bg-white border-slate-200 shadow-2xs'
@@ -760,42 +892,6 @@ export function MeetingFormModal({
                     ))
                   )}
                 </div>
-
-                {/* Formulário de Nova Ação / Meta */}
-                <form onSubmit={handleAddAction} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2.5">
-                  <input
-                    type="text"
-                    placeholder="Descreva a nova ação, meta ou compromisso acordado..."
-                    value={newActionTitle}
-                    onChange={e => setNewActionTitle(e.target.value)}
-                    className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-
-                  <div className="flex flex-col sm:flex-row items-center gap-2">
-                    <select
-                      value={newActionAssignee}
-                      onChange={e => setNewActionAssignee(e.target.value as any)}
-                      className="w-full sm:flex-1 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 cursor-pointer"
-                    >
-                      <option value="employee">👤 Responsável: {selectedMember.name} (Liderado)</option>
-                      <option value="manager">👔 Responsável: {managerName} (Gestor)</option>
-                    </select>
-
-                    <input
-                      type="date"
-                      value={newActionDueDate}
-                      onChange={e => setNewActionDueDate(e.target.value)}
-                      className="w-full sm:w-40 text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 cursor-pointer"
-                    />
-
-                    <button
-                      type="submit"
-                      className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Adicionar Ação
-                    </button>
-                  </div>
-                </form>
               </div>
             </div>
           </div>
