@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EmployeePdi, PdiActionItem } from './types';
 import { INITIAL_PDIS } from './mock-data';
 import { PdiDashboard } from './components/PdiDashboard';
@@ -18,6 +18,24 @@ export default function PdiManagerModule() {
   const [editingPdi, setEditingPdi] = useState<EmployeePdi | null>(null);
   const [dossierPdi, setDossierPdi] = useState<EmployeePdi | null>(null);
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+  const [tintedGlass, setTintedGlass] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('aptis_tinted_glass_mode');
+    if (saved !== null) {
+      setTintedGlass(saved === 'true');
+    }
+
+    const handleModeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      if (typeof customEvent.detail === 'boolean') {
+        setTintedGlass(customEvent.detail);
+      }
+    };
+
+    window.addEventListener('aptis-glass-mode-change', handleModeChange);
+    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
+  }, []);
 
   const persistPdis = (newPdis: EmployeePdi[]) => {
     setPdis(newPdis);
@@ -152,6 +170,7 @@ export default function PdiManagerModule() {
       {selectedPdi ? (
         <PdiDetailView
           pdi={selectedPdi}
+          tintedGlass={tintedGlass}
           onBack={() => setSelectedPdiId(null)}
           onUpdatePdi={handleUpdatePdi}
           onEditPdi={handleOpenEditPdi}
@@ -161,6 +180,7 @@ export default function PdiManagerModule() {
       ) : (
         <PdiDashboard
           pdis={pdis}
+          tintedGlass={tintedGlass}
           onSelectPdi={pdi => setSelectedPdiId(pdi.id)}
           onEditPdi={handleOpenEditPdi}
           onDeletePdi={handleDeletePdi}

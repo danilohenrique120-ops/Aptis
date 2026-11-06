@@ -547,17 +547,17 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-slate-100 border border-slate-300 rounded-3xl w-[96vw] max-w-[1440px] h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2 sm:p-4 overflow-y-auto">
+      <div className="aptis-glass-modal rounded-3xl w-[96vw] max-w-[1440px] h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-white">
         {/* TOP BAR EXECUTIVA DO GERADOR DE DOSSIÊ */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 border-b border-slate-800">
+        <div className="bg-slate-950/60 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 border border-cyan-400/35 flex items-center justify-center text-cyan-300 shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.25)]">
               <FileCheck2 className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/35">
                   Dossiê Inteligente & Exportação de Evidências
                 </span>
                 <span className="text-xs text-slate-400 font-mono">
@@ -574,7 +574,11 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
             <button
               type="button"
               onClick={handlePrintPdf}
-              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all hover:scale-105 cursor-pointer"
+              className="px-5 py-2.5 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-2 transition-all hover:scale-105 cursor-pointer border border-white/25"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                boxShadow: '0 0 22px rgba(6, 182, 212, 0.45)'
+              }}
             >
               <Printer className="w-4 h-4" />
               Baixar / Imprimir Dossiê em PDF (A4)
@@ -583,7 +587,7 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
             <button
               type="button"
               onClick={onClose}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Fechar visualização"
             >
               <X className="w-5 h-5" />
@@ -594,35 +598,35 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
         {/* CORPO DIVIDIDO: BARRA LATERAL DE PERSONALIZAÇÃO INTELIGENTE + PREVIEW INTERATIVO DA FOLHA A4 */}
         <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
           {/* COLUNA ESQUERDA (4 COLUNAS): CONFIGURAÇÃO INTELIGENTE DO DOCUMENTO */}
-          <div className="lg:col-span-4 bg-white border-r border-slate-200 p-5 overflow-y-auto space-y-5">
+          <div className="lg:col-span-4 bg-slate-950/60 border-r border-white/10 p-5 overflow-y-auto space-y-5">
             <div>
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 mb-3">
-                <SlidersHorizontal className="w-4 h-4 text-purple-600" />
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 mb-3">
+                <SlidersHorizontal className="w-4 h-4 text-cyan-400" />
                 1. Escolha a Finalidade do Documento
               </h3>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <button
                   type="button"
                   onClick={() => handleSelectPurpose('full_audit')}
-                  className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                  className={`w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
                     reportPurpose === 'full_audit'
-                      ? 'bg-purple-50 border-purple-500 shadow-2xs'
-                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-cyan-500/15 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                      : 'aptis-glass-subcard hover:border-white/20'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-cyan-400" />
                       Dossiê Completo de Evidências & Auditoria
                     </span>
                     {reportPurpose === 'full_audit' && (
-                      <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-400/35 px-2 py-0.5 rounded-full">
                         Ativo
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">
+                  <p className="text-[11px] text-slate-400 mt-1">
                     Ideal para comprovação em auditorias (ISO/IATF), arquivo de RH e histórico completo com check-ins.
                   </p>
                 </button>
@@ -630,24 +634,24 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
                 <button
                   type="button"
                   onClick={() => handleSelectPurpose('homologation')}
-                  className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                  className={`w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
                     reportPurpose === 'homologation'
-                      ? 'bg-purple-50 border-purple-500 shadow-2xs'
-                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-cyan-500/15 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                      : 'aptis-glass-subcard hover:border-white/20'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-emerald-400" />
                       Parecer Executivo para Promoção / Mérito
                     </span>
                     {reportPurpose === 'homologation' && (
-                      <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-400/35 px-2 py-0.5 rounded-full">
                         Ativo
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">
+                  <p className="text-[11px] text-slate-400 mt-1">
                     Enxuto e direto para diretoria/comitê de gente avaliar prontidão e aprovar mudança de cargo.
                   </p>
                 </button>
@@ -655,24 +659,24 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
                 <button
                   type="button"
                   onClick={() => handleSelectPurpose('collaborator_guide')}
-                  className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                  className={`w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
                     reportPurpose === 'collaborator_guide'
-                      ? 'bg-purple-50 border-purple-500 shadow-2xs'
-                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-cyan-500/15 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                      : 'aptis-glass-subcard hover:border-white/20'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                      <UserCheck className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <UserCheck className="w-4 h-4 text-blue-400" />
                       Guia Prático para Entregar ao Colaborador
                     </span>
                     {reportPurpose === 'collaborator_guide' && (
-                      <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-400/35 px-2 py-0.5 rounded-full">
                         Ativo
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-1">
+                  <p className="text-[11px] text-slate-400 mt-1">
                     Focado nas metas 70-20-10, tutores, prazos e assinatura de compromisso no chão de fábrica.
                   </p>
                 </button>
@@ -680,56 +684,56 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
             </div>
 
             {/* SEÇÕES INCLUÍDAS NO PDF */}
-            <div className="pt-4 border-t border-slate-200">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">
+            <div className="pt-4 border-t border-white/10">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-300 mb-3">
                 2. Seções Visíveis no PDF
               </h3>
               <div className="space-y-2 text-xs">
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                  <span className="font-semibold text-slate-800">
+                <label className="flex items-center justify-between p-3 rounded-xl aptis-glass-subcard cursor-pointer">
+                  <span className="font-semibold text-slate-200">
                     Diagnóstico Inteligente & Índice de Prontidão
                   </span>
                   <input
                     type="checkbox"
                     checked={showSmartAnalytics}
                     onChange={e => setShowSmartAnalytics(e.target.checked)}
-                    className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
+                    className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                  <span className="font-semibold text-slate-800">
+                <label className="flex items-center justify-between p-3 rounded-xl aptis-glass-subcard cursor-pointer">
+                  <span className="font-semibold text-slate-200">
                     Mapa de Pontos Fortes & Gaps Críticos
                   </span>
                   <input
                     type="checkbox"
                     checked={showStrengthsAndGaps}
                     onChange={e => setShowStrengthsAndGaps(e.target.checked)}
-                    className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
+                    className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                  <span className="font-semibold text-slate-800">
+                <label className="flex items-center justify-between p-3 rounded-xl aptis-glass-subcard cursor-pointer">
+                  <span className="font-semibold text-slate-200">
                     Linha do Tempo de Check-ins ({pdi.checkIns.length})
                   </span>
                   <input
                     type="checkbox"
                     checked={showCheckInHistory}
                     onChange={e => setShowCheckInHistory(e.target.checked)}
-                    className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
+                    className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                  <span className="font-semibold text-slate-800">
+                <label className="flex items-center justify-between p-3 rounded-xl aptis-glass-subcard cursor-pointer">
+                  <span className="font-semibold text-slate-200">
                     Termo de Homologação e Assinaturas (3 vias)
                   </span>
                   <input
                     type="checkbox"
                     checked={showSignatures}
                     onChange={e => setShowSignatures(e.target.checked)}
-                    className="w-4 h-4 accent-purple-600 rounded cursor-pointer"
+                    className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                   />
                 </label>
               </div>
@@ -737,16 +741,16 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
 
             {/* PARECER EXECUTIVO EDITÁVEL */}
             {showSmartAnalytics && (
-              <div className="pt-4 border-t border-slate-200">
+              <div className="pt-4 border-t border-white/10">
                 <div className="flex items-center justify-between mb-1.5">
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                     3. Parecer Técnico no Documento
                   </h3>
                   <button
                     type="button"
                     onClick={() => setCustomManagerOpinion(analytics.defaultOpinion)}
-                    className="text-[11px] text-purple-600 hover:underline font-semibold cursor-pointer"
+                    className="text-[11px] text-cyan-300 hover:underline font-semibold cursor-pointer"
                   >
                     Restaurar texto automático
                   </button>
@@ -755,7 +759,7 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
                   rows={4}
                   value={customManagerOpinion}
                   onChange={e => setCustomManagerOpinion(e.target.value)}
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-800 focus:outline-none focus:border-purple-500 leading-relaxed"
+                  className="w-full text-xs aptis-glass-input rounded-xl p-3 focus:outline-none leading-relaxed"
                   placeholder="Escreva ou ajuste o parecer final do gestor para sair no PDF..."
                 />
               </div>
@@ -763,7 +767,7 @@ export function PdiDossierModal({ pdi, isOpen, onClose }: PdiDossierModalProps) 
           </div>
 
           {/* COLUNA DIREITA (8 COLUNAS): PREVIEW FIEL E INTERATIVO DO DOCUMENTO A4 */}
-          <div className="lg:col-span-8 bg-slate-200/80 p-4 sm:p-8 overflow-y-auto">
+          <div className="lg:col-span-8 bg-slate-900/75 p-4 sm:p-8 overflow-y-auto">
             <div className="max-w-[850px] mx-auto bg-white rounded-2xl shadow-xl border border-slate-300 p-6 sm:p-9 space-y-6 text-slate-900">
               {/* BANNER EXECUTIVO DO DOCUMENTO */}
               <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">

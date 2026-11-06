@@ -86,12 +86,12 @@ export function PdiCheckInModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 overflow-y-auto">
+      <div className="aptis-glass-modal rounded-3xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-white">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-slate-950/40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-400/35 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
@@ -101,44 +101,44 @@ export function PdiCheckInModal({
                   : 'Registrar Check-in de Evolução do PDI'}
               </h3>
               <p className="text-xs text-slate-400">
-                Colaborador: <span className="text-purple-300 font-semibold">{pdi.employeeName}</span> ({pdi.employeeRole})
+                Colaborador: <span className="text-cyan-300 font-semibold">{pdi.employeeName}</span> ({pdi.employeeRole})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Data da Reunião de Acompanhamento</label>
+              <label className="block text-slate-300 font-semibold mb-1">Data da Reunião de Acompanhamento</label>
               <div className="relative">
-                <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="date"
                   value={date}
                   onChange={e => setDate(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Avaliador / Gestor</label>
+              <label className="block text-slate-300 font-semibold mb-1">Avaliador / Gestor</label>
               <div className="relative">
-                <UserCheck className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <UserCheck className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   value={reviewerName}
                   onChange={e => setReviewerName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                   required
                 />
               </div>
@@ -146,13 +146,13 @@ export function PdiCheckInModal({
           </div>
 
           {/* Slider de Evolução Percentual */}
-          <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+          <div className="p-4 aptis-glass-subcard rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-purple-400" />
+                <Award className="w-4 h-4 text-cyan-400" />
                 Nível de Evolução e Conclusão do PDI
               </span>
-              <span className="text-base font-black font-mono text-purple-400">
+              <span className="text-base font-black font-mono text-cyan-300">
                 {evolutionPercent}%
               </span>
             </div>
@@ -163,9 +163,9 @@ export function PdiCheckInModal({
               step="5"
               value={evolutionPercent}
               onChange={e => setEvolutionPercent(Number(e.target.value))}
-              className="w-full accent-purple-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
+              className="w-full accent-cyan-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+            <div className="flex justify-between text-[10px] text-slate-400 font-mono">
               <span>0% (Início)</span>
               <span>25% (Capacitação)</span>
               <span>50% (Prática em Andamento)</span>
@@ -176,7 +176,7 @@ export function PdiCheckInModal({
 
           {/* Resumo do Encontro */}
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">
+            <label className="block text-slate-300 font-semibold mb-1">
               Resumo do Encontro & Alinhamentos Chave <span className="text-rose-400">*</span>
             </label>
             <textarea
@@ -184,7 +184,7 @@ export function PdiCheckInModal({
               value={summary}
               onChange={e => setSummary(e.target.value)}
               placeholder="Descreva os principais pontos conversados sobre o progresso das metas..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
+              className="w-full aptis-glass-input rounded-xl p-3 focus:outline-none"
               required
             />
           </div>
@@ -200,7 +200,7 @@ export function PdiCheckInModal({
               value={strengthsNoticed}
               onChange={e => setStrengthsNoticed(e.target.value)}
               placeholder="Quais habilidades o colaborador colocou em prática com sucesso? Elogios e evidências..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
+              className="w-full aptis-glass-input rounded-xl p-3 focus:outline-none"
             />
           </div>
 
@@ -215,37 +215,41 @@ export function PdiCheckInModal({
               value={blockersAndAdjustments}
               onChange={e => setBlockersAndAdjustments(e.target.value)}
               placeholder="O que travou a execução? Algum prazo precisa ser renegociado? Como o gestor apoiará?"
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+              className="w-full aptis-glass-input rounded-xl p-3 focus:outline-none"
             />
           </div>
 
           {/* Próximo Check-in */}
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Data Agendada para o Próximo Check-in</label>
+            <label className="block text-slate-300 font-semibold mb-1">Data Agendada para o Próximo Check-in</label>
             <div className="relative max-w-xs">
-              <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+              <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="date"
                 value={nextCheckInDate}
                 onChange={e => setNextCheckInDate(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                 required
               />
             </div>
           </div>
 
           {/* Ações do Modal */}
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-medium cursor-pointer"
+              className="px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors font-medium cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-2"
+              className="px-5 py-2 text-white font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 border border-white/25 hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                boxShadow: '0 0 20px rgba(6, 182, 212, 0.45)'
+              }}
             >
               <Sparkles className="w-4 h-4" />
               {existingCheckIn ? 'Salvar Alterações do Check-in' : 'Salvar Check-in & Atualizar Evolução'}

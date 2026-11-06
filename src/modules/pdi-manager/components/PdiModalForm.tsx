@@ -213,12 +213,12 @@ export function PdiModalForm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200 my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 overflow-y-auto">
+      <div className="aptis-glass-modal rounded-3xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8 text-white">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-slate-950/40">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-400/35 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]">
               <Compass className="w-5 h-5" />
             </div>
             <div>
@@ -232,34 +232,34 @@ export function PdiModalForm({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-5 text-xs max-h-[78vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-xs max-h-[78vh] overflow-y-auto">
           {/* Templates Rápidos (Apenas na criação) */}
           {!existingPdi && (
-            <div className="p-3.5 bg-slate-950 rounded-xl border border-purple-900/30 space-y-2">
+            <div className="p-4 aptis-glass-subcard rounded-2xl space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                   Modelos Prontos de Chão de Fábrica (Opcional):
                 </span>
-                <span className="text-[10px] text-slate-500">Clique para auto-preencher</span>
+                <span className="text-[10px] text-slate-400">Clique para auto-preencher</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 {PDI_TEMPLATES.map(tpl => (
                   <button
                     key={tpl.id}
                     type="button"
                     onClick={() => handleApplyTemplate(tpl.id)}
-                    className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                       selectedTemplateId === tpl.id
-                        ? 'bg-purple-950/40 border-purple-500 text-purple-200'
-                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                        ? 'bg-cyan-500/20 border-cyan-400 text-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                        : 'bg-slate-950/60 border-white/10 hover:border-cyan-400/40 text-slate-300'
                     }`}
                   >
                     <div>
@@ -279,49 +279,49 @@ export function PdiModalForm({
 
           {/* Dados do Colaborador */}
           <div className="space-y-3">
-            <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-slate-800 pb-1">
+            <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-white/10 pb-1.5">
               1. Identificação do Colaborador
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Nome Completo do Colaborador *</label>
+                <label className="block text-slate-300 font-semibold mb-1">Nome Completo do Colaborador *</label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={employeeName}
                     onChange={e => setEmployeeName(e.target.value)}
                     placeholder="Ex: José Carlos Nascimento"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Cargo Atual *</label>
+                <label className="block text-slate-300 font-semibold mb-1">Cargo Atual *</label>
                 <div className="relative">
-                  <Briefcase className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <Briefcase className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={employeeRole}
                     onChange={e => setEmployeeRole(e.target.value)}
                     placeholder="Ex: Operador de Torno CNC II"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Setor / Departamento</label>
+                <label className="block text-slate-300 font-semibold mb-1">Setor / Departamento</label>
                 <input
                   type="text"
                   list="pdi-departments-list"
                   value={department}
                   onChange={e => setDepartment(e.target.value)}
                   placeholder="Digite ou selecione o setor..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full aptis-glass-input rounded-xl px-3 py-2 focus:outline-none"
                 />
                 <datalist id="pdi-departments-list">
                   <option value="Usinagem CNC" />
@@ -334,16 +334,16 @@ export function PdiModalForm({
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Turno de Trabalho</label>
+                <label className="block text-slate-300 font-semibold mb-1">Turno de Trabalho</label>
                 <select
                   value={shift}
                   onChange={e => setShift(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full aptis-glass-input rounded-xl px-3 py-2 focus:outline-none"
                 >
-                  <option value="Turno A">Turno A (Manhã)</option>
-                  <option value="Turno B">Turno B (Tarde/Noite)</option>
-                  <option value="Turno C">Turno C (Madrugada)</option>
-                  <option value="Horário Central">Horário Central / Administrativo</option>
+                  <option value="Turno A" className="bg-slate-900 text-white">Turno A (Manhã)</option>
+                  <option value="Turno B" className="bg-slate-900 text-white">Turno B (Tarde/Noite)</option>
+                  <option value="Turno C" className="bg-slate-900 text-white">Turno C (Madrugada)</option>
+                  <option value="Horário Central" className="bg-slate-900 text-white">Horário Central / Administrativo</option>
                 </select>
               </div>
             </div>
@@ -351,87 +351,87 @@ export function PdiModalForm({
 
           {/* Objetivo do PDI e Prazos */}
           <div className="space-y-3">
-            <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-slate-800 pb-1">
+            <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-white/10 pb-1.5">
               2. Objetivo Estratégico & Ciclo de Desenvolvimento
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Cargo / Posição Almejada *</label>
+                <label className="block text-slate-300 font-semibold mb-1">Cargo / Posição Almejada *</label>
                 <div className="relative">
-                  <Target className="w-4 h-4 text-purple-400 absolute left-3 top-2.5" />
+                  <Target className="w-4 h-4 text-cyan-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={targetRole}
                     onChange={e => setTargetRole(e.target.value)}
                     placeholder="Ex: Operador Líder de Turno"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Nível Almejado</label>
+                <label className="block text-slate-300 font-semibold mb-1">Nível Almejado</label>
                 <input
                   type="text"
                   value={targetLevel}
                   onChange={e => setTargetLevel(e.target.value)}
                   placeholder="Ex: Nível 3 (Autônomo)"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full aptis-glass-input rounded-xl px-3 py-2 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Ciclo / Semestre</label>
+                <label className="block text-slate-300 font-semibold mb-1">Ciclo / Semestre</label>
                 <input
                   type="text"
                   value={cycleYear}
                   onChange={e => setCycleYear(e.target.value)}
                   placeholder="Ex: 2026 - 1º Ciclo"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full aptis-glass-input rounded-xl px-3 py-2 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Nível Atual</label>
+                <label className="block text-slate-300 font-semibold mb-1">Nível Atual</label>
                 <input
                   type="text"
                   value={currentLevel}
                   onChange={e => setCurrentLevel(e.target.value)}
                   placeholder="Ex: Pleno / N2"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                  className="w-full aptis-glass-input rounded-xl px-3 py-2 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Data de Início</label>
+                <label className="block text-slate-300 font-semibold mb-1">Data de Início</label>
                 <div className="relative">
-                  <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Prazo p/ Homologação</label>
+                <label className="block text-slate-300 font-semibold mb-1">Prazo p/ Homologação</label>
                 <div className="relative">
-                  <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="date"
                     value={targetEndDate}
                     onChange={e => setTargetEndDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                    className="w-full aptis-glass-input rounded-xl pl-9 pr-3 py-2 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">
+              <label className="block text-slate-300 font-semibold mb-1">
                 Propósito / Objetivo Central de Carreira & Benefício para a Operação
               </label>
               <textarea
@@ -439,14 +439,14 @@ export function PdiModalForm({
                 value={careerGoal}
                 onChange={e => setCareerGoal(e.target.value)}
                 placeholder="Explique onde o colaborador quer chegar e como isso fortalecerá a fábrica..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
+                className="w-full aptis-glass-input rounded-xl p-3 focus:outline-none"
               />
             </div>
           </div>
 
           {/* Diagnóstico: Forças e Gaps */}
           <div className="space-y-3">
-            <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-slate-800 pb-1">
+            <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-white/10 pb-1.5">
               3. Diagnóstico de Competências (Forças vs. Gaps)
             </h4>
 
@@ -467,12 +467,12 @@ export function PdiModalForm({
                     }
                   }}
                   placeholder="Ex: Pontualidade britânica, zelo com ferramentas..."
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                  className="flex-1 aptis-glass-input rounded-xl px-3 py-2 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleAddStrength}
-                  className="px-3 py-2 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 rounded-xl font-bold hover:bg-emerald-600/30 cursor-pointer"
+                  className="px-3 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-400/35 rounded-xl font-bold hover:bg-emerald-500/30 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -481,7 +481,7 @@ export function PdiModalForm({
                 {strengths.map((str, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 text-emerald-300 border border-emerald-800/50 text-[11px]"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-[11px]"
                   >
                     {editingStrengthIdx === idx ? (
                       <>
@@ -546,12 +546,12 @@ export function PdiModalForm({
                     }
                   }}
                   placeholder="Ex: Habilidade de comunicação, autonomia em setups..."
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"
+                  className="flex-1 aptis-glass-input rounded-xl px-3 py-2 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleAddGap}
-                  className="px-3 py-2 bg-amber-600/20 text-amber-300 border border-amber-500/30 rounded-xl font-bold hover:bg-amber-600/30 cursor-pointer"
+                  className="px-3 py-2 bg-amber-500/20 text-amber-300 border border-amber-400/35 rounded-xl font-bold hover:bg-amber-500/30 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -560,7 +560,7 @@ export function PdiModalForm({
                 {growthGaps.map((gap, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-800/50 text-[11px]"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-400/30 text-[11px]"
                   >
                     {editingGapIdx === idx ? (
                       <>
@@ -610,17 +610,21 @@ export function PdiModalForm({
           </div>
 
           {/* Footer do Modal */}
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-2">
+          <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-medium cursor-pointer"
+              className="px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors font-medium cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-2"
+              className="px-5 py-2 text-white font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 border border-white/25 hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                boxShadow: '0 0 20px rgba(6, 182, 212, 0.45)'
+              }}
             >
               <Compass className="w-4 h-4" />
               {existingPdi ? 'Salvar Alterações do PDI' : 'Criar PDI com Metas 70-20-10'}
