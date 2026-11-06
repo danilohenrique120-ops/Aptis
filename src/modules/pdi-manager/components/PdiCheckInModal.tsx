@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EmployeePdi, PdiCheckIn } from '../types';
 import { 
   X, 
@@ -9,8 +9,8 @@ import {
   TrendingUp, 
   CheckCircle2, 
   AlertTriangle, 
-  Sparkles,
-  Award
+  Sparkles, 
+  Award 
 } from 'lucide-react';
 
 interface PdiCheckInModalProps {
@@ -18,13 +18,15 @@ interface PdiCheckInModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveCheckIn: (checkIn: PdiCheckIn, newProgress: number) => void;
+  existingCheckIn?: PdiCheckIn | null;
 }
 
 export function PdiCheckInModal({
   pdi,
   isOpen,
   onClose,
-  onSaveCheckIn
+  onSaveCheckIn,
+  existingCheckIn
 }: PdiCheckInModalProps) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [reviewerName, setReviewerName] = useState('Danilo Henrique (Gestor)');
@@ -38,17 +40,40 @@ export function PdiCheckInModal({
     return d.toISOString().split('T')[0];
   });
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (existingCheckIn) {
+      setDate(existingCheckIn.date);
+      setReviewerName(existingCheckIn.reviewerName);
+      setEvolutionPercent(existingCheckIn.evolutionPercent);
+      setSummary(existingCheckIn.summary || '');
+      setStrengthsNoticed(existingCheckIn.strengthsNoticed || '');
+      setBlockersAndAdjustments(existingCheckIn.blockersAndAdjustments || '');
+      setNextCheckInDate(existingCheckIn.nextCheckInDate || new Date().toISOString().split('T')[0]);
+    } else {
+      setDate(new Date().toISOString().split('T')[0]);
+      setReviewerName('Danilo Henrique (Gestor)');
+      setEvolutionPercent(pdi.progressPercent);
+      setSummary('');
+      setStrengthsNoticed('');
+      setBlockersAndAdjustments('');
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      setNextCheckInDate(d.toISOString().split('T')[0]);
+    }
+  }, [isOpen, existingCheckIn, pdi.progressPercent]);
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!summary.trim()) return;
 
-    const newCheckIn: PdiCheckIn = {
-      id: `chk-${Date.now()}`,
+    const savedCheckIn: PdiCheckIn = {
+      id: existingCheckIn?.id || `chk-${Date.now()}`,
       pdiId: pdi.id,
       date,
-      reviewerName,
+      reviewerName: reviewerName.trim() || 'Gestor',
       evolutionPercent: Number(evolutionPercent),
       summary: summary.trim(),
       strengthsNoticed: strengthsNoticed.trim(),
@@ -56,7 +81,7 @@ export function PdiCheckInModal({
       nextCheckInDate
     };
 
-    onSaveCheckIn(newCheckIn, Number(evolutionPercent));
+    onSaveCheckIn(savedCheckIn, Number(evolutionPercent));
     onClose();
   };
 
@@ -71,7 +96,9 @@ export function PdiCheckInModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                Registrar Check-in de Evolução do PDI
+                {existingCheckIn
+                  ? 'Editar Check-in de Evolução do PDI'
+                  : 'Registrar Check-in de Evolução do PDI'}
               </h3>
               <p className="text-xs text-slate-400">
                 Colaborador: <span className="text-purple-300 font-semibold">{pdi.employeeName}</span> ({pdi.employeeRole})
@@ -80,7 +107,7 @@ export function PdiCheckInModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -88,7 +115,6 @@ export function PdiCheckInModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
-          {/* Dados do Check-in */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-slate-400 font-semibold mb-1">Data da Reunião de Acompanhamento</label>
@@ -97,7 +123,7 @@ export function PdiCheckInModal({
                 <input
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={e => setDate(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                   required
                 />
@@ -111,7 +137,7 @@ export function PdiCheckInModal({
                 <input
                   type="text"
                   value={reviewerName}
-                  onChange={(e) => setReviewerName(e.target.value)}
+                  onChange={e => setReviewerName(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                   required
                 />
@@ -136,7 +162,7 @@ export function PdiCheckInModal({
               max="100"
               step="5"
               value={evolutionPercent}
-              onChange={(e) => setEvolutionPercent(Number(e.target.value))}
+              onChange={e => setEvolutionPercent(Number(e.target.value))}
               className="w-full accent-purple-500 h-2 bg-slate-800 rounded-lg cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-500 font-mono">
@@ -156,7 +182,7 @@ export function PdiCheckInModal({
             <textarea
               rows={2}
               value={summary}
-              onChange={(e) => setSummary(e.target.value)}
+              onChange={e => setSummary(e.target.value)}
               placeholder="Descreva os principais pontos conversados sobre o progresso das metas..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
               required
@@ -172,7 +198,7 @@ export function PdiCheckInModal({
             <textarea
               rows={2}
               value={strengthsNoticed}
-              onChange={(e) => setStrengthsNoticed(e.target.value)}
+              onChange={e => setStrengthsNoticed(e.target.value)}
               placeholder="Quais habilidades o colaborador colocou em prática com sucesso? Elogios e evidências..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500"
             />
@@ -187,7 +213,7 @@ export function PdiCheckInModal({
             <textarea
               rows={2}
               value={blockersAndAdjustments}
-              onChange={(e) => setBlockersAndAdjustments(e.target.value)}
+              onChange={e => setBlockersAndAdjustments(e.target.value)}
               placeholder="O que travou a execução? Algum prazo precisa ser renegociado? Como o gestor apoiará?"
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
             />
@@ -201,7 +227,7 @@ export function PdiCheckInModal({
               <input
                 type="date"
                 value={nextCheckInDate}
-                onChange={(e) => setNextCheckInDate(e.target.value)}
+                onChange={e => setNextCheckInDate(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                 required
               />
@@ -222,7 +248,7 @@ export function PdiCheckInModal({
               className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
-              Salvar Check-in & Atualizar Evolução
+              {existingCheckIn ? 'Salvar Alterações do Check-in' : 'Salvar Check-in & Atualizar Evolução'}
             </button>
           </div>
         </form>

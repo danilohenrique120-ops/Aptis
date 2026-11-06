@@ -12,15 +12,19 @@ import {
   Plus, 
   Search, 
   ArrowRight, 
-  Award,
-  Clock,
-  Sparkles,
-  FileSpreadsheet
+  Clock, 
+  FileSpreadsheet, 
+  Edit3, 
+  Trash2,
+  FileCheck2
 } from 'lucide-react';
 
 interface PdiDashboardProps {
   pdis: EmployeePdi[];
   onSelectPdi: (pdi: EmployeePdi) => void;
+  onEditPdi: (pdi: EmployeePdi) => void;
+  onDeletePdi: (pdiId: string) => void;
+  onExportPdiPdf?: (pdi: EmployeePdi) => void;
   onOpenCreateModal: () => void;
   onOpenExcelImporter?: () => void;
 }
@@ -28,6 +32,9 @@ interface PdiDashboardProps {
 export function PdiDashboard({
   pdis,
   onSelectPdi,
+  onEditPdi,
+  onDeletePdi,
+  onExportPdiPdf,
   onOpenCreateModal,
   onOpenExcelImporter
 }: PdiDashboardProps) {
@@ -37,21 +44,24 @@ export function PdiDashboard({
 
   // Cálculos de KPIs
   const totalPdis = pdis.length;
-  const avgProgress = totalPdis > 0 
-    ? Math.round(pdis.reduce((acc, p) => acc + p.progressPercent, 0) / totalPdis) 
-    : 0;
+  const avgProgress =
+    totalPdis > 0
+      ? Math.round(pdis.reduce((acc, p) => acc + p.progressPercent, 0) / totalPdis)
+      : 0;
 
   const totalActions = pdis.reduce((acc, p) => acc + p.actions.length, 0);
   const completedActions = pdis.reduce(
-    (acc, p) => acc + p.actions.filter(a => a.status === 'done').length, 
+    (acc, p) => acc + p.actions.filter(a => a.status === 'done').length,
     0
   );
 
   const totalCheckIns = pdis.reduce((acc, p) => acc + p.checkIns.length, 0);
 
+  const departments = Array.from(new Set(pdis.map(p => p.department).filter(Boolean)));
+
   // Filtragem
   const filteredPdis = pdis.filter(pdi => {
-    const matchesSearch = 
+    const matchesSearch =
       pdi.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pdi.employeeRole.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pdi.targetRole.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,7 +75,7 @@ export function PdiDashboard({
 
   return (
     <div className="space-y-6 w-full">
-      {/* Header do Módulo com Alto Contraste */}
+      {/* Header do Módulo */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
@@ -87,7 +97,7 @@ export function PdiDashboard({
           {onOpenExcelImporter && (
             <button
               onClick={onOpenExcelImporter}
-              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
+              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold rounded-xl text-xs flex items-center gap-2 shadow-2xs transition-all cursor-pointer shrink-0"
               title="Importar metas e PDIs de colaboradores do Excel"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
@@ -107,7 +117,6 @@ export function PdiDashboard({
 
       {/* KPI CARDS EXECUTIVOS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total de PDIs */}
         <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">PDIs Ativos</span>
@@ -122,7 +131,6 @@ export function PdiDashboard({
           <p className="text-[11px] text-slate-500 mt-1">Planos de carreira em andamento</p>
         </div>
 
-        {/* Taxa Média de Evolução */}
         <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Evolução Média</span>
@@ -137,7 +145,6 @@ export function PdiDashboard({
           <p className="text-[11px] text-slate-500 mt-1">Conclusão de competências</p>
         </div>
 
-        {/* Metas 70-20-10 Entregues */}
         <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Ações Concluídas</span>
@@ -152,7 +159,6 @@ export function PdiDashboard({
           <p className="text-[11px] text-slate-500 mt-1">Prática, mentoria e cursos</p>
         </div>
 
-        {/* Check-ins de Acompanhamento */}
         <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Check-ins Realizados</span>
@@ -175,7 +181,7 @@ export function PdiDashboard({
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             placeholder="Buscar por colaborador, cargo ou setor..."
             className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:bg-white"
           />
@@ -184,8 +190,8 @@ export function PdiDashboard({
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto text-xs">
           <select
             value={selectedShift}
-            onChange={(e) => setSelectedShift(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-purple-500 focus:bg-white"
+            onChange={e => setSelectedShift(e.target.value)}
+            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-purple-500 focus:bg-white cursor-pointer"
           >
             <option value="all">Todos os Turnos</option>
             <option value="Turno A">Turno A</option>
@@ -196,20 +202,22 @@ export function PdiDashboard({
 
           <select
             value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-purple-500 focus:bg-white"
+            onChange={e => setSelectedDepartment(e.target.value)}
+            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-purple-500 focus:bg-white cursor-pointer"
           >
             <option value="all">Todos os Setores</option>
-            <option value="Usinagem CNC">Usinagem CNC</option>
-            <option value="Estamparia & Prensas">Estamparia & Prensas</option>
-            <option value="Linha de Montagem">Linha de Montagem</option>
+            {departments.map(dept => (
+              <option key={dept} value={dept}>
+                {dept}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
-      {/* GRID DE CARDS DOS COLABORADORES */}
+      {/* GRID DE CARDS DOS COLABORADORES COM OPÇÕES DE EDITAR E EXCLUIR */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredPdis.map((pdi) => {
+        {filteredPdis.map(pdi => {
           const totalMetas = pdi.actions.length;
           const metasDone = pdi.actions.filter(a => a.status === 'done').length;
           const count70 = pdi.actions.filter(a => a.pillar === '70_practice').length;
@@ -240,15 +248,36 @@ export function PdiDashboard({
                     </p>
                   </div>
 
-                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
-                    {pdi.progressPercent}% Evolução
-                  </span>
+                  {/* Evolução + Botões Editar e Excluir PDI */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
+                      {pdi.progressPercent}% Evolução
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onEditPdi(pdi)}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-purple-700 hover:bg-purple-50 transition-colors cursor-pointer"
+                      title="Editar dados gerais do PDI"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeletePdi(pdi.id)}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Excluir este PDI"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Objetivo Almejado */}
                 <div className="mt-3 p-3 bg-purple-50/50 rounded-xl border border-purple-100 flex items-center justify-between gap-2 text-xs">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Objetivo / Próximo Nível</span>
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                      Objetivo / Próximo Nível
+                    </span>
                     <span className="font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
                       <Target className="w-3.5 h-3.5 text-purple-600" />
                       {pdi.targetRole}
@@ -266,7 +295,9 @@ export function PdiDashboard({
                     />
                   </div>
                   <div className="flex justify-between text-[10px] text-slate-500">
-                    <span>{metasDone} de {totalMetas} metas concluídas</span>
+                    <span>
+                      {metasDone} de {totalMetas} metas concluídas
+                    </span>
                     <span>Prazo: {pdi.targetEndDate}</span>
                   </div>
                 </div>
@@ -286,20 +317,34 @@ export function PdiDashboard({
               </div>
 
               {/* Rodapé do Card */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="text-[11px] text-slate-500 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
                   {lastCheckIn ? `Último check-in: ${lastCheckIn.date}` : 'Sem check-in ainda'}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onSelectPdi(pdi)}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-purple-600 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                >
-                  Ver PDI & Evolução
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {onExportPdiPdf && (
+                    <button
+                      type="button"
+                      onClick={() => onExportPdiPdf(pdi)}
+                      className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Visualizar Dossiê Inteligente e Baixar PDI em PDF"
+                    >
+                      <FileCheck2 className="w-3.5 h-3.5" />
+                      Dossiê PDF
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => onSelectPdi(pdi)}
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-purple-600 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                  >
+                    Ver PDI & Evolução
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -311,7 +356,7 @@ export function PdiDashboard({
           <p className="text-slate-500 text-sm">Nenhum colaborador encontrado com os filtros atuais.</p>
           <button
             onClick={onOpenCreateModal}
-            className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-500 transition-colors"
+            className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-500 transition-colors cursor-pointer"
           >
             Cadastrar Novo PDI
           </button>

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { EmployeePdi, PdiTemplate, PdiActionItem } from '../types';
+import React, { useState, useEffect } from 'react';
+import { EmployeePdi, PdiActionItem } from '../types';
 import { PDI_TEMPLATES } from '../mock-data';
 import { 
   X, 
@@ -11,10 +11,9 @@ import {
   Target, 
   Calendar, 
   Briefcase, 
-  Layers, 
   Plus, 
-  Trash2,
-  Check
+  Check,
+  Edit3
 } from 'lucide-react';
 
 interface PdiModalFormProps {
@@ -30,32 +29,83 @@ export function PdiModalForm({
   onSave,
   existingPdi
 }: PdiModalFormProps) {
-  const [employeeName, setEmployeeName] = useState(existingPdi?.employeeName || '');
-  const [employeeRole, setEmployeeRole] = useState(existingPdi?.employeeRole || '');
-  const [department, setDepartment] = useState(existingPdi?.department || 'Usinagem CNC');
-  const [shift, setShift] = useState(existingPdi?.shift || 'Turno A');
-  const [targetRole, setTargetRole] = useState(existingPdi?.targetRole || '');
-  const [targetLevel, setTargetLevel] = useState(existingPdi?.targetLevel || 'Nível 3 (Autônomo / Multi-posto)');
-  const [cycleYear, setCycleYear] = useState(existingPdi?.cycleYear || '2026 - 1º Ciclo');
-  const [careerGoal, setCareerGoal] = useState(existingPdi?.careerGoal || '');
-  const [startDate, setStartDate] = useState(existingPdi?.startDate || new Date().toISOString().split('T')[0]);
+  const [employeeName, setEmployeeName] = useState('');
+  const [employeeRole, setEmployeeRole] = useState('');
+  const [currentLevel, setCurrentLevel] = useState('Pleno / N2');
+  const [department, setDepartment] = useState('Usinagem CNC');
+  const [shift, setShift] = useState('Turno A');
+  const [targetRole, setTargetRole] = useState('');
+  const [targetLevel, setTargetLevel] = useState('Nível 3 (Autônomo / Multi-posto)');
+  const [cycleYear, setCycleYear] = useState('2026 - 1º Ciclo');
+  const [careerGoal, setCareerGoal] = useState('');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [targetEndDate, setTargetEndDate] = useState(() => {
-    if (existingPdi?.targetEndDate) return existingPdi.targetEndDate;
     const d = new Date();
     d.setMonth(d.getMonth() + 6);
     return d.toISOString().split('T')[0];
   });
 
-  const [strengths, setStrengths] = useState<string[]>(
-    existingPdi?.strengths || ['Pontualidade e comprometimento', 'Bom relacionamento interpessoal']
-  );
-  const [growthGaps, setGrowthGaps] = useState<string[]>(
-    existingPdi?.growthGaps || ['Autonomia em resolução de problemas técnicos', 'Postura de liderança na passagem de turno']
-  );
+  const [strengths, setStrengths] = useState<string[]>([
+    'Pontualidade e comprometimento',
+    'Bom relacionamento interpessoal'
+  ]);
+  const [growthGaps, setGrowthGaps] = useState<string[]>([
+    'Autonomia em resolução de problemas técnicos',
+    'Postura de liderança na passagem de turno'
+  ]);
   const [strengthInput, setStrengthInput] = useState('');
   const [gapInput, setGapInput] = useState('');
+  const [editingStrengthIdx, setEditingStrengthIdx] = useState<number | null>(null);
+  const [editingStrengthText, setEditingStrengthText] = useState('');
+  const [editingGapIdx, setEditingGapIdx] = useState<number | null>(null);
+  const [editingGapText, setEditingGapText] = useState('');
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+  // Sincroniza os campos sempre que o modal abre ou quando muda o PDI em edição
+  useEffect(() => {
+    if (!isOpen) return;
+    if (existingPdi) {
+      setEmployeeName(existingPdi.employeeName || '');
+      setEmployeeRole(existingPdi.employeeRole || '');
+      setCurrentLevel(existingPdi.currentLevel || 'Pleno / N2');
+      setDepartment(existingPdi.department || 'Usinagem CNC');
+      setShift(existingPdi.shift || 'Turno A');
+      setTargetRole(existingPdi.targetRole || '');
+      setTargetLevel(existingPdi.targetLevel || 'Nível 3 (Autônomo / Multi-posto)');
+      setCycleYear(existingPdi.cycleYear || '2026 - 1º Ciclo');
+      setCareerGoal(existingPdi.careerGoal || '');
+      setStartDate(existingPdi.startDate || new Date().toISOString().split('T')[0]);
+      setTargetEndDate(existingPdi.targetEndDate || new Date().toISOString().split('T')[0]);
+      setStrengths(existingPdi.strengths || []);
+      setGrowthGaps(existingPdi.growthGaps || []);
+      setSelectedTemplateId('');
+    } else {
+      setEmployeeName('');
+      setEmployeeRole('');
+      setCurrentLevel('Operador I');
+      setDepartment('Usinagem CNC');
+      setShift('Turno A');
+      setTargetRole('');
+      setTargetLevel('Nível 3 (Autônomo / Multi-posto)');
+      setCycleYear('2026 - 1º Ciclo');
+      setCareerGoal('');
+      setStartDate(new Date().toISOString().split('T')[0]);
+      const d = new Date();
+      d.setMonth(d.getMonth() + 6);
+      setTargetEndDate(d.toISOString().split('T')[0]);
+      setStrengths(['Pontualidade e comprometimento', 'Bom relacionamento interpessoal']);
+      setGrowthGaps([
+        'Autonomia em resolução de problemas técnicos',
+        'Postura de liderança na passagem de turno'
+      ]);
+      setSelectedTemplateId('');
+    }
+    setStrengthInput('');
+    setGapInput('');
+    setEditingStrengthIdx(null);
+    setEditingGapIdx(null);
+  }, [isOpen, existingPdi]);
 
   if (!isOpen) return null;
 
@@ -77,6 +127,13 @@ export function PdiModalForm({
     }
   };
 
+  const handleSaveStrengthEdit = (idx: number) => {
+    if (!editingStrengthText.trim()) return;
+    setStrengths(strengths.map((s, i) => (i === idx ? editingStrengthText.trim() : s)));
+    setEditingStrengthIdx(null);
+    setEditingStrengthText('');
+  };
+
   const handleRemoveStrength = (index: number) => {
     setStrengths(strengths.filter((_, i) => i !== index));
   };
@@ -86,6 +143,13 @@ export function PdiModalForm({
       setGrowthGaps([...growthGaps, gapInput.trim()]);
       setGapInput('');
     }
+  };
+
+  const handleSaveGapEdit = (idx: number) => {
+    if (!editingGapText.trim()) return;
+    setGrowthGaps(growthGaps.map((g, i) => (i === idx ? editingGapText.trim() : g)));
+    setEditingGapIdx(null);
+    setEditingGapText('');
   };
 
   const handleRemoveGap = (index: number) => {
@@ -98,7 +162,6 @@ export function PdiModalForm({
 
     let initialActions: PdiActionItem[] = existingPdi?.actions || [];
 
-    // Se é novo e selecionou um template, gera ações iniciais baseadas no template
     if (!existingPdi && selectedTemplateId) {
       const tpl = PDI_TEMPLATES.find(t => t.id === selectedTemplateId);
       if (tpl && tpl.suggestedActions) {
@@ -127,12 +190,12 @@ export function PdiModalForm({
       employeeId: existingPdi?.employeeId || `emp-${Date.now()}`,
       employeeName: employeeName.trim(),
       employeeRole: employeeRole.trim() || 'Operador de Produção',
-      department,
+      department: department.trim() || 'Operações',
       shift,
-      currentLevel: existingPdi?.currentLevel || 'Operador I',
+      currentLevel: currentLevel.trim() || 'Operador I',
       targetRole: targetRole.trim(),
-      targetLevel,
-      cycleYear,
+      targetLevel: targetLevel.trim() || 'Nível 3',
+      cycleYear: cycleYear.trim() || '2026',
       status: existingPdi?.status || 'in_progress',
       progressPercent: existingPdi?.progressPercent || 0,
       startDate,
@@ -169,14 +232,14 @@ export function PdiModalForm({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-5 text-xs max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 space-y-5 text-xs max-h-[78vh] overflow-y-auto">
           {/* Templates Rápidos (Apenas na criação) */}
           {!existingPdi && (
             <div className="p-3.5 bg-slate-950 rounded-xl border border-purple-900/30 space-y-2">
@@ -188,7 +251,7 @@ export function PdiModalForm({
                 <span className="text-[10px] text-slate-500">Clique para auto-preencher</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {PDI_TEMPLATES.map((tpl) => (
+                {PDI_TEMPLATES.map(tpl => (
                   <button
                     key={tpl.id}
                     type="button"
@@ -227,7 +290,7 @@ export function PdiModalForm({
                   <input
                     type="text"
                     value={employeeName}
-                    onChange={(e) => setEmployeeName(e.target.value)}
+                    onChange={e => setEmployeeName(e.target.value)}
                     placeholder="Ex: José Carlos Nascimento"
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                     required
@@ -236,13 +299,13 @@ export function PdiModalForm({
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Cargo Atual na Fábrica *</label>
+                <label className="block text-slate-400 font-semibold mb-1">Cargo Atual *</label>
                 <div className="relative">
                   <Briefcase className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={employeeRole}
-                    onChange={(e) => setEmployeeRole(e.target.value)}
+                    onChange={e => setEmployeeRole(e.target.value)}
                     placeholder="Ex: Operador de Torno CNC II"
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                     required
@@ -252,25 +315,29 @@ export function PdiModalForm({
 
               <div>
                 <label className="block text-slate-400 font-semibold mb-1">Setor / Departamento</label>
-                <select
+                <input
+                  type="text"
+                  list="pdi-departments-list"
                   value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
+                  onChange={e => setDepartment(e.target.value)}
+                  placeholder="Digite ou selecione o setor..."
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
-                >
-                  <option value="Usinagem CNC">Usinagem CNC</option>
-                  <option value="Estamparia & Prensas">Estamparia & Prensas</option>
-                  <option value="Linha de Montagem">Linha de Montagem</option>
-                  <option value="Pintura Industrial">Pintura Industrial</option>
-                  <option value="Manutenção & Ferramentaria">Manutenção & Ferramentaria</option>
-                  <option value="Logística & Expedição">Logística & Expedição</option>
-                </select>
+                />
+                <datalist id="pdi-departments-list">
+                  <option value="Usinagem CNC" />
+                  <option value="Estamparia & Prensas" />
+                  <option value="Linha de Montagem" />
+                  <option value="Pintura Industrial" />
+                  <option value="Manutenção & Ferramentaria" />
+                  <option value="Logística & Expedição" />
+                </datalist>
               </div>
 
               <div>
                 <label className="block text-slate-400 font-semibold mb-1">Turno de Trabalho</label>
                 <select
                   value={shift}
-                  onChange={(e) => setShift(e.target.value)}
+                  onChange={e => setShift(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
                 >
                   <option value="Turno A">Turno A (Manhã)</option>
@@ -287,7 +354,7 @@ export function PdiModalForm({
             <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-slate-800 pb-1">
               2. Objetivo Estratégico & Ciclo de Desenvolvimento
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-slate-400 font-semibold mb-1">Cargo / Posição Almejada *</label>
                 <div className="relative">
@@ -295,7 +362,7 @@ export function PdiModalForm({
                   <input
                     type="text"
                     value={targetRole}
-                    onChange={(e) => setTargetRole(e.target.value)}
+                    onChange={e => setTargetRole(e.target.value)}
                     placeholder="Ex: Operador Líder de Turno"
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                     required
@@ -304,12 +371,34 @@ export function PdiModalForm({
               </div>
 
               <div>
+                <label className="block text-slate-400 font-semibold mb-1">Nível Almejado</label>
+                <input
+                  type="text"
+                  value={targetLevel}
+                  onChange={e => setTargetLevel(e.target.value)}
+                  placeholder="Ex: Nível 3 (Autônomo)"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
                 <label className="block text-slate-400 font-semibold mb-1">Ciclo / Semestre</label>
                 <input
                   type="text"
                   value={cycleYear}
-                  onChange={(e) => setCycleYear(e.target.value)}
+                  onChange={e => setCycleYear(e.target.value)}
                   placeholder="Ex: 2026 - 1º Ciclo"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1">Nível Atual</label>
+                <input
+                  type="text"
+                  value={currentLevel}
+                  onChange={e => setCurrentLevel(e.target.value)}
+                  placeholder="Ex: Pleno / N2"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-purple-500"
                 />
               </div>
@@ -321,20 +410,20 @@ export function PdiModalForm({
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={e => setStartDate(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Data Almejada para Homologação</label>
+                <label className="block text-slate-400 font-semibold mb-1">Prazo p/ Homologação</label>
                 <div className="relative">
                   <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                   <input
                     type="date"
                     value={targetEndDate}
-                    onChange={(e) => setTargetEndDate(e.target.value)}
+                    onChange={e => setTargetEndDate(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white focus:outline-none focus:border-purple-500"
                   />
                 </div>
@@ -348,7 +437,7 @@ export function PdiModalForm({
               <textarea
                 rows={2}
                 value={careerGoal}
-                onChange={(e) => setCareerGoal(e.target.value)}
+                onChange={e => setCareerGoal(e.target.value)}
                 placeholder="Explique onde o colaborador quer chegar e como isso fortalecerá a fábrica..."
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
               />
@@ -370,8 +459,13 @@ export function PdiModalForm({
                 <input
                   type="text"
                   value={strengthInput}
-                  onChange={(e) => setStrengthInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddStrength(); }}}
+                  onChange={e => setStrengthInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddStrength();
+                    }
+                  }}
                   placeholder="Ex: Pontualidade britânica, zelo com ferramentas..."
                   className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                 />
@@ -389,14 +483,47 @@ export function PdiModalForm({
                     key={idx}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 text-emerald-300 border border-emerald-800/50 text-[11px]"
                   >
-                    <span>{str}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveStrength(idx)}
-                      className="text-emerald-400 hover:text-emerald-200"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                    {editingStrengthIdx === idx ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editingStrengthText}
+                          onChange={e => setEditingStrengthText(e.target.value)}
+                          className="bg-slate-900 border border-emerald-500 rounded px-1.5 py-0.5 text-white text-[11px] w-40"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveStrengthEdit(idx)}
+                          className="text-emerald-300 hover:text-white"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span>{str}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingStrengthIdx(idx);
+                            setEditingStrengthText(str);
+                          }}
+                          className="text-emerald-400/70 hover:text-emerald-200 cursor-pointer"
+                          title="Editar ponto forte"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStrength(idx)}
+                          className="text-emerald-400 hover:text-rose-400 cursor-pointer"
+                          title="Remover ponto forte"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
                   </span>
                 ))}
               </div>
@@ -411,8 +538,13 @@ export function PdiModalForm({
                 <input
                   type="text"
                   value={gapInput}
-                  onChange={(e) => setGapInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddGap(); }}}
+                  onChange={e => setGapInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddGap();
+                    }
+                  }}
                   placeholder="Ex: Habilidade de comunicação, autonomia em setups..."
                   className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500"
                 />
@@ -430,14 +562,47 @@ export function PdiModalForm({
                     key={idx}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-800/50 text-[11px]"
                   >
-                    <span>{gap}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveGap(idx)}
-                      className="text-amber-400 hover:text-amber-200"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                    {editingGapIdx === idx ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editingGapText}
+                          onChange={e => setEditingGapText(e.target.value)}
+                          className="bg-slate-900 border border-amber-500 rounded px-1.5 py-0.5 text-white text-[11px] w-40"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveGapEdit(idx)}
+                          className="text-amber-300 hover:text-white"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span>{gap}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingGapIdx(idx);
+                            setEditingGapText(gap);
+                          }}
+                          className="text-amber-400/70 hover:text-amber-200 cursor-pointer"
+                          title="Editar gap"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGap(idx)}
+                          className="text-amber-400 hover:text-rose-400 cursor-pointer"
+                          title="Remover gap"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
                   </span>
                 ))}
               </div>
@@ -458,7 +623,7 @@ export function PdiModalForm({
               className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 transition-all cursor-pointer flex items-center gap-2"
             >
               <Compass className="w-4 h-4" />
-              {existingPdi ? 'Salvar Alterações' : 'Criar PDI com Metas 70-20-10'}
+              {existingPdi ? 'Salvar Alterações do PDI' : 'Criar PDI com Metas 70-20-10'}
             </button>
           </div>
         </form>

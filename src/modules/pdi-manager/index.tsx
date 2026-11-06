@@ -6,6 +6,7 @@ import { INITIAL_PDIS } from './mock-data';
 import { PdiDashboard } from './components/PdiDashboard';
 import { PdiDetailView } from './components/PdiDetailView';
 import { PdiModalForm } from './components/PdiModalForm';
+import { PdiDossierModal } from './components/PdiDossierModal';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
 import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
@@ -14,9 +15,10 @@ export default function PdiManagerModule() {
   const [pdis, setPdis] = useTenantStorage<EmployeePdi[]>('pdi-manager', 'pdis', INITIAL_PDIS);
   const [selectedPdiId, setSelectedPdiId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingPdi, setEditingPdi] = useState<EmployeePdi | null>(null);
+  const [dossierPdi, setDossierPdi] = useState<EmployeePdi | null>(null);
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
 
-  // Salvar no Supabase e LocalStorage via useTenantStorage
   const persistPdis = (newPdis: EmployeePdi[]) => {
     setPdis(newPdis);
   };
@@ -25,20 +27,35 @@ export default function PdiManagerModule() {
     const exists = pdis.some(p => p.id === pdi.id);
     let updated: EmployeePdi[];
     if (exists) {
-      updated = pdis.map(p => p.id === pdi.id ? pdi : p);
+      updated = pdis.map(p => (p.id === pdi.id ? pdi : p));
     } else {
       updated = [pdi, ...pdis];
     }
     persistPdis(updated);
     setSelectedPdiId(pdi.id);
+    setEditingPdi(null);
   };
 
   const handleUpdatePdi = (updatedPdi: EmployeePdi) => {
-    const updated = pdis.map(p => p.id === updatedPdi.id ? updatedPdi : p);
+    const updated = pdis.map(p => (p.id === updatedPdi.id ? updatedPdi : p));
     persistPdis(updated);
   };
 
+  const handleOpenEditPdi = (pdi: EmployeePdi) => {
+    setEditingPdi(pdi);
+    setIsCreateModalOpen(true);
+  };
+
   const handleDeletePdi = (pdiId: string) => {
+    const target = pdis.find(p => p.id === pdiId);
+    if (!target) return;
+    if (
+      !window.confirm(
+        `Deseja realmente excluir o PDI do colaborador "${target.employeeName}" (${target.targetRole})?`
+      )
+    ) {
+      return;
+    }
     const updated = pdis.filter(p => p.id !== pdiId);
     persistPdis(updated);
     if (selectedPdiId === pdiId) {
@@ -49,7 +66,9 @@ export default function PdiManagerModule() {
   const handleImportPdiExcel = (rows: Record<string, any>[]) => {
     const newPdis: EmployeePdi[] = rows.map((row, idx) => {
       const nowStr = new Date().toISOString().split('T')[0];
-      const targetDate = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const targetDate = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
       const actions: PdiActionItem[] = [];
 
       if (row.action70) {
@@ -107,7 +126,9 @@ export default function PdiManagerModule() {
         progressPercent: 15,
         startDate: nowStr,
         targetEndDate: targetDate,
-        careerGoal: `Evolução para ${row.targetRole || 'próximo nível'} com foco em ${row.focusSkill || 'excelência operacional'}`,
+        careerGoal: `Evolução para ${row.targetRole || 'próximo nível'} com foco em ${
+          row.focusSkill || 'excelência operacional'
+        }`,
         strengths: ['Comprometimento', 'Segurança'],
         growthGaps: [row.focusSkill || 'Polivalência'],
         actions,
@@ -133,21 +154,40 @@ export default function PdiManagerModule() {
           pdi={selectedPdi}
           onBack={() => setSelectedPdiId(null)}
           onUpdatePdi={handleUpdatePdi}
+          onEditPdi={handleOpenEditPdi}
           onDeletePdi={handleDeletePdi}
+          onExportPdiPdf={pdi => setDossierPdi(pdi)}
         />
       ) : (
         <PdiDashboard
           pdis={pdis}
-          onSelectPdi={(pdi) => setSelectedPdiId(pdi.id)}
-          onOpenCreateModal={() => setIsCreateModalOpen(true)}
+          onSelectPdi={pdi => setSelectedPdiId(pdi.id)}
+          onEditPdi={handleOpenEditPdi}
+          onDeletePdi={handleDeletePdi}
+          onExportPdiPdf={pdi => setDossierPdi(pdi)}
+          onOpenCreateModal={() => {
+            setEditingPdi(null);
+            setIsCreateModalOpen(true);
+          }}
           onOpenExcelImporter={() => setIsExcelImporterOpen(true)}
         />
       )}
 
-      {/* Modal de Criação de PDI */}
+      {/* Modal de Dossiê Inteligente & Exportação PDF */}
+      <PdiDossierModal
+        pdi={dossierPdi}
+        isOpen={!!dossierPdi}
+        onClose={() => setDossierPdi(null)}
+      />
+
+      {/* Modal de Criação / Edição de PDI */}
       <PdiModalForm
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        existingPdi={editingPdi}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingPdi(null);
+        }}
         onSave={handleCreateOrUpdatePdi}
       />
 
