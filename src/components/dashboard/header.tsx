@@ -35,7 +35,8 @@ export function DashboardHeader() {
   const isSuperAdmin = currentUser.role === 'superadmin';
   const isGlassEnabledRoute =
     pathname === '/dashboard' ||
-    pathname.startsWith('/dashboard/tools/manager-tasks');
+    pathname.startsWith('/dashboard/tools/manager-tasks') ||
+    pathname.startsWith('/dashboard/tools/one-on-one');
   const isDarkGlass = isGlassEnabledRoute && tintedGlass;
 
   return (

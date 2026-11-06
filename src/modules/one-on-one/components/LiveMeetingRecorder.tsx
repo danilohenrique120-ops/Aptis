@@ -482,26 +482,40 @@ export function LiveMeetingRecorder({
   };
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 sm:p-5 space-y-4 shadow-xl flex flex-col h-full">
+    <div className="aptis-glass-dark rounded-3xl p-4 sm:p-5 space-y-4 flex flex-col h-full relative overflow-hidden text-white">
+      {/* Orbes Acústicos Internos */}
+      <div
+        className="absolute -top-20 -right-20 w-56 h-56 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{
+          background: isRecording
+            ? 'radial-gradient(circle, #f43f5e 0%, transparent 70%)'
+            : 'radial-gradient(circle, #38bdf8 0%, transparent 70%)'
+        }}
+      />
+
       {/* Topo do Gravador */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-white/[0.08] relative z-10">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all shrink-0 ${
-            isRecording ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse' : 'bg-slate-800 text-slate-400'
-          }`}>
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold transition-all shrink-0 ${
+              isRecording
+                ? 'bg-rose-500/20 text-rose-400 border border-rose-400/50 shadow-[0_0_20px_rgba(244,63,94,0.4)] animate-pulse'
+                : 'aptis-glass-subcard text-cyan-400'
+            }`}
+          >
             <Mic className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-sm font-bold text-white">Gravador & Diarização Acústica ao Vivo</h4>
+              <h4 className="text-sm font-black text-white">Gravador & Diarização Acústica ao Vivo</h4>
               {isRecording && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/25 text-rose-300 border border-rose-400/40 shadow-[0_0_12px_rgba(244,63,94,0.3)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
                   Capturando Voz
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-300">
               Identifica automaticamente mudanças de timbre vocal (Hz) e pausas de diálogo.
             </p>
           </div>
@@ -509,7 +523,7 @@ export function LiveMeetingRecorder({
 
         {/* Cronômetro & Botão Gravar */}
         <div className="flex items-center gap-2.5">
-          <span className="text-xs font-mono font-bold text-slate-300 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 flex items-center gap-1.5">
+          <span className="text-xs font-mono font-bold text-slate-200 aptis-glass-subcard px-3 py-2 rounded-xl flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-cyan-400" />
             {formatTimer(seconds)}
           </span>
@@ -517,10 +531,10 @@ export function LiveMeetingRecorder({
           <button
             type="button"
             onClick={toggleRecording}
-            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
               isRecording
-                ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20'
-                : 'bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-cyan-500/20 font-black'
+                ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_24px_rgba(244,63,94,0.45)]'
+                : 'bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 shadow-[0_0_20px_rgba(56,189,248,0.35)]'
             }`}
           >
             {isRecording ? (
@@ -538,7 +552,7 @@ export function LiveMeetingRecorder({
 
       {/* Alertas de Suporte ou Permissão */}
       {!isSupported && (
-        <div className="p-3 bg-amber-950/50 border border-amber-700/60 rounded-xl text-xs text-amber-200 flex items-start gap-2">
+        <div className="p-3 bg-amber-950/50 border border-amber-700/60 rounded-2xl text-xs text-amber-200 flex items-start gap-2 relative z-10">
           <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <span>
             Para transcrição automática por voz, utilize o <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>. Você também pode registrar falas manualmente no campo abaixo.
@@ -547,7 +561,7 @@ export function LiveMeetingRecorder({
       )}
 
       {permissionErrorMsg && (
-        <div className="p-3.5 bg-rose-950/60 border border-rose-700 rounded-xl text-xs text-rose-200 flex items-start justify-between gap-3">
+        <div className="p-3.5 bg-rose-950/60 border border-rose-700 rounded-2xl text-xs text-rose-200 flex items-start justify-between gap-3 relative z-10">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <span>{permissionErrorMsg}</span>
@@ -555,16 +569,16 @@ export function LiveMeetingRecorder({
           <button
             type="button"
             onClick={startRecording}
-            className="shrink-0 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-[11px] cursor-pointer"
+            className="shrink-0 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-[11px] cursor-pointer"
           >
             Tentar Novamente
           </button>
         </div>
       )}
 
-      {/* PAINEL DE DIARIZAÇÃO ACÚSTICA & TIMBRE VOCAL */}
-      <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800/80">
+      {/* PAINEL DE DIARIZAÇÃO ACÚSTICA & TIMBRE VOCAL (Estilo Halvo Vídeo 4) */}
+      <div className="aptis-glass-subcard p-3.5 rounded-2xl space-y-3 relative z-10">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span className="text-xs font-bold text-white">Detector Dinâmico de Vozes (Timbre + Turno)</span>
@@ -573,27 +587,30 @@ export function LiveMeetingRecorder({
               onClick={() => setAutoDiarization(!autoDiarization)}
               className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold transition-all border cursor-pointer ${
                 autoDiarization
-                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 shadow-[0_0_10px_rgba(16,185,129,0.25)]'
+                  : 'bg-white/[0.06] text-slate-400 border-white/[0.12]'
               }`}
             >
               {autoDiarization ? 'Automático Ativo' : 'Modo Manual'}
             </button>
           </div>
 
-          {/* Medidor Acústico ao Vivo */}
+          {/* Medidor Acústico ao Vivo com Brilho Neon */}
           <div className="flex items-center gap-3 text-[11px]">
             {isRecording && (
               <div className="flex items-center gap-2">
                 <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
-                <div className="w-20 h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-24 h-2.5 bg-slate-950/80 border border-white/[0.08] rounded-full overflow-hidden p-0.5">
                   <div
-                    className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-75"
-                    style={{ width: `${audioLevel}%` }}
+                    className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-75"
+                    style={{
+                      width: `${audioLevel}%`,
+                      boxShadow: '0 0 10px rgba(34, 211, 238, 0.7)'
+                    }}
                   />
                 </div>
                 {currentPitchHz && (
-                  <span className="font-mono text-[10px] text-cyan-300 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/50">
+                  <span className="font-mono text-[10px] font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-full border border-cyan-400/30">
                     {currentPitchHz} Hz
                   </span>
                 )}
@@ -613,32 +630,36 @@ export function LiveMeetingRecorder({
           </div>
         </div>
 
-        {/* Seletores de Orador com Indicador de Timbre Calibrado */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Seletores de Orador (Cenas Iluminadas Estilo Halvo Vídeo 4) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => handleSpeakerChange('manager')}
-            className={`p-2.5 rounded-xl text-left border transition-all flex items-center justify-between cursor-pointer ${
+            className={`p-3 rounded-2xl text-left border transition-all duration-300 flex items-center justify-between cursor-pointer ${
               currentSpeaker === 'manager'
-                ? 'bg-blue-600/25 border-blue-400 text-white shadow-sm'
-                : 'bg-slate-900/90 border-slate-800 text-slate-400 hover:text-slate-200'
+                ? 'bg-blue-500/20 border-blue-400/60 text-white shadow-[0_0_20px_rgba(59,130,246,0.25),inset_0_1px_0_rgba(255,255,255,0.2)]'
+                : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]'
             }`}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                currentSpeaker === 'manager' ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  currentSpeaker === 'manager'
+                    ? 'bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.6)]'
+                    : 'bg-white/[0.06] text-slate-400'
+                }`}
+              >
                 <UserCheck className="w-4 h-4" />
               </div>
               <div className="truncate">
                 <span className="text-xs font-bold block truncate">👔 {managerName}</span>
-                <span className="text-[10px] text-blue-300/80 block">
+                <span className="text-[10px] text-blue-300/90 block">
                   {voiceProfiles.managerHz ? `Timbre base: ~${voiceProfiles.managerHz} Hz` : 'Gestor (1ª voz a falar)'}
                 </span>
               </div>
             </div>
             {currentSpeaker === 'manager' && (
-              <span className="text-[10px] font-bold bg-blue-500 text-white px-2 py-0.5 rounded-full shrink-0">
+              <span className="text-[10px] font-bold bg-blue-500 text-white px-2.5 py-0.5 rounded-full shrink-0">
                 Com a palavra
               </span>
             )}
@@ -647,27 +668,31 @@ export function LiveMeetingRecorder({
           <button
             type="button"
             onClick={() => handleSpeakerChange('employee')}
-            className={`p-2.5 rounded-xl text-left border transition-all flex items-center justify-between cursor-pointer ${
+            className={`p-3 rounded-2xl text-left border transition-all duration-300 flex items-center justify-between cursor-pointer ${
               currentSpeaker === 'employee'
-                ? 'bg-emerald-600/25 border-emerald-400 text-white shadow-sm'
-                : 'bg-slate-900/90 border-slate-800 text-slate-400 hover:text-slate-200'
+                ? 'bg-emerald-500/20 border-emerald-400/60 text-white shadow-[0_0_20px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,0.2)]'
+                : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]'
             }`}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                currentSpeaker === 'employee' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  currentSpeaker === 'employee'
+                    ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.6)]'
+                    : 'bg-white/[0.06] text-slate-400'
+                }`}
+              >
                 <User className="w-4 h-4" />
               </div>
               <div className="truncate">
                 <span className="text-xs font-bold block truncate">👤 {employeeName}</span>
-                <span className="text-[10px] text-emerald-300/80 block">
+                <span className="text-[10px] text-emerald-300/90 block">
                   {voiceProfiles.employeeHz ? `Timbre base: ~${voiceProfiles.employeeHz} Hz` : 'Liderado (2ª voz a falar)'}
                 </span>
               </div>
             </div>
             {currentSpeaker === 'employee' && (
-              <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full shrink-0">
+              <span className="text-[10px] font-bold bg-emerald-500 text-white px-2.5 py-0.5 rounded-full shrink-0">
                 Com a palavra
               </span>
             )}
@@ -676,20 +701,20 @@ export function LiveMeetingRecorder({
       </div>
 
       {/* LISTA DE FALAS TRANSCRITAS COM EDIÇÃO, TROCA DE ORADOR E EXCLUSÃO */}
-      <div className="flex-1 flex flex-col min-h-[220px] space-y-2">
-        <div className="flex items-center justify-between text-xs text-slate-400">
-          <span className="font-semibold uppercase tracking-wider text-[10px]">
+      <div className="flex-1 flex flex-col min-h-[220px] space-y-2 relative z-10">
+        <div className="flex items-center justify-between text-xs text-slate-300">
+          <span className="font-bold uppercase tracking-wider text-[10px] text-cyan-300">
             Diálogo Transcrito ({transcripts.length})
           </span>
-          <span className="text-[10px] text-slate-500">
+          <span className="text-[10px] text-slate-400">
             Dica: clique em ⇄ em qualquer balão para inverter quem falou
           </span>
         </div>
 
-        <div className="bg-slate-950 rounded-xl p-3.5 border border-slate-800 flex-1 max-h-[320px] overflow-y-auto space-y-2.5 text-xs">
+        <div className="bg-slate-950/60 backdrop-blur-md rounded-2xl p-3.5 border border-white/[0.08] flex-1 max-h-[320px] overflow-y-auto space-y-2.5 text-xs">
           {transcripts.length === 0 && !interimText && (
-            <div className="text-slate-500 text-center py-8 space-y-1">
-              <p className="font-semibold text-slate-400">Nenhuma fala registrada ainda.</p>
+            <div className="text-slate-400 text-center py-8 space-y-1">
+              <p className="font-bold text-slate-300">Nenhuma fala registrada ainda.</p>
               <p className="text-[11px]">
                 Clique em <strong>"Iniciar Gravação"</strong> para transcrever ao vivo ou adicione uma fala manualmente abaixo.
               </p>
@@ -699,20 +724,22 @@ export function LiveMeetingRecorder({
           {transcripts.map((item) => (
             <div
               key={item.id}
-              className={`p-3 rounded-xl border transition-all group ${
+              className={`p-3 rounded-2xl border transition-all group ${
                 item.speaker === 'manager'
-                  ? 'bg-blue-950/25 border-blue-900/50 text-blue-100 mr-4'
-                  : 'bg-emerald-950/25 border-emerald-900/50 text-emerald-100 ml-4'
+                  ? 'bg-blue-500/15 border-blue-400/30 text-blue-100 mr-4'
+                  : 'bg-emerald-500/15 border-emerald-400/30 text-emerald-100 ml-4'
               }`}
             >
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <div className="flex items-center gap-2">
-                  <span className={`font-bold text-[11px] flex items-center gap-1 ${
-                    item.speaker === 'manager' ? 'text-blue-300' : 'text-emerald-300'
-                  }`}>
+                  <span
+                    className={`font-bold text-[11px] flex items-center gap-1 ${
+                      item.speaker === 'manager' ? 'text-blue-300' : 'text-emerald-300'
+                    }`}
+                  >
                     {item.speaker === 'manager' ? '👔' : '👤'} {item.speakerName}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">{item.timestamp}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{item.timestamp}</span>
                 </div>
 
                 {/* Ações rápidas no balão de fala */}
@@ -721,7 +748,7 @@ export function LiveMeetingRecorder({
                     <button
                       type="button"
                       onClick={() => handleSwapBlockSpeaker(item)}
-                      className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] flex items-center gap-1 cursor-pointer"
+                      className="px-2 py-0.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-slate-200 hover:text-white text-[10px] flex items-center gap-1 cursor-pointer border border-white/[0.1]"
                       title="Inverter quem falou (Gestor ↔ Colaborador)"
                     >
                       <ArrowLeftRight className="w-3 h-3" />
@@ -733,7 +760,7 @@ export function LiveMeetingRecorder({
                     <button
                       type="button"
                       onClick={() => onCreateActionFromTranscript(item.text, item.speaker)}
-                      className="px-1.5 py-0.5 rounded bg-emerald-900/50 hover:bg-emerald-800 text-emerald-300 text-[10px] flex items-center gap-1 cursor-pointer"
+                      className="px-2 py-0.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-400/30 text-[10px] flex items-center gap-1 cursor-pointer"
                       title="Transformar esta fala em um Compromisso / Ação"
                     >
                       <ListTodo className="w-3 h-3" />
@@ -748,7 +775,7 @@ export function LiveMeetingRecorder({
                         setEditingId(item.id);
                         setEditingText(item.text);
                       }}
-                      className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-cyan-300 cursor-pointer"
+                      className="p-1 rounded-lg hover:bg-white/[0.1] text-slate-400 hover:text-cyan-300 cursor-pointer"
                       title="Editar texto da fala"
                     >
                       <Edit3 className="w-3 h-3" />
@@ -759,7 +786,7 @@ export function LiveMeetingRecorder({
                     <button
                       type="button"
                       onClick={() => onDeleteTranscript(item.id)}
-                      className="p-1 rounded hover:bg-rose-950 text-slate-400 hover:text-rose-400 cursor-pointer"
+                      className="p-1 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 cursor-pointer"
                       title="Excluir esta fala"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -774,41 +801,43 @@ export function LiveMeetingRecorder({
                     type="text"
                     value={editingText}
                     onChange={(e) => setEditingText(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="flex-1 aptis-glass-input rounded-xl px-2.5 py-1.5 text-xs focus:outline-none"
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={() => handleSaveEdit(item.id)}
-                    className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg cursor-pointer"
+                    className="p-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingId(null)}
-                    className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg cursor-pointer"
+                    className="p-1.5 bg-white/[0.1] hover:bg-white/[0.18] text-slate-300 rounded-xl cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ) : (
-                <p className="text-slate-200 leading-relaxed text-xs">{item.text}</p>
+                <p className="text-slate-100 leading-relaxed text-xs">{item.text}</p>
               )}
             </div>
           ))}
 
           {/* Texto sendo falado no instante (Interim) */}
           {interimText && (
-            <div className={`p-3 rounded-xl border border-dashed animate-pulse ${
-              currentSpeaker === 'manager'
-                ? 'bg-blue-950/15 border-blue-500/50 text-blue-200 mr-4'
-                : 'bg-emerald-950/15 border-emerald-500/50 text-emerald-200 ml-4'
-            }`}>
-              <span className="text-[10px] text-slate-400 block mb-0.5">
+            <div
+              className={`p-3 rounded-2xl border border-dashed animate-pulse ${
+                currentSpeaker === 'manager'
+                  ? 'bg-blue-500/15 border-blue-400/50 text-blue-200 mr-4'
+                  : 'bg-emerald-500/15 border-emerald-400/50 text-emerald-200 ml-4'
+              }`}
+            >
+              <span className="text-[10px] text-slate-300 block mb-0.5">
                 Ouvindo agora ({currentSpeaker === 'manager' ? managerName : employeeName}):
               </span>
-              <p className="text-slate-200 italic">{interimText}</p>
+              <p className="text-white italic">{interimText}</p>
             </div>
           )}
         </div>
@@ -820,11 +849,11 @@ export function LiveMeetingRecorder({
             placeholder={`Digitar fala ou observação de ${currentSpeaker === 'manager' ? managerName : employeeName}...`}
             value={manualText}
             onChange={(e) => setManualText(e.target.value)}
-            className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            className="flex-1 aptis-glass-input rounded-xl px-3.5 py-2 text-xs focus:outline-none"
           />
           <button
             type="submit"
-            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="px-4 py-2 aptis-glass-subcard hover:bg-white/[0.12] text-cyan-300 text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer transition-colors shrink-0 border border-white/[0.15]"
           >
             <Plus className="w-3.5 h-3.5" /> Registrar Fala
           </button>
