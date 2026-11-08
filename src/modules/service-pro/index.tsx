@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wrench,
   Calendar,
@@ -28,6 +28,7 @@ import {
   ClipboardCheck,
   Edit3,
 } from 'lucide-react';
+import { useTenant } from '@/context/tenant-context';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
 import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
@@ -59,6 +60,26 @@ import { ClientManager } from './components/ClientManager';
 import { ClientPortalModal } from './components/ClientPortalModal';
 
 export const ServiceProModule: React.FC = () => {
+  const { currentTenant } = useTenant();
+
+  // Sincronia com o motor óptico Tinted Glass / Light Crystal
+  const [tintedGlass, setTintedGlass] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('aptis_tinted_glass_mode');
+    if (saved !== null) {
+      setTintedGlass(saved === 'true');
+    }
+    const handleModeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      if (typeof customEvent.detail === 'boolean') {
+        setTintedGlass(customEvent.detail);
+      }
+    };
+    window.addEventListener('aptis-glass-mode-change', handleModeChange);
+    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
+  }, []);
+
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<
     'cockpit' | 'equipments' | 'calendar' | 'work_orders' | 'diagnostics' | 'catalog' | 'clients'
@@ -215,8 +236,10 @@ export const ServiceProModule: React.FC = () => {
         daysLeft,
         status: 'overdue' as const,
         label: `Vencida há ${Math.abs(daysLeft)} dia(s)`,
-        badgeClass: 'bg-red-100 text-red-800 border-red-300',
-        dotClass: 'bg-red-600',
+        badgeClass: tintedGlass
+          ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
+          : 'bg-rose-50 text-rose-700 border-rose-200',
+        dotClass: 'bg-rose-500',
       };
     }
     if (daysLeft === 0) {
@@ -224,8 +247,10 @@ export const ServiceProModule: React.FC = () => {
         daysLeft,
         status: 'overdue' as const,
         label: 'Vence Hoje!',
-        badgeClass: 'bg-red-100 text-red-800 border-red-300',
-        dotClass: 'bg-red-600',
+        badgeClass: tintedGlass
+          ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
+          : 'bg-rose-50 text-rose-700 border-rose-200',
+        dotClass: 'bg-rose-500',
       };
     }
     if (daysLeft <= 15) {
@@ -233,8 +258,10 @@ export const ServiceProModule: React.FC = () => {
         daysLeft,
         status: 'due_15' as const,
         label: `Vence em ${daysLeft} dia(s)`,
-        badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
-        dotClass: 'bg-amber-500',
+        badgeClass: tintedGlass
+          ? 'bg-amber-500/20 text-amber-300 border-amber-400/35'
+          : 'bg-amber-50 text-amber-800 border-amber-200',
+        dotClass: 'bg-amber-400',
       };
     }
     if (daysLeft <= 30) {
@@ -242,16 +269,20 @@ export const ServiceProModule: React.FC = () => {
         daysLeft,
         status: 'due_30' as const,
         label: `Próxima: faltam ${daysLeft} dias`,
-        badgeClass: 'bg-blue-50 text-blue-800 border-blue-200',
-        dotClass: 'bg-blue-500',
+        badgeClass: tintedGlass
+          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
+          : 'bg-blue-50 text-blue-700 border-blue-200',
+        dotClass: 'bg-cyan-400',
       };
     }
     return {
       daysLeft,
       status: 'ok' as const,
       label: `Em dia (${daysLeft} dias)`,
-      badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-      dotClass: 'bg-emerald-500',
+      badgeClass: tintedGlass
+        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+        : 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      dotClass: 'bg-emerald-400',
     };
   };
 
@@ -728,158 +759,415 @@ export const ServiceProModule: React.FC = () => {
 
   return (
     <div className="space-y-6 w-full pb-12">
-      {/* HEADER DO MÓDULO */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-              <Wrench className="w-3.5 h-3.5 text-blue-600" /> Manutenção & Engenharia de Serviços B2B
-            </span>
-            <span className="text-xs text-slate-500 font-medium">Plataforma Aptis</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            Aptis Service Pro • Gestão de Manutenção & Contratos
-          </h1>
-          <p className="text-sm text-slate-600 max-w-3xl mt-1">
-            Controle centralizado para gestores de manutenção industrial: contratos B2B, inventário de ativos com controle automático de vencimento preventivo, baixa de OS com laudo e inteligência preditiva.
-          </p>
-        </div>
+      {/* =====================================================================
+          HEADER EXECUTIVO INTEGRADO EM LIQUID GLASS + 5 SUB-CÁPSULAS KPI
+      ===================================================================== */}
+      <div
+        className={`rounded-3xl p-6 relative overflow-hidden transition-all duration-500 ${
+          tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+        }`}
+      >
+        {/* Reflexo de Luz Safira / Ciano no Topo Direito */}
+        <div
+          className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-25 pointer-events-none blur-[95px]"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(37, 99, 235, 0.75) 0%, rgba(6, 182, 212, 0.35) 55%, transparent 75%)',
+          }}
+        />
 
-        {/* Global Action Shortcuts */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={() => setIsExcelImporterOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer"
-            title="Importar catálogo de máquinas e clientes do Excel"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Importar Excel
-          </button>
-
-          <button
-            onClick={() => {
-              setEditingEquipment(null);
-              setIsImporterOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs cursor-pointer"
-          >
-            <Cpu className="w-4 h-4 text-blue-600" />
-            + Cadastrar Máquina
-          </button>
-
-          <button
-            onClick={() => {
-              setEditingWorkOrder(null);
-              setIsWorkOrderModalOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-blue-600/25 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Nova Ordem de Serviço
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
-            <span>Faturamento (MRR)</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold">
-              <DollarSign className="w-5 h-5" />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border inline-flex items-center gap-1.5 ${
+                  tintedGlass
+                    ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                <Wrench className="w-3.5 h-3.5" /> Manutenção & Engenharia de Serviços B2B
+              </span>
+              <span
+                className={`text-xs font-medium ${
+                  tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                }`}
+              >
+                Unidade: {currentTenant?.name || 'Aptis Tecnologia (Admin Master)'}
+              </span>
             </div>
-          </div>
-          <div className="text-2xl font-black text-emerald-600 mt-2">
-            {totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </div>
-          <span className="text-xs text-slate-500 font-medium">{clients.length} clientes ativos</span>
-        </div>
-
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
-            <span>Parque sob Gestão</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
-              <Cpu className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-slate-900 mt-2">{totalEquipments} Máquinas</div>
-          <span className="text-xs text-slate-500 font-medium">Com TAGs QR Code ativas</span>
-        </div>
-
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
-            <span>Máquinas Críticas</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center font-bold">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-amber-600 mt-2">{criticalEquipments} Ativos</div>
-          <span className="text-xs text-slate-500 font-medium">Linhas de parada severa</span>
-        </div>
-
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
-            <span>OSs em Aberto</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
-              <Clock className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-blue-700 mt-2">{pendingOrders} Agendadas</div>
-          <span className="text-xs text-slate-500 font-medium">Visitas para executar</span>
-        </div>
-
-        <div className="col-span-2 sm:col-span-1 bg-white border border-slate-200 p-5 rounded-2xl shadow-sm hover:shadow-md transition">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-semibold uppercase tracking-wider">
-            <span>OSs Concluídas</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-emerald-600 mt-2">{completedOrders} Laudos</div>
-          <span className="text-xs text-slate-500 font-medium">Assinadas digitalmente</span>
-        </div>
-      </div>
-
-      {/* Main Tab Navigation */}
-      <div className="flex border-b border-slate-200 overflow-x-auto gap-2 text-xs font-semibold">
-        {[
-          { key: 'cockpit', label: 'Cockpit Geral', icon: Activity },
-          { key: 'equipments', label: 'Parque de Máquinas', icon: Cpu, count: equipments.length },
-          { key: 'calendar', label: 'Agenda & Visitas', icon: Calendar, count: pendingOrders },
-          { key: 'work_orders', label: 'Ordens de Serviço (OS)', icon: FileText, count: workOrders.length },
-          { key: 'diagnostics', label: 'Copiloto IA (Waze)', icon: Sparkles, count: diagnostics.length },
-          { key: 'catalog', label: 'Catálogo Mestre', icon: Layers, count: masterCatalog.length },
-          { key: 'clients', label: 'Clientes & Contratos', icon: Building2, count: clients.length },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`pb-3 px-3.5 border-b-2 flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
-                isActive
-                  ? 'border-blue-600 text-blue-700 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-900'
+            <h1
+              className={`text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2.5 ${
+                tintedGlass ? 'text-white drop-shadow-sm' : 'text-slate-900'
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-              {tab.count !== undefined && (
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isActive ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
+              Aptis Service Pro • Gestão de Manutenção & Contratos
+            </h1>
+            <p
+              className={`text-sm max-w-3xl mt-1 ${
+                tintedGlass ? 'text-slate-300' : 'text-slate-600'
+              }`}
+            >
+              Controle centralizado para gestores de manutenção industrial: contratos B2B, inventário de ativos com controle automático de vencimento preventivo, baixa de OS com laudo e inteligência preditiva.
+            </p>
+          </div>
+
+          {/* Global Action Shortcuts */}
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => setIsExcelImporterOpen(true)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-xl transition cursor-pointer ${
+                tintedGlass
+                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-400/35 shadow-[0_0_16px_rgba(16,185,129,0.2)]'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-2xs'
+              }`}
+              title="Importar catálogo de máquinas e clientes do Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Importar Excel
             </button>
-          );
-        })}
+
+            <button
+              onClick={() => {
+                setEditingEquipment(null);
+                setIsImporterOpen(true);
+              }}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold text-xs rounded-xl transition cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-subcard text-slate-200 hover:text-white hover:border-cyan-400/40'
+                  : 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 shadow-2xs'
+              }`}
+            >
+              <Cpu className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
+              + Cadastrar Máquina
+            </button>
+
+            <button
+              onClick={() => {
+                setEditingWorkOrder(null);
+                setIsWorkOrderModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-white font-bold text-xs rounded-xl transition-all cursor-pointer border border-cyan-300/35 hover:brightness-110"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                boxShadow:
+                  '0 0 22px rgba(6, 182, 212, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.45)',
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Nova Ordem de Serviço
+            </button>
+          </div>
+        </div>
+
+        {/* 5 SUB-CÁPSULAS KPI INTEGRADAS AO HEADER */}
+        <div
+          className={`grid grid-cols-2 lg:grid-cols-5 gap-3.5 mt-6 pt-5 border-t relative z-10 ${
+            tintedGlass ? 'border-white/[0.08]' : 'border-slate-200/80'
+          }`}
+        >
+          {/* KPI 1: Faturamento (MRR) */}
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs font-bold mb-1">
+              <span className={tintedGlass ? 'text-emerald-300' : 'text-emerald-700'}>
+                Faturamento (MRR)
+              </span>
+              <DollarSign
+                className={`w-4 h-4 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}
+              />
+            </div>
+            <div
+              className={`text-2xl font-black tracking-tight ${
+                tintedGlass
+                  ? 'text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                  : 'text-emerald-600'
+              }`}
+            >
+              {totalMRR.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </div>
+            <span
+              className={`text-[11px] font-medium ${
+                tintedGlass ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              {clients.length} clientes ativos
+            </span>
+          </div>
+
+          {/* KPI 2: Parque sob Gestão */}
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs font-bold mb-1">
+              <span className={tintedGlass ? 'text-slate-300' : 'text-slate-600'}>
+                Parque sob Gestão
+              </span>
+              <Cpu className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
+            </div>
+            <div
+              className={`text-2xl font-black tracking-tight ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              {totalEquipments} Máquinas
+            </div>
+            <span
+              className={`text-[11px] font-medium ${
+                tintedGlass ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              Com TAGs QR Code ativas
+            </span>
+          </div>
+
+          {/* KPI 3: Máquinas Críticas */}
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs font-bold mb-1">
+              <span className={tintedGlass ? 'text-amber-300' : 'text-amber-700'}>
+                Máquinas Críticas
+              </span>
+              <AlertTriangle
+                className={`w-4 h-4 ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`}
+              />
+            </div>
+            <div
+              className={`text-2xl font-black tracking-tight ${
+                tintedGlass
+                  ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                  : 'text-amber-600'
+              }`}
+            >
+              {criticalEquipments} Ativos
+            </div>
+            <span
+              className={`text-[11px] font-medium ${
+                tintedGlass ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              Linhas de parada severa
+            </span>
+          </div>
+
+          {/* KPI 4: OSs em Aberto */}
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs font-bold mb-1">
+              <span className={tintedGlass ? 'text-cyan-300' : 'text-blue-600'}>
+                OSs em Aberto
+              </span>
+              <Clock className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
+            </div>
+            <div
+              className={`text-2xl font-black tracking-tight ${
+                tintedGlass
+                  ? 'text-cyan-400 drop-shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                  : 'text-blue-600'
+              }`}
+            >
+              {pendingOrders} Agendadas
+            </div>
+            <span
+              className={`text-[11px] font-medium ${
+                tintedGlass ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              Visitas para executar
+            </span>
+          </div>
+
+          {/* KPI 5: OSs Concluídas */}
+          <div
+            className={`col-span-2 lg:col-span-1 p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs font-bold mb-1">
+              <span className={tintedGlass ? 'text-emerald-300' : 'text-emerald-700'}>
+                OSs Concluídas
+              </span>
+              <CheckCircle2
+                className={`w-4 h-4 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}
+              />
+            </div>
+            <div
+              className={`text-2xl font-black tracking-tight ${
+                tintedGlass
+                  ? 'text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                  : 'text-emerald-600'
+              }`}
+            >
+              {completedOrders} Laudos
+            </div>
+            <span
+              className={`text-[11px] font-medium ${
+                tintedGlass ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              Assinadas digitalmente
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Tab 1: Cockpit Geral */}
+      {/* =====================================================================
+          NAVEGAÇÃO POR ABAS EM MENISCUS LIQUID BEAD PILL BAR
+      ===================================================================== */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+        <div className="aptis-meniscus-track inline-flex items-center p-1.5 rounded-full gap-1 max-w-full overflow-x-auto">
+          {[
+            {
+              key: 'cockpit',
+              label: 'Cockpit Geral',
+              icon: Activity,
+              beadGradient: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+              glowColor: 'rgba(6, 182, 212, 0.55)',
+            },
+            {
+              key: 'equipments',
+              label: 'Parque de Máquinas',
+              icon: Cpu,
+              count: equipments.length,
+              beadGradient: 'linear-gradient(135deg, #0284c7 0%, #3b82f6 100%)',
+              glowColor: 'rgba(59, 130, 246, 0.55)',
+            },
+            {
+              key: 'calendar',
+              label: 'Agenda & Visitas',
+              icon: Calendar,
+              count: pendingOrders,
+              beadGradient: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+              glowColor: 'rgba(16, 185, 129, 0.55)',
+            },
+            {
+              key: 'work_orders',
+              label: 'Ordens de Serviço (OS)',
+              icon: FileText,
+              count: workOrders.length,
+              beadGradient: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)',
+              glowColor: 'rgba(79, 70, 229, 0.55)',
+            },
+            {
+              key: 'diagnostics',
+              label: 'Copiloto IA (Waze)',
+              icon: Sparkles,
+              count: diagnostics.length,
+              beadGradient: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+              glowColor: 'rgba(245, 158, 11, 0.55)',
+            },
+            {
+              key: 'catalog',
+              label: 'Catálogo Mestre',
+              icon: Layers,
+              count: masterCatalog.length,
+              beadGradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
+              glowColor: 'rgba(139, 92, 246, 0.55)',
+            },
+            {
+              key: 'clients',
+              label: 'Clientes & Contratos',
+              icon: Building2,
+              count: clients.length,
+              beadGradient: 'linear-gradient(135deg, #0d9488 0%, #06b6d4 100%)',
+              glowColor: 'rgba(20, 184, 166, 0.55)',
+            },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as any)}
+                className={`relative px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 whitespace-nowrap transition-all duration-300 cursor-pointer ${
+                  isActive ? 'text-white scale-[1.02]' : 'text-slate-300 hover:text-white'
+                }`}
+                style={
+                  isActive
+                    ? {
+                        background: tab.beadGradient,
+                        boxShadow: `0 0 22px ${tab.glowColor}, inset 0 1.5px 1px rgba(255, 255, 255, 0.65), inset 0 -2px 4px rgba(0, 0, 0, 0.25)`,
+                      }
+                    : undefined
+                }
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span
+                    className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                      isActive
+                        ? 'bg-black/25 text-white border border-white/25'
+                        : 'bg-white/10 text-slate-300 border border-white/10'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Cápsula de Filtro Rápido por Cliente */}
+        <div
+          className={`flex items-center gap-2 px-4 py-2 rounded-full border shrink-0 transition-all ${
+            tintedGlass
+              ? 'aptis-glass-subcard text-white border-white/15'
+              : 'bg-white border-slate-200/90 shadow-2xs text-slate-800'
+          }`}
+        >
+          <Building2 className={`w-3.5 h-3.5 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
+          <span
+            className={`text-[10px] font-black uppercase tracking-wider ${
+              tintedGlass ? 'text-slate-300' : 'text-slate-500'
+            }`}
+          >
+            Cliente B2B:
+          </span>
+          <select
+            value={equipmentClientFilter}
+            onChange={(e) => setEquipmentClientFilter(e.target.value)}
+            className={`text-xs font-bold bg-transparent outline-none cursor-pointer ${
+              tintedGlass ? 'text-cyan-300' : 'text-slate-900'
+            }`}
+          >
+            <option value="all" className="bg-slate-900 text-white">
+              Todos os Clientes ({clients.length})
+            </option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id} className="bg-slate-900 text-white">
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* =====================================================================
+          TAB 1: COCKPIT GERAL
+      ===================================================================== */}
       {activeTab === 'cockpit' && (
         <div className="space-y-6">
           {/* Quick Action Shortcuts Banner */}
@@ -889,20 +1177,46 @@ export const ServiceProModule: React.FC = () => {
                 setEditingEquipment(null);
                 setIsImporterOpen(true);
               }}
-              className="p-5 rounded-2xl bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border border-blue-200/80 hover:border-blue-400 hover:shadow-md transition cursor-pointer shadow-sm group"
+              className={`p-5 rounded-3xl transition-all duration-300 cursor-pointer group ${
+                tintedGlass
+                  ? 'aptis-glass-dark aptis-glass-subcard-interactive text-white'
+                  : 'aptis-glass-light hover:shadow-lg hover:-translate-y-1 hover:border-blue-300 text-slate-900'
+              }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20">
+                <div
+                  className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md border border-white/25"
+                  style={{
+                    background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                    boxShadow: '0 0 18px rgba(6, 182, 212, 0.35)',
+                  }}
+                >
                   <Cpu className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-bold text-blue-700 px-2.5 py-0.5 rounded-full bg-blue-100 border border-blue-200">
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                    tintedGlass
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
+                      : 'bg-blue-100 text-blue-700 border-blue-200'
+                  }`}
+                >
                   NOVO ATIVO
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition">
+              <h3
+                className={`text-sm font-black transition ${
+                  tintedGlass
+                    ? 'text-white group-hover:text-cyan-300'
+                    : 'text-slate-900 group-hover:text-blue-700'
+                }`}
+              >
                 Cadastrar Nova Máquina no Parque
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p
+                className={`text-xs mt-1 leading-relaxed ${
+                  tintedGlass ? 'text-slate-300' : 'text-slate-500'
+                }`}
+              >
                 Cadastre máquinas por formulário direto, herde dados do Catálogo Mestre ou anexe foto/PDF opcional.
               </p>
             </div>
@@ -912,40 +1226,92 @@ export const ServiceProModule: React.FC = () => {
                 setEditingWorkOrder(null);
                 setIsWorkOrderModalOpen(true);
               }}
-              className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/80 hover:border-emerald-400 hover:shadow-md transition cursor-pointer shadow-sm group"
+              className={`p-5 rounded-3xl transition-all duration-300 cursor-pointer group ${
+                tintedGlass
+                  ? 'aptis-glass-dark aptis-glass-subcard-interactive text-white'
+                  : 'aptis-glass-light hover:shadow-lg hover:-translate-y-1 hover:border-emerald-300 text-slate-900'
+              }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+                <div
+                  className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md border border-white/25"
+                  style={{
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    boxShadow: '0 0 18px rgba(16, 185, 129, 0.35)',
+                  }}
+                >
                   <Calendar className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-200">
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                    tintedGlass
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                      : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                  }`}
+                >
                   PROGRAMAÇÃO
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition">
+              <h3
+                className={`text-sm font-black transition ${
+                  tintedGlass
+                    ? 'text-white group-hover:text-emerald-300'
+                    : 'text-slate-900 group-hover:text-emerald-700'
+                }`}
+              >
                 Agendar Visita Preventiva / Corretiva
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p
+                className={`text-xs mt-1 leading-relaxed ${
+                  tintedGlass ? 'text-slate-300' : 'text-slate-500'
+                }`}
+              >
                 Selecione o cliente, a máquina e o responsável. O cliente receberá lembretes automáticos no WhatsApp antes da visita.
               </p>
             </div>
 
             <div
               onClick={() => setActiveTab('diagnostics')}
-              className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/80 hover:border-amber-400 hover:shadow-md transition cursor-pointer shadow-sm group"
+              className={`p-5 rounded-3xl transition-all duration-300 cursor-pointer group ${
+                tintedGlass
+                  ? 'aptis-glass-dark aptis-glass-subcard-interactive text-white'
+                  : 'aptis-glass-light hover:shadow-lg hover:-translate-y-1 hover:border-amber-300 text-slate-900'
+              }`}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+                <div
+                  className="w-10 h-10 rounded-xl text-white flex items-center justify-center shadow-md border border-white/25"
+                  style={{
+                    background: 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)',
+                    boxShadow: '0 0 18px rgba(245, 158, 11, 0.35)',
+                  }}
+                >
                   <Wrench className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-bold text-amber-800 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-200">
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                    tintedGlass
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/35'
+                      : 'bg-amber-100 text-amber-800 border-amber-200'
+                  }`}
+                >
                   WAZE DA MANUTENÇÃO
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-slate-900 group-hover:text-amber-700 transition">
+              <h3
+                className={`text-sm font-black transition ${
+                  tintedGlass
+                    ? 'text-white group-hover:text-amber-300'
+                    : 'text-slate-900 group-hover:text-amber-700'
+                }`}
+              >
                 Consultar Copiloto Preditivo de Falhas
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p
+                className={`text-xs mt-1 leading-relaxed ${
+                  tintedGlass ? 'text-slate-300' : 'text-slate-500'
+                }`}
+              >
                 Veja o histórico cruzado de falhas em modelos idênticos em outros clientes e saiba quais peças separar antes da visita.
               </p>
             </div>
@@ -954,62 +1320,116 @@ export const ServiceProModule: React.FC = () => {
           {/* Next visits & Critical Alert grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Próximas Visitas Programadas */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+            <div
+              className={`p-5 rounded-3xl space-y-4 transition-all ${
+                tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-blue-600" />
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <Calendar
+                    className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`}
+                  />
+                  <h3 className={`text-sm font-black ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                     Próximas Ordens de Serviço no Calendário
                   </h3>
                 </div>
                 <button
                   onClick={() => setActiveTab('calendar')}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                  className={`text-xs font-bold cursor-pointer transition ${
+                    tintedGlass
+                      ? 'text-cyan-400 hover:text-cyan-300'
+                      : 'text-blue-600 hover:text-blue-800'
+                  }`}
                 >
                   Ver Agenda Completa →
                 </button>
               </div>
 
               <div className="space-y-2.5">
-                {workOrders.slice(0, 4).map((wo) => (
-                  <div
-                    key={wo.id}
-                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition flex items-center justify-between gap-3 text-xs shadow-2xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-blue-600">{wo.orderNumber}</span>
-                        <span className="font-bold text-slate-900">[{wo.equipmentTag}]</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {wo.clientName} • {wo.technicianName} ({wo.scheduledDate})
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => setMobileOSModalOrder(wo)}
-                      className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold flex items-center gap-1.5 transition text-[11px] shadow-2xs cursor-pointer"
+                {workOrders
+                  .filter(
+                    (wo) =>
+                      equipmentClientFilter === 'all' || wo.clientId === equipmentClientFilter
+                  )
+                  .slice(0, 4)
+                  .map((wo) => (
+                    <div
+                      key={wo.id}
+                      className={`p-3.5 rounded-2xl transition-all flex items-center justify-between gap-3 text-xs ${
+                        tintedGlass
+                          ? 'aptis-glass-subcard aptis-glass-subcard-interactive text-white'
+                          : 'bg-white border border-slate-200/90 hover:border-blue-300 hover:shadow-md text-slate-900 shadow-2xs'
+                      }`}
                     >
-                      <ClipboardCheck className="w-3.5 h-3.5 text-blue-600" />
-                      Baixar / Laudo OS
-                    </button>
-                  </div>
-                ))}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`font-mono font-black ${
+                              tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                            }`}
+                          >
+                            {wo.orderNumber}
+                          </span>
+                          <span
+                            className={`font-bold ${
+                              tintedGlass ? 'text-white' : 'text-slate-900'
+                            }`}
+                          >
+                            [{wo.equipmentTag}]
+                          </span>
+                        </div>
+                        <p
+                          className={`text-[11px] mt-0.5 ${
+                            tintedGlass ? 'text-slate-300' : 'text-slate-500'
+                          }`}
+                        >
+                          {wo.clientName} • {wo.technicianName} ({wo.scheduledDate})
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => setMobileOSModalOrder(wo)}
+                        className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition text-[11px] cursor-pointer shrink-0 ${
+                          tintedGlass
+                            ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-400/35'
+                            : 'bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
+                        }`}
+                      >
+                        <ClipboardCheck
+                          className={`w-3.5 h-3.5 ${
+                            tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                          }`}
+                        />
+                        Baixar / Laudo OS
+                      </button>
+                    </div>
+                  ))}
               </div>
             </div>
 
             {/* Equipamentos com Preventiva Próxima ou Crítica */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+            <div
+              className={`p-5 rounded-3xl space-y-4 transition-all ${
+                tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <AlertTriangle
+                    className={`w-4 h-4 ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`}
+                  />
+                  <h3 className={`text-sm font-black ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                     Radar de Vencimentos Preventivos (Próximas Datas)
                   </h3>
                 </div>
                 <button
                   onClick={() => setActiveTab('equipments')}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                  className={`text-xs font-bold cursor-pointer transition ${
+                    tintedGlass
+                      ? 'text-cyan-400 hover:text-cyan-300'
+                      : 'text-blue-600 hover:text-blue-800'
+                  }`}
                 >
                   Ver Todas as Máquinas →
                 </button>
@@ -1017,6 +1437,10 @@ export const ServiceProModule: React.FC = () => {
 
               <div className="space-y-2.5">
                 {[...equipments]
+                  .filter(
+                    (eq) =>
+                      equipmentClientFilter === 'all' || eq.clientId === equipmentClientFilter
+                  )
                   .sort((a, b) => a.nextPreventiveDate.localeCompare(b.nextPreventiveDate))
                   .slice(0, 4)
                   .map((eq) => {
@@ -1024,12 +1448,28 @@ export const ServiceProModule: React.FC = () => {
                     return (
                       <div
                         key={eq.id}
-                        className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition flex items-center justify-between gap-3 text-xs shadow-2xs"
+                        className={`p-3.5 rounded-2xl transition-all flex items-center justify-between gap-3 text-xs ${
+                          tintedGlass
+                            ? 'aptis-glass-subcard aptis-glass-subcard-interactive text-white'
+                            : 'bg-white border border-slate-200/90 hover:border-blue-300 hover:shadow-md text-slate-900 shadow-2xs'
+                        }`}
                       >
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono font-bold text-slate-900">[{eq.tag}]</span>
-                            <span className="font-bold text-slate-800 line-clamp-1">{eq.name}</span>
+                            <span
+                              className={`font-mono font-black ${
+                                tintedGlass ? 'text-cyan-300' : 'text-slate-900'
+                              }`}
+                            >
+                              [{eq.tag}]
+                            </span>
+                            <span
+                              className={`font-bold line-clamp-1 ${
+                                tintedGlass ? 'text-white' : 'text-slate-800'
+                              }`}
+                            >
+                              {eq.name}
+                            </span>
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1 ${dueInfo.badgeClass}`}
                             >
@@ -1037,13 +1477,25 @@ export const ServiceProModule: React.FC = () => {
                               {dueInfo.label}
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p
+                            className={`text-[11px] mt-0.5 ${
+                              tintedGlass ? 'text-slate-300' : 'text-slate-500'
+                            }`}
+                          >
                             {eq.clientName} • Vencimento:{' '}
-                            <strong className="text-blue-700 font-mono">
+                            <strong
+                              className={`font-mono ${
+                                tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                              }`}
+                            >
                               {eq.nextPreventiveDate}
                             </strong>
                             {eq.lastServiceDate && (
-                              <span className="ml-2 text-slate-400">
+                              <span
+                                className={`ml-2 ${
+                                  tintedGlass ? 'text-slate-400' : 'text-slate-400'
+                                }`}
+                              >
                                 (Última: {eq.lastServiceDate})
                               </span>
                             )}
@@ -1052,10 +1504,18 @@ export const ServiceProModule: React.FC = () => {
 
                         <button
                           onClick={() => setQRCodeModalEquipment(eq)}
-                          className="p-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 transition shadow-2xs cursor-pointer"
+                          className={`p-2 rounded-xl transition cursor-pointer shrink-0 ${
+                            tintedGlass
+                              ? 'aptis-glass-subcard text-cyan-300 hover:text-white hover:border-cyan-400/40'
+                              : 'bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
+                          }`}
                           title="Ver Etiqueta QR Code"
                         >
-                          <QrCode className="w-4 h-4 text-blue-600" />
+                          <QrCode
+                            className={`w-4 h-4 ${
+                              tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                            }`}
+                          />
                         </button>
                       </div>
                     );
@@ -1066,19 +1526,33 @@ export const ServiceProModule: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 2: Parque de Máquinas */}
+      {/* =====================================================================
+          TAB 2: PARQUE DE MÁQUINAS
+      ===================================================================== */}
       {activeTab === 'equipments' && (
         <div className="space-y-4">
           {/* Filter & Action Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
+          <div
+            className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl transition-all ${
+              tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+            }`}
+          >
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search
+                className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${
+                  tintedGlass ? 'text-slate-400' : 'text-slate-400'
+                }`}
+              />
               <input
                 type="text"
                 value={equipmentSearch}
                 onChange={(e) => setEquipmentSearch(e.target.value)}
                 placeholder="Buscar por TAG, modelo, cliente ou número de série..."
-                className="w-full text-xs pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 focus:bg-white rounded-xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
+                className={`w-full text-xs pl-10 pr-4 py-2.5 rounded-xl outline-none font-medium transition ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-400'
+                    : 'bg-white border border-slate-200/90 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 shadow-2xs'
+                }`}
               />
             </div>
 
@@ -1086,23 +1560,43 @@ export const ServiceProModule: React.FC = () => {
               <select
                 value={equipmentDueFilter}
                 onChange={(e) => setEquipmentDueFilter(e.target.value as any)}
-                className="text-xs bg-blue-50/70 border border-blue-300 focus:bg-white rounded-xl px-3 py-2 text-blue-900 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-bold"
+                className={`text-xs rounded-xl px-3 py-2.5 outline-none font-bold cursor-pointer transition ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-cyan-300 border-cyan-400/35'
+                    : 'bg-blue-50/80 border border-blue-300 text-blue-900 shadow-2xs'
+                }`}
               >
-                <option value="all">📅 Todos os Vencimentos</option>
-                <option value="overdue">🔴 Vencidas / Atrasadas</option>
-                <option value="due_15">🟡 Vencendo em até 15 dias</option>
-                <option value="due_30">🔵 Vencendo em até 30 dias</option>
-                <option value="ok">🟢 Em dia (&gt; 30 dias)</option>
+                <option value="all" className="bg-slate-900 text-white">
+                  📅 Todos os Vencimentos
+                </option>
+                <option value="overdue" className="bg-slate-900 text-white">
+                  🔴 Vencidas / Atrasadas
+                </option>
+                <option value="due_15" className="bg-slate-900 text-white">
+                  🟡 Vencendo em até 15 dias
+                </option>
+                <option value="due_30" className="bg-slate-900 text-white">
+                  🔵 Vencendo em até 30 dias
+                </option>
+                <option value="ok" className="bg-slate-900 text-white">
+                  🟢 Em dia (&gt; 30 dias)
+                </option>
               </select>
 
               <select
                 value={equipmentClientFilter}
                 onChange={(e) => setEquipmentClientFilter(e.target.value)}
-                className="text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
+                className={`text-xs rounded-xl px-3 py-2.5 outline-none font-medium cursor-pointer transition ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'bg-white border border-slate-200/90 text-slate-800 shadow-2xs'
+                }`}
               >
-                <option value="all">Todos os Clientes</option>
+                <option value="all" className="bg-slate-900 text-white">
+                  Todos os Clientes
+                </option>
                 {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <option key={c.id} value={c.id} className="bg-slate-900 text-white">
                     {c.name}
                   </option>
                 ))}
@@ -1111,12 +1605,24 @@ export const ServiceProModule: React.FC = () => {
               <select
                 value={equipmentCriticalityFilter}
                 onChange={(e) => setEquipmentCriticalityFilter(e.target.value)}
-                className="text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
+                className={`text-xs rounded-xl px-3 py-2.5 outline-none font-medium cursor-pointer transition ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'bg-white border border-slate-200/90 text-slate-800 shadow-2xs'
+                }`}
               >
-                <option value="all">Todas as Criticidades</option>
-                <option value="high">Alta (Parada Severa)</option>
-                <option value="medium">Média</option>
-                <option value="low">Baixa</option>
+                <option value="all" className="bg-slate-900 text-white">
+                  Todas as Criticidades
+                </option>
+                <option value="high" className="bg-slate-900 text-white">
+                  Alta (Parada Severa)
+                </option>
+                <option value="medium" className="bg-slate-900 text-white">
+                  Média
+                </option>
+                <option value="low" className="bg-slate-900 text-white">
+                  Baixa
+                </option>
               </select>
 
               <button
@@ -1124,7 +1630,12 @@ export const ServiceProModule: React.FC = () => {
                   setEditingEquipment(null);
                   setIsImporterOpen(true);
                 }}
-                className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-md shadow-blue-600/25 transition flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 text-xs font-bold text-white rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-cyan-300/35 hover:brightness-110"
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                  boxShadow:
+                    '0 0 18px rgba(6, 182, 212, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45)',
+                }}
               >
                 <Plus className="w-3.5 h-3.5" />
                 Cadastrar Máquina
@@ -1139,11 +1650,21 @@ export const ServiceProModule: React.FC = () => {
               return (
                 <div
                   key={eq.id}
-                  className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-md transition shadow-sm space-y-3 flex flex-col justify-between"
+                  className={`p-5 rounded-3xl transition-all duration-300 space-y-3 flex flex-col justify-between ${
+                    tintedGlass
+                      ? 'aptis-glass-dark aptis-glass-subcard-interactive text-white'
+                      : 'bg-white border border-slate-200/90 shadow-xs hover:shadow-lg hover:-translate-y-1 hover:border-blue-300 text-slate-900'
+                  }`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-mono font-black px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                      <span
+                        className={`text-xs font-mono font-black px-2.5 py-0.5 rounded-lg border ${
+                          tintedGlass
+                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
+                            : 'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}
+                      >
                         {eq.tag}
                       </span>
                       <span
@@ -1154,33 +1675,69 @@ export const ServiceProModule: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-slate-900 mt-2 line-clamp-1">{eq.name}</h3>
-                    <p className="text-xs text-slate-500">
+                    <h3
+                      className={`text-sm font-black mt-2.5 line-clamp-1 ${
+                        tintedGlass ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      {eq.name}
+                    </h3>
+                    <p
+                      className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}
+                    >
                       {eq.brand} • {eq.model} {eq.capacity ? `(${eq.capacity})` : ''}
                     </p>
 
-                    <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 shadow-2xs">
-                      <div className="flex justify-between text-slate-500">
-                        <span>Cliente:</span>
-                        <strong className="text-slate-900">{eq.clientName}</strong>
+                    <div
+                      className={`mt-3 p-3.5 rounded-2xl text-xs space-y-1.5 ${
+                        tintedGlass
+                          ? 'aptis-glass-subcard text-slate-200'
+                          : 'bg-slate-50 border border-slate-200/90 text-slate-700 shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex justify-between">
+                        <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
+                          Cliente:
+                        </span>
+                        <strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>
+                          {eq.clientName}
+                        </strong>
                       </div>
-                      <div className="flex justify-between text-slate-500">
-                        <span>Localização:</span>
-                        <span className="text-slate-800 truncate max-w-[160px]">
+                      <div className="flex justify-between">
+                        <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
+                          Localização:
+                        </span>
+                        <span
+                          className={`truncate max-w-[160px] ${
+                            tintedGlass ? 'text-slate-200' : 'text-slate-800'
+                          }`}
+                        >
                           {eq.locationInPlant}
                         </span>
                       </div>
                       {eq.lastServiceDate && (
-                        <div className="flex justify-between text-slate-500">
-                          <span>Última Preventiva:</span>
-                          <span className="font-mono font-semibold text-emerald-700">
+                        <div className="flex justify-between">
+                          <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
+                            Última Preventiva:
+                          </span>
+                          <span
+                            className={`font-mono font-bold ${
+                              tintedGlass ? 'text-emerald-400' : 'text-emerald-700'
+                            }`}
+                          >
                             {eq.lastServiceDate}
                           </span>
                         </div>
                       )}
-                      <div className="flex justify-between text-slate-500">
-                        <span>Próx. Preventiva:</span>
-                        <strong className="text-blue-700 font-mono">
+                      <div className="flex justify-between">
+                        <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
+                          Próx. Preventiva:
+                        </span>
+                        <strong
+                          className={`font-mono ${
+                            tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                          }`}
+                        >
                           {eq.nextPreventiveDate} (a cada {eq.maintenancePlan?.intervalMonths || 3}m)
                         </strong>
                       </div>
@@ -1188,20 +1745,40 @@ export const ServiceProModule: React.FC = () => {
 
                     {/* Norm Badge */}
                     {eq.maintenancePlan?.legalNorm && (
-                      <div className="mt-2 text-[10px] font-bold text-amber-700 flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                      <div
+                        className={`mt-2.5 text-[10px] font-bold flex items-center gap-1 ${
+                          tintedGlass ? 'text-amber-300' : 'text-amber-700'
+                        }`}
+                      >
+                        <ShieldCheck
+                          className={`w-3.5 h-3.5 ${
+                            tintedGlass ? 'text-amber-400' : 'text-amber-600'
+                          }`}
+                        />
                         Regulamentado por {eq.maintenancePlan.legalNorm}
                       </div>
                     )}
                   </div>
 
                   {/* Bottom Actions */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div
+                    className={`pt-3 border-t flex items-center justify-between gap-2 ${
+                      tintedGlass ? 'border-white/[0.08]' : 'border-slate-100'
+                    }`}
+                  >
                     <button
                       onClick={() => setQRCodeModalEquipment(eq)}
-                      className="flex-1 py-2 px-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold flex items-center justify-center gap-1.5 text-xs transition shadow-2xs cursor-pointer"
+                      className={`flex-1 py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition cursor-pointer ${
+                        tintedGlass
+                          ? 'aptis-glass-subcard text-slate-200 hover:text-white hover:border-cyan-400/40'
+                          : 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 shadow-2xs'
+                      }`}
                     >
-                      <QrCode className="w-3.5 h-3.5 text-blue-600" />
+                      <QrCode
+                        className={`w-3.5 h-3.5 ${
+                          tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                        }`}
+                      />
                       Etiqueta QR
                     </button>
 
@@ -1242,7 +1819,11 @@ export const ServiceProModule: React.FC = () => {
                         setEditingWorkOrder(newOrder);
                         setIsWorkOrderModalOpen(true);
                       }}
-                      className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold flex items-center justify-center gap-1.5 text-xs shadow-md shadow-blue-600/20 transition cursor-pointer"
+                      className="flex-1 py-2 px-3 rounded-xl text-white font-bold flex items-center justify-center gap-1.5 text-xs transition cursor-pointer border border-cyan-300/35 hover:brightness-110"
+                      style={{
+                        background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                        boxShadow: '0 0 16px rgba(6, 182, 212, 0.35)',
+                      }}
                     >
                       <Calendar className="w-3.5 h-3.5" />
                       Agendar OS
@@ -1253,7 +1834,11 @@ export const ServiceProModule: React.FC = () => {
                         setEditingEquipment(eq);
                         setIsImporterOpen(true);
                       }}
-                      className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition shadow-2xs cursor-pointer"
+                      className={`p-2 rounded-xl transition cursor-pointer ${
+                        tintedGlass
+                          ? 'aptis-glass-subcard text-slate-300 hover:text-cyan-300'
+                          : 'border border-slate-200 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 shadow-2xs'
+                      }`}
                       title="Editar equipamento"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1261,7 +1846,11 @@ export const ServiceProModule: React.FC = () => {
 
                     <button
                       onClick={() => handleDeleteEquipment(eq.id, eq.name)}
-                      className="p-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition shadow-2xs cursor-pointer"
+                      className={`p-2 rounded-xl transition cursor-pointer ${
+                        tintedGlass
+                          ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-400/30'
+                          : 'border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 shadow-2xs'
+                      }`}
                       title="Excluir equipamento"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1274,9 +1863,12 @@ export const ServiceProModule: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 3: Agenda & Visitas */}
+      {/* =====================================================================
+          TAB 3: AGENDA & VISITAS
+      ===================================================================== */}
       {activeTab === 'calendar' && (
         <ScheduleCalendarView
+          tintedGlass={tintedGlass}
           workOrders={workOrders}
           clients={clients}
           equipments={equipments}
@@ -1289,18 +1881,32 @@ export const ServiceProModule: React.FC = () => {
         />
       )}
 
-      {/* Tab 4: Ordens de Serviço (OS) */}
+      {/* =====================================================================
+          TAB 4: ORDENS DE SERVIÇO (OS)
+      ===================================================================== */}
       {activeTab === 'work_orders' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
+          <div
+            className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-2xl transition-all ${
+              tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+            }`}
+          >
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search
+                className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${
+                  tintedGlass ? 'text-slate-400' : 'text-slate-400'
+                }`}
+              />
               <input
                 type="text"
                 value={woSearch}
                 onChange={(e) => setWoSearch(e.target.value)}
                 placeholder="Buscar por OS, cliente, equipamento ou responsável..."
-                className="w-full text-xs pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 focus:bg-white rounded-xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
+                className={`w-full text-xs pl-10 pr-4 py-2.5 rounded-xl outline-none font-medium transition ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-400'
+                    : 'bg-white border border-slate-200/90 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 shadow-2xs'
+                }`}
               />
             </div>
 
@@ -1308,12 +1914,24 @@ export const ServiceProModule: React.FC = () => {
               <select
                 value={woStatusFilter}
                 onChange={(e) => setWoStatusFilter(e.target.value)}
-                className="text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3 py-2 text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs font-medium"
+                className={`text-xs rounded-xl px-3 py-2.5 outline-none font-medium cursor-pointer transition ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'bg-white border border-slate-200/90 text-slate-800 shadow-2xs'
+                }`}
               >
-                <option value="all">Todos os Status</option>
-                <option value="scheduled">Agendadas</option>
-                <option value="in_progress">Em Andamento</option>
-                <option value="completed">Concluídas</option>
+                <option value="all" className="bg-slate-900 text-white">
+                  Todos os Status
+                </option>
+                <option value="scheduled" className="bg-slate-900 text-white">
+                  Agendadas
+                </option>
+                <option value="in_progress" className="bg-slate-900 text-white">
+                  Em Andamento
+                </option>
+                <option value="completed" className="bg-slate-900 text-white">
+                  Concluídas
+                </option>
               </select>
 
               <button
@@ -1321,7 +1939,12 @@ export const ServiceProModule: React.FC = () => {
                   setEditingWorkOrder(null);
                   setIsWorkOrderModalOpen(true);
                 }}
-                className="px-5 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2.5 text-xs font-bold text-white rounded-xl transition flex items-center gap-1.5 cursor-pointer border border-cyan-300/35 hover:brightness-110"
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                  boxShadow:
+                    '0 0 18px rgba(6, 182, 212, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45)',
+                }}
               >
                 <Plus className="w-3.5 h-3.5" />
                 Nova OS
@@ -1333,55 +1956,96 @@ export const ServiceProModule: React.FC = () => {
             {filteredWorkOrders.map((order) => (
               <div
                 key={order.id}
-                className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-blue-400 hover:shadow-md transition shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                className={`p-4 rounded-2xl transition-all duration-300 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+                  tintedGlass
+                    ? 'aptis-glass-dark aptis-glass-subcard-interactive text-white'
+                    : 'bg-white border border-slate-200/90 shadow-xs hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-300 text-slate-900'
+                }`}
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-mono font-bold text-xs text-blue-700 shadow-2xs shrink-0">
+                  <div
+                    className={`w-12 h-12 rounded-xl border flex items-center justify-center font-mono font-black text-xs shrink-0 ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard text-cyan-300 border-cyan-400/35'
+                        : 'bg-slate-100 border-slate-200 text-blue-700 shadow-2xs'
+                    }`}
+                  >
                     {order.type === 'preventive' ? 'PREV' : 'CORR'}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-black text-blue-600 text-xs">
+                      <span
+                        className={`font-mono font-black text-xs ${
+                          tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                        }`}
+                      >
                         {order.orderNumber}
                       </span>
                       <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                           order.status === 'completed'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            ? tintedGlass
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : tintedGlass
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-400/35'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
                         }`}
                       >
                         {order.status === 'completed' ? 'Concluída' : 'Em Aberto'}
                       </span>
                     </div>
-                    <h4 className="text-sm font-bold text-slate-900 mt-0.5">
+                    <h4
+                      className={`text-sm font-black mt-0.5 ${
+                        tintedGlass ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
                       [{order.equipmentTag}] • {order.equipmentName}
                     </h4>
-                    <p className="text-xs text-slate-500">
-                      {order.clientName} • Data: {order.scheduledDate} • Responsável: {order.technicianName}
+                    <p
+                      className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}
+                    >
+                      {order.clientName} • Data: {order.scheduledDate} • Responsável:{' '}
+                      {order.technicianName}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end">
                   {order.clientSignatureBase64 && (
-                    <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Laudo Assinado
+                    <span
+                      className={`text-[10px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full border ${
+                        tintedGlass
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Laudo Assinado
                     </span>
                   )}
 
                   <button
                     onClick={() => setMobileOSModalOrder(order)}
-                    className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center gap-1.5 shadow-md shadow-blue-600/20 cursor-pointer"
+                    className="px-4 py-2 text-xs font-bold rounded-xl text-white transition flex items-center gap-1.5 cursor-pointer border border-cyan-300/35 hover:brightness-110"
+                    style={{
+                      background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                      boxShadow: '0 0 16px rgba(6, 182, 212, 0.35)',
+                    }}
                   >
                     <ClipboardCheck className="w-3.5 h-3.5" />
-                    {order.status === 'completed' ? 'Ver Laudo da OS' : 'Registrar Execução / Baixar OS'}
+                    {order.status === 'completed'
+                      ? 'Ver Laudo da OS'
+                      : 'Registrar Execução / Baixar OS'}
                   </button>
 
                   <button
                     onClick={() => handleDeleteWorkOrder(order.id, order.orderNumber)}
-                    className="p-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition shadow-2xs cursor-pointer"
+                    className={`p-2 rounded-xl transition cursor-pointer ${
+                      tintedGlass
+                        ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-400/30'
+                        : 'border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 shadow-2xs'
+                    }`}
                     title="Excluir Ordem de Serviço"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -1393,9 +2057,12 @@ export const ServiceProModule: React.FC = () => {
         </div>
       )}
 
-      {/* Tab 5: Copiloto IA (Waze da Manutenção) */}
+      {/* =====================================================================
+          TAB 5: COPILOTO IA (WAZE DA MANUTENÇÃO)
+      ===================================================================== */}
       {activeTab === 'diagnostics' && (
         <CrossClientAiDiagnostics
+          tintedGlass={tintedGlass}
           diagnostics={diagnostics}
           equipments={equipments}
           masterCatalog={masterCatalog}
@@ -1405,9 +2072,12 @@ export const ServiceProModule: React.FC = () => {
         />
       )}
 
-      {/* Tab 6: Catálogo Mestre */}
+      {/* =====================================================================
+          TAB 6: CATÁLOGO MESTRE
+      ===================================================================== */}
       {activeTab === 'catalog' && (
         <MasterCatalogPanel
+          tintedGlass={tintedGlass}
           catalog={masterCatalog}
           clients={clients}
           equipments={equipments}
@@ -1418,9 +2088,12 @@ export const ServiceProModule: React.FC = () => {
         />
       )}
 
-      {/* Tab 7: Clientes & Contratos */}
+      {/* =====================================================================
+          TAB 7: CLIENTES & CONTRATOS
+      ===================================================================== */}
       {activeTab === 'clients' && (
         <ClientManager
+          tintedGlass={tintedGlass}
           clients={clients}
           onAddClient={(newClient) => setClients((prev) => [newClient, ...prev])}
           onOpenPortalSimulation={(client) => setPortalSimulationClient(client)}

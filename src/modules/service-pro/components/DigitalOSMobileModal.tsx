@@ -263,13 +263,18 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-      {/* Container Frame - Solid White */}
-      <div className="bg-white border border-slate-300 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
-        {/* Header Bar - Solid Dark Industrial Header */}
-        <div className="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto">
+      <div className="aptis-glass-modal w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh] text-white animate-in fade-in zoom-in-95 duration-200">
+        {/* Header Bar */}
+        <div className="p-4 sm:p-5 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center shadow-xs">
+            <div
+              className="w-10 h-10 rounded-2xl border border-white/25 text-white flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                boxShadow: '0 0 18px rgba(6, 182, 212, 0.35)',
+              }}
+            >
               <ClipboardCheck className="w-5 h-5" />
             </div>
             <div>
@@ -278,52 +283,52 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   Ficha de Execução & Baixa • {workOrder.orderNumber}
                 </span>
                 <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                     status === 'completed'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                      : 'bg-amber-500/20 text-amber-300 border-amber-400/35'
                   }`}
                 >
                   {status === 'completed' ? 'CONCLUÍDA' : 'EM ABERTO'}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-300 mt-0.5">
                 {workOrder.clientName} • {workOrder.branchName}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Machine Quick Pill */}
-        <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between text-xs">
+        <div className="bg-white/[0.03] px-5 py-3 border-b border-white/10 flex items-center justify-between text-xs">
           <div>
-            <span className="font-bold text-slate-900 font-mono">[{workOrder.equipmentTag}]</span>
-            <span className="text-slate-600 ml-1.5 font-semibold">
+            <span className="font-bold text-cyan-400 font-mono">[{workOrder.equipmentTag}]</span>
+            <span className="text-slate-200 ml-1.5 font-semibold">
               {workOrder.equipmentName} ({workOrder.equipmentModel})
             </span>
           </div>
-          <span className="text-[11px] font-mono text-slate-500">
+          <span className="text-[11px] font-mono text-slate-300">
             Responsável Execução:{' '}
-            <strong className="text-slate-800 font-bold">{workOrder.technicianName}</strong>
+            <strong className="text-white font-bold">{workOrder.technicianName}</strong>
           </span>
         </div>
 
-        {/* Scrollable Content Body - Solid White Background */}
-        <div className="p-5 overflow-y-auto space-y-6 flex-1 text-xs bg-white">
+        {/* Scrollable Content Body */}
+        <div className="p-5 overflow-y-auto space-y-6 flex-1 text-xs">
           {/* Section 1: Checklist */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-blue-600" />
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-cyan-400" />
                 1. Checklist Técnico de Inspeção
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/35">
                 {checklist.filter((c) => c.status === 'passed').length}/{checklist.length} Aprovados
               </span>
             </div>
@@ -332,9 +337,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               {checklist.map((item) => (
                 <div
                   key={item.id}
-                  className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2 shadow-2xs"
+                  className="p-3 rounded-2xl aptis-glass-subcard space-y-2"
                 >
-                  <p className="font-bold text-slate-800 text-xs">{item.description}</p>
+                  <p className="font-bold text-white text-xs">{item.description}</p>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -342,7 +347,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                         item.status === 'passed'
                           ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                          : 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
                       }`}
                     >
                       ✓ Conforme
@@ -352,8 +357,8 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       onClick={() => handleChecklistStatusChange(item.id, 'failed')}
                       className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                         item.status === 'failed'
-                          ? 'bg-red-600 text-white shadow-xs'
-                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
                       }`}
                     >
                       ✕ Não Conforme
@@ -363,8 +368,8 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       onClick={() => handleChecklistStatusChange(item.id, 'not_applicable')}
                       className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                         item.status === 'not_applicable'
-                          ? 'bg-slate-700 text-white shadow-xs'
-                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                          ? 'bg-slate-600 text-white shadow-xs'
+                          : 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
                       }`}
                     >
                       N/A
@@ -377,21 +382,21 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
           {/* Section 2: Before & After Photos */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Camera className="w-4 h-4 text-blue-600" />
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Camera className="w-4 h-4 text-cyan-400" />
                 2. Evidências Fotográficas (Antes & Depois)
               </h3>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               {/* Before */}
-              <div className="border border-slate-200 rounded-xl p-2.5 bg-slate-50 space-y-2">
-                <span className="text-[10px] font-bold text-slate-600 uppercase block">
+              <div className="rounded-2xl p-2.5 aptis-glass-subcard space-y-2">
+                <span className="text-[10px] font-bold text-slate-300 uppercase block">
                   Antes do Atendimento
                 </span>
                 {beforePhotos.length > 0 ? (
-                  <div className="relative rounded-lg overflow-hidden h-28 bg-slate-900 border border-slate-300 shadow-2xs">
+                  <div className="relative rounded-lg overflow-hidden h-28 bg-slate-900 border border-white/15">
                     <img
                       src={beforePhotos[0]}
                       alt="Antes"
@@ -402,7 +407,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white">
+                  <div className="h-28 rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center text-slate-400 bg-white/5">
                     <Camera className="w-6 h-6 mb-1 opacity-50" />
                     <span className="text-[10px]">Anexar foto</span>
                   </div>
@@ -410,12 +415,12 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               </div>
 
               {/* After */}
-              <div className="border border-slate-200 rounded-xl p-2.5 bg-slate-50 space-y-2">
-                <span className="text-[10px] font-bold text-emerald-700 uppercase block">
+              <div className="rounded-2xl p-2.5 aptis-glass-subcard space-y-2">
+                <span className="text-[10px] font-bold text-emerald-300 uppercase block">
                   Após Manutenção / Limpeza
                 </span>
                 {afterPhotos.length > 0 ? (
-                  <div className="relative rounded-lg overflow-hidden h-28 bg-slate-900 border border-slate-300 shadow-2xs">
+                  <div className="relative rounded-lg overflow-hidden h-28 bg-slate-900 border border-white/15">
                     <img
                       src={afterPhotos[0]}
                       alt="Depois"
@@ -426,7 +431,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white">
+                  <div className="h-28 rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center text-slate-400 bg-white/5">
                     <Camera className="w-6 h-6 mb-1 opacity-50" />
                     <span className="text-[10px]">Anexar foto</span>
                   </div>
@@ -437,22 +442,22 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
           {/* Section 3: Parts & Consumables */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Wrench className="w-4 h-4 text-blue-600" />
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Wrench className="w-4 h-4 text-cyan-400" />
                 3. Peças & Insumos Utilizados
               </h3>
               <button
                 type="button"
                 onClick={handleAddPart}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" /> Adicionar Peça
               </button>
             </div>
 
             {spareParts.length === 0 ? (
-              <p className="text-slate-500 text-[11px] italic py-1">
+              <p className="text-slate-400 text-[11px] italic py-1">
                 Nenhuma peça extra aplicada até o momento.
               </p>
             ) : (
@@ -460,7 +465,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                 {spareParts.map((part, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 bg-slate-50"
+                    className="flex items-center gap-2 p-2.5 rounded-xl aptis-glass-subcard"
                   >
                     <div className="flex-1">
                       <input
@@ -471,9 +476,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                           updated[idx].description = e.target.value;
                           setSpareParts(updated);
                         }}
-                        className="w-full text-xs bg-transparent border-none font-bold text-slate-900 focus:outline-none"
+                        className="w-full text-xs bg-transparent border-none font-bold text-white focus:outline-none"
                       />
-                      <span className="text-[10px] text-slate-500 font-mono">{part.partCode}</span>
+                      <span className="text-[10px] text-cyan-300 font-mono">{part.partCode}</span>
                     </div>
 
                     <div className="w-16">
@@ -486,12 +491,12 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                           updated[idx].quantity = Number(e.target.value) || 1;
                           setSpareParts(updated);
                         }}
-                        className="w-full text-center text-xs bg-white border border-slate-300 p-1 rounded font-mono font-bold"
+                        className="aptis-glass-input w-full text-center text-xs p-1 rounded font-mono font-bold text-white"
                       />
                     </div>
 
                     <div className="w-24 text-right">
-                      <span className="text-xs font-mono font-bold text-slate-900">
+                      <span className="text-xs font-mono font-bold text-emerald-400">
                         {(part.quantity * part.unitPrice).toLocaleString('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
@@ -502,16 +507,16 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRemovePart(idx)}
-                      className="p-1 text-slate-400 hover:text-red-600 rounded transition cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-rose-400 rounded transition cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
 
-                <div className="flex justify-between items-center pt-2 text-xs font-bold text-slate-900 px-2">
+                <div className="flex justify-between items-center pt-2 text-xs font-bold text-white px-2">
                   <span>Subtotal Peças:</span>
-                  <span className="font-mono text-blue-700">
+                  <span className="font-mono text-cyan-300">
                     {partsTotal.toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
@@ -524,16 +529,16 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
           {/* Section 4: Technical Diagnosis & Actions */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-blue-600" />
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-cyan-400" />
                 4. Parecer Técnico & Horas Trabalhadas
               </h3>
             </div>
 
             <div className="space-y-2.5">
               <div>
-                <label className="text-[11px] font-bold text-slate-700">
+                <label className="text-[11px] font-bold text-slate-300">
                   Causa Raiz Identificada:
                 </label>
                 <input
@@ -541,12 +546,12 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   value={rootCause}
                   onChange={(e) => setRootCause(e.target.value)}
                   placeholder="Ex: Obstrução parcial da colmeia por poeira fibrosa"
-                  className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 mt-1 text-slate-800"
+                  className="aptis-glass-input w-full text-xs rounded-xl p-2 mt-1 text-white placeholder:text-slate-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700">
+                <label className="text-[11px] font-bold text-slate-300">
                   Ações Corretivas / Preventivas Executadas:
                 </label>
                 <textarea
@@ -554,33 +559,33 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   value={actionsTaken}
                   onChange={(e) => setActionsTaken(e.target.value)}
                   placeholder="Descreva o procedimento realizado..."
-                  className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 mt-1 resize-none text-slate-800"
+                  className="aptis-glass-input w-full text-xs rounded-xl p-2 mt-1 resize-none text-white placeholder:text-slate-500"
                 />
               </div>
 
               {/* Automatic Waze Knowledge Base Sync Checkbox */}
-              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-50/80 border border-blue-200 cursor-pointer">
+              <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={shareToWaze}
                   onChange={(e) => setShareToWaze(e.target.checked)}
-                  className="mt-0.5 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                  className="mt-0.5 rounded accent-cyan-500"
                 />
                 <div className="text-[11px] leading-relaxed">
-                  <span className="font-bold text-blue-900 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="font-bold text-cyan-300 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                     Compartilhar solução automaticamente no Waze da Manutenção
                   </span>
-                  <span className="text-slate-600 block">
+                  <span className="text-slate-300 block">
                     Ao salvar com a Causa Raiz preenchida, o sistema atualizará a base inteligente
-                    do modelo <strong>{workOrder.equipmentModel}</strong>.
+                    do modelo <strong className="text-white">{workOrder.equipmentModel}</strong>.
                   </span>
                 </div>
               </label>
 
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1">
-                  <label className="text-[11px] font-bold text-slate-700">
+                  <label className="text-[11px] font-bold text-slate-300">
                     Horas de Mão de Obra:
                   </label>
                   <input
@@ -588,14 +593,14 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     step="0.5"
                     value={laborHours}
                     onChange={(e) => setLaborHours(Number(e.target.value) || 1)}
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 font-mono font-bold mt-1 text-slate-800"
+                    className="aptis-glass-input w-full text-xs rounded-xl p-2 font-mono font-bold mt-1 text-white"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[11px] font-bold text-slate-700">
+                  <label className="text-[11px] font-bold text-slate-300">
                     Custo Mão de Obra (R$ 120/h):
                   </label>
-                  <div className="p-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-mono font-bold mt-1 text-slate-900">
+                  <div className="p-2 aptis-glass-subcard rounded-xl text-xs font-mono font-bold mt-1 text-emerald-400">
                     {laborTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </div>
                 </div>
@@ -604,51 +609,61 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
           </div>
 
           {/* Section 5: Programação Automática da Próxima Preventiva */}
-          <div className="space-y-3 p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
-            <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
-              <h3 className="font-bold text-emerald-950 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-400/30">
+            <div className="flex items-center justify-between border-b border-emerald-400/20 pb-2">
+              <h3 className="font-bold text-emerald-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-emerald-400" />
                 5. Cálculo Automático da Próxima Preventiva
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/35">
                 Ciclo Recorrente
               </span>
             </div>
 
-            <p className="text-[11px] text-emerald-900 leading-relaxed">
+            <p className="text-[11px] text-emerald-100 leading-relaxed">
               Ao concluir esta OS hoje, o sistema atualizará automaticamente a{' '}
-              <strong>Última Preventiva</strong> do equipamento{' '}
-              <span className="font-mono font-bold">[{workOrder.equipmentTag}]</span> e já definirá
-              a data do próximo vencimento:
+              <strong className="text-white">Última Preventiva</strong> do equipamento{' '}
+              <span className="font-mono font-bold text-emerald-300">[{workOrder.equipmentTag}]</span>{' '}
+              e já definirá a data do próximo vencimento:
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
                   Periodicidade / Ciclo da Máquina:
                 </label>
                 <select
                   value={nextCycleMonths}
                   onChange={(e) => handleCycleChange(Number(e.target.value))}
-                  className="w-full text-xs bg-white border border-emerald-300 rounded-xl p-2 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="aptis-glass-input w-full text-xs rounded-xl p-2 font-bold text-white outline-none"
                 >
-                  <option value={1}>Mensal (daqui a 30 dias)</option>
-                  <option value={2}>Bimestral (daqui a 2 meses)</option>
-                  <option value={3}>Trimestral (daqui a 3 meses)</option>
-                  <option value={6}>Semestral (daqui a 6 meses)</option>
-                  <option value={12}>Anual (daqui a 12 meses)</option>
+                  <option value={1} className="bg-slate-900 text-white">
+                    Mensal (daqui a 30 dias)
+                  </option>
+                  <option value={2} className="bg-slate-900 text-white">
+                    Bimestral (daqui a 2 meses)
+                  </option>
+                  <option value={3} className="bg-slate-900 text-white">
+                    Trimestral (daqui a 3 meses)
+                  </option>
+                  <option value={6} className="bg-slate-900 text-white">
+                    Semestral (daqui a 6 meses)
+                  </option>
+                  <option value={12} className="bg-slate-900 text-white">
+                    Anual (daqui a 12 meses)
+                  </option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-emerald-900 mb-1">
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">
                   Data da Próxima Preventiva (Editável):
                 </label>
                 <input
                   type="date"
                   value={nextPreventiveDate}
                   onChange={(e) => setNextPreventiveDate(e.target.value)}
-                  className="w-full text-xs bg-white border border-emerald-300 rounded-xl p-2 font-mono font-bold text-emerald-800 outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="aptis-glass-input w-full text-xs rounded-xl p-2 font-mono font-bold text-emerald-300 outline-none"
                 />
               </div>
             </div>
@@ -658,27 +673,27 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                 type="checkbox"
                 checked={autoCreateNextOS}
                 onChange={(e) => setAutoCreateNextOS(e.target.checked)}
-                className="rounded border-emerald-400 text-emerald-600 focus:ring-emerald-500"
+                className="rounded accent-emerald-500"
               />
-              <span className="text-[11px] font-bold text-emerald-950">
+              <span className="text-[11px] font-bold text-emerald-200">
                 Já deixar a próxima Ordem de Serviço Preventiva agendada no calendário para{' '}
-                <span className="underline font-mono">{nextPreventiveDate}</span>
+                <span className="underline font-mono text-white">{nextPreventiveDate}</span>
               </span>
             </label>
           </div>
 
           {/* Section 6: Digital Signature Canvas */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <PenTool className="w-4 h-4 text-blue-600" />
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <PenTool className="w-4 h-4 text-cyan-400" />
                 6. Aceite & Assinatura de Conformidade
               </h3>
               {hasSignature && (
                 <button
                   type="button"
                   onClick={clearSignature}
-                  className="text-[11px] font-bold text-slate-500 hover:text-red-600 flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] font-bold text-slate-400 hover:text-rose-400 flex items-center gap-1 cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3" /> Limpar Assinatura
                 </button>
@@ -688,7 +703,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-600">
+                  <label className="text-[10px] font-bold text-slate-300">
                     Nome do Responsável:
                   </label>
                   <input
@@ -696,21 +711,21 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     value={signedByName}
                     onChange={(e) => setSignedByName(e.target.value)}
                     placeholder="Nome completo"
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 mt-1 text-slate-800"
+                    className="aptis-glass-input w-full text-xs rounded-lg p-2 mt-1 text-white placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-600">Cargo / Setor:</label>
+                  <label className="text-[10px] font-bold text-slate-300">Cargo / Setor:</label>
                   <input
                     type="text"
                     defaultValue="Gestor / Supervisor de Manutenção"
-                    className="w-full text-xs bg-slate-50 border border-slate-300 focus:bg-white rounded-lg p-2 mt-1 text-slate-800"
+                    className="aptis-glass-input w-full text-xs rounded-lg p-2 mt-1 text-white"
                   />
                 </div>
               </div>
 
               {/* HTML5 Touch/Mouse Canvas on Crisp White Surface */}
-              <div className="relative border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50/60 overflow-hidden shadow-inner">
+              <div className="relative border-2 border-dashed border-cyan-400/40 rounded-2xl bg-white overflow-hidden shadow-inner">
                 <canvas
                   ref={canvasRef}
                   width={460}
@@ -738,12 +753,16 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
         </div>
 
         {/* Footer Action Bar */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex flex-col gap-2">
+        <div className="p-4 border-t border-white/10 bg-white/[0.02] flex flex-col gap-2">
           {/* Quick WhatsApp Share Button */}
           <button
             type="button"
             onClick={handleSendWhatsAppNotification}
-            className="w-full py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/35 hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+              boxShadow: '0 0 18px rgba(16, 185, 129, 0.35)',
+            }}
           >
             <Share2 className="w-4 h-4" />
             {whatsappSent
@@ -755,14 +774,19 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             <button
               type="button"
               onClick={() => handleSave(false)}
-              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 transition shadow-2xs cursor-pointer"
+              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-slate-200 aptis-glass-subcard hover:text-white transition cursor-pointer"
             >
               Salvar Rascunho
             </button>
             <button
               type="button"
               onClick={() => handleSave(true)}
-              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/25 cursor-pointer"
+              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-1.5 cursor-pointer border border-cyan-300/35 hover:brightness-110"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                boxShadow:
+                  '0 0 18px rgba(6, 182, 212, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45)',
+              }}
             >
               <Check className="w-4 h-4" />
               Concluir OS & Atualizar Próxima Preventiva

@@ -33,7 +33,8 @@ export default function DashboardLayout({
     pathname === '/dashboard' ||
     pathname.startsWith('/dashboard/tools/manager-tasks') ||
     pathname.startsWith('/dashboard/tools/one-on-one') ||
-    pathname.startsWith('/dashboard/tools/pdi-manager');
+    pathname.startsWith('/dashboard/tools/pdi-manager') ||
+    pathname.startsWith('/dashboard/tools/service-pro');
   const useDarkGlassCanvas = isGlassEnabledRoute && tintedGlass;
 
   return (
