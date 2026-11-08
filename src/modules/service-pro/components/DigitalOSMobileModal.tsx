@@ -26,6 +26,7 @@ export interface PreventiveCycleOptions {
 }
 
 interface DigitalOSMobileModalProps {
+  tintedGlass?: boolean;
   isOpen: boolean;
   onClose: () => void;
   workOrder: MaintenanceWorkOrder | null;
@@ -38,6 +39,7 @@ interface DigitalOSMobileModalProps {
 }
 
 export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
+  tintedGlass = false,
   isOpen,
   onClose,
   workOrder,
@@ -262,11 +264,29 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
     setWhatsappSent(true);
   };
 
+  const inputClass = tintedGlass
+    ? 'aptis-glass-input text-white placeholder:text-slate-500'
+    : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500';
+
+  const sectionHeaderTitleClass = `font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 ${
+    tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+  }`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-3 sm:p-4 overflow-y-auto">
-      <div className="aptis-glass-modal w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh] text-white animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-3 sm:p-4 overflow-y-auto">
+      <div
+        className={`w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200 ${
+          tintedGlass
+            ? 'aptis-glass-modal text-white'
+            : 'bg-white text-slate-900 border border-slate-200'
+        }`}
+      >
         {/* Header Bar */}
-        <div className="p-4 sm:p-5 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+        <div
+          className={`p-4 sm:p-5 border-b flex items-center justify-between ${
+            tintedGlass ? 'border-white/10 bg-white/[0.02]' : 'border-slate-200 bg-slate-50/70'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-2xl border border-white/25 text-white flex items-center justify-center"
@@ -279,43 +299,71 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black text-white">
+                <span
+                  className={`text-sm font-black ${
+                    tintedGlass ? 'text-white' : 'text-slate-900'
+                  }`}
+                >
                   Ficha de Execução & Baixa • {workOrder.orderNumber}
                 </span>
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                     status === 'completed'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
-                      : 'bg-amber-500/20 text-amber-300 border-amber-400/35'
+                      ? tintedGlass
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : tintedGlass
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/35'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}
                 >
                   {status === 'completed' ? 'CONCLUÍDA' : 'EM ABERTO'}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className={`text-xs mt-0.5 ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                 {workOrder.clientName} • {workOrder.branchName}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+            className={`p-1.5 rounded-xl transition cursor-pointer ${
+              tintedGlass
+                ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/70'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Machine Quick Pill */}
-        <div className="bg-white/[0.03] px-5 py-3 border-b border-white/10 flex items-center justify-between text-xs">
+        <div
+          className={`px-5 py-3 border-b flex items-center justify-between text-xs ${
+            tintedGlass ? 'bg-white/[0.03] border-white/10' : 'bg-slate-100/80 border-slate-200'
+          }`}
+        >
           <div>
-            <span className="font-bold text-cyan-400 font-mono">[{workOrder.equipmentTag}]</span>
-            <span className="text-slate-200 ml-1.5 font-semibold">
+            <span
+              className={`font-bold font-mono ${
+                tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+              }`}
+            >
+              [{workOrder.equipmentTag}]
+            </span>
+            <span
+              className={`ml-1.5 font-semibold ${
+                tintedGlass ? 'text-slate-200' : 'text-slate-800'
+              }`}
+            >
               {workOrder.equipmentName} ({workOrder.equipmentModel})
             </span>
           </div>
-          <span className="text-[11px] font-mono text-slate-300">
+          <span className={`text-[11px] font-mono ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
             Responsável Execução:{' '}
-            <strong className="text-white font-bold">{workOrder.technicianName}</strong>
+            <strong className={`font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              {workOrder.technicianName}
+            </strong>
           </span>
         </div>
 
@@ -323,12 +371,24 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
         <div className="p-5 overflow-y-auto space-y-6 flex-1 text-xs">
           {/* Section 1: Checklist */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+            <div
+              className={`flex items-center justify-between border-b pb-2 ${
+                tintedGlass ? 'border-white/10' : 'border-slate-200'
+              }`}
+            >
+              <h3 className={sectionHeaderTitleClass}>
+                <CheckCircle2
+                  className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`}
+                />
                 1. Checklist Técnico de Inspeção
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/35">
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  tintedGlass
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
                 {checklist.filter((c) => c.status === 'passed').length}/{checklist.length} Aprovados
               </span>
             </div>
@@ -337,9 +397,13 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               {checklist.map((item) => (
                 <div
                   key={item.id}
-                  className="p-3 rounded-2xl aptis-glass-subcard space-y-2"
+                  className={`p-3 rounded-2xl space-y-2 ${
+                    tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                  }`}
                 >
-                  <p className="font-bold text-white text-xs">{item.description}</p>
+                  <p className={`font-bold text-xs ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                    {item.description}
+                  </p>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -347,7 +411,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                         item.status === 'passed'
                           ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
+                          : tintedGlass
+                          ? 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
+                          : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
                       ✓ Conforme
@@ -358,7 +424,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                         item.status === 'failed'
                           ? 'bg-rose-600 text-white shadow-xs'
-                          : 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
+                          : tintedGlass
+                          ? 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
+                          : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
                       ✕ Não Conforme
@@ -369,7 +437,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       className={`px-3 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
                         item.status === 'not_applicable'
                           ? 'bg-slate-600 text-white shadow-xs'
-                          : 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
+                          : tintedGlass
+                          ? 'bg-white/10 border border-white/15 text-slate-300 hover:bg-white/20'
+                          : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
                       N/A
@@ -382,17 +452,29 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
           {/* Section 2: Before & After Photos */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Camera className="w-4 h-4 text-cyan-400" />
+            <div
+              className={`flex items-center justify-between border-b pb-2 ${
+                tintedGlass ? 'border-white/10' : 'border-slate-200'
+              }`}
+            >
+              <h3 className={sectionHeaderTitleClass}>
+                <Camera className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 2. Evidências Fotográficas (Antes & Depois)
               </h3>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               {/* Before */}
-              <div className="rounded-2xl p-2.5 aptis-glass-subcard space-y-2">
-                <span className="text-[10px] font-bold text-slate-300 uppercase block">
+              <div
+                className={`rounded-2xl p-2.5 space-y-2 ${
+                  tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                }`}
+              >
+                <span
+                  className={`text-[10px] font-bold uppercase block ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-600'
+                  }`}
+                >
                   Antes do Atendimento
                 </span>
                 {beforePhotos.length > 0 ? (
@@ -407,7 +489,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <div className="h-28 rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center text-slate-400 bg-white/5">
+                  <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white/5">
                     <Camera className="w-6 h-6 mb-1 opacity-50" />
                     <span className="text-[10px]">Anexar foto</span>
                   </div>
@@ -415,8 +497,16 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               </div>
 
               {/* After */}
-              <div className="rounded-2xl p-2.5 aptis-glass-subcard space-y-2">
-                <span className="text-[10px] font-bold text-emerald-300 uppercase block">
+              <div
+                className={`rounded-2xl p-2.5 space-y-2 ${
+                  tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                }`}
+              >
+                <span
+                  className={`text-[10px] font-bold uppercase block ${
+                    tintedGlass ? 'text-emerald-300' : 'text-emerald-700'
+                  }`}
+                >
                   Após Manutenção / Limpeza
                 </span>
                 {afterPhotos.length > 0 ? (
@@ -431,7 +521,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     </span>
                   </div>
                 ) : (
-                  <div className="h-28 rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center text-slate-400 bg-white/5">
+                  <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white/5">
                     <Camera className="w-6 h-6 mb-1 opacity-50" />
                     <span className="text-[10px]">Anexar foto</span>
                   </div>
@@ -442,15 +532,23 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
           {/* Section 3: Parts & Consumables */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Wrench className="w-4 h-4 text-cyan-400" />
+            <div
+              className={`flex items-center justify-between border-b pb-2 ${
+                tintedGlass ? 'border-white/10' : 'border-slate-200'
+              }`}
+            >
+              <h3 className={sectionHeaderTitleClass}>
+                <Wrench className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 3. Peças & Insumos Utilizados
               </h3>
               <button
                 type="button"
                 onClick={handleAddPart}
-                className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                className={`text-[11px] font-bold flex items-center gap-1 cursor-pointer ${
+                  tintedGlass
+                    ? 'text-cyan-400 hover:text-cyan-300'
+                    : 'text-blue-600 hover:text-blue-700'
+                }`}
               >
                 <Plus className="w-3.5 h-3.5" /> Adicionar Peça
               </button>
@@ -465,7 +563,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                 {spareParts.map((part, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 p-2.5 rounded-xl aptis-glass-subcard"
+                    className={`flex items-center gap-2 p-2.5 rounded-xl ${
+                      tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                    }`}
                   >
                     <div className="flex-1">
                       <input
@@ -476,9 +576,17 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                           updated[idx].description = e.target.value;
                           setSpareParts(updated);
                         }}
-                        className="w-full text-xs bg-transparent border-none font-bold text-white focus:outline-none"
+                        className={`w-full text-xs bg-transparent border-none font-bold focus:outline-none ${
+                          tintedGlass ? 'text-white' : 'text-slate-900'
+                        }`}
                       />
-                      <span className="text-[10px] text-cyan-300 font-mono">{part.partCode}</span>
+                      <span
+                        className={`text-[10px] font-mono ${
+                          tintedGlass ? 'text-cyan-300' : 'text-blue-600'
+                        }`}
+                      >
+                        {part.partCode}
+                      </span>
                     </div>
 
                     <div className="w-16">
@@ -491,12 +599,20 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                           updated[idx].quantity = Number(e.target.value) || 1;
                           setSpareParts(updated);
                         }}
-                        className="aptis-glass-input w-full text-center text-xs p-1 rounded font-mono font-bold text-white"
+                        className={`w-full text-center text-xs p-1 rounded font-mono font-bold outline-none ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-white'
+                            : 'bg-white border border-slate-300 text-slate-900'
+                        }`}
                       />
                     </div>
 
                     <div className="w-24 text-right">
-                      <span className="text-xs font-mono font-bold text-emerald-400">
+                      <span
+                        className={`text-xs font-mono font-bold ${
+                          tintedGlass ? 'text-emerald-400' : 'text-emerald-600'
+                        }`}
+                      >
                         {(part.quantity * part.unitPrice).toLocaleString('pt-BR', {
                           style: 'currency',
                           currency: 'BRL',
@@ -507,16 +623,28 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRemovePart(idx)}
-                      className="p-1 text-slate-400 hover:text-rose-400 rounded transition cursor-pointer"
+                      className={`p-1 rounded transition cursor-pointer ${
+                        tintedGlass
+                          ? 'text-slate-400 hover:text-rose-400'
+                          : 'text-slate-400 hover:text-red-600'
+                      }`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
 
-                <div className="flex justify-between items-center pt-2 text-xs font-bold text-white px-2">
+                <div
+                  className={`flex justify-between items-center pt-2 text-xs font-bold px-2 ${
+                    tintedGlass ? 'text-white' : 'text-slate-900'
+                  }`}
+                >
                   <span>Subtotal Peças:</span>
-                  <span className="font-mono text-cyan-300">
+                  <span
+                    className={`font-mono ${
+                      tintedGlass ? 'text-cyan-300' : 'text-blue-600'
+                    }`}
+                  >
                     {partsTotal.toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
@@ -529,16 +657,24 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
           {/* Section 4: Technical Diagnosis & Actions */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-cyan-400" />
+            <div
+              className={`flex items-center justify-between border-b pb-2 ${
+                tintedGlass ? 'border-white/10' : 'border-slate-200'
+              }`}
+            >
+              <h3 className={sectionHeaderTitleClass}>
+                <Clock className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 4. Parecer Técnico & Horas Trabalhadas
               </h3>
             </div>
 
             <div className="space-y-2.5">
               <div>
-                <label className="text-[11px] font-bold text-slate-300">
+                <label
+                  className={`text-[11px] font-bold ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                  }`}
+                >
                   Causa Raiz Identificada:
                 </label>
                 <input
@@ -546,12 +682,16 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   value={rootCause}
                   onChange={(e) => setRootCause(e.target.value)}
                   placeholder="Ex: Obstrução parcial da colmeia por poeira fibrosa"
-                  className="aptis-glass-input w-full text-xs rounded-xl p-2 mt-1 text-white placeholder:text-slate-500"
+                  className={`w-full text-xs rounded-xl p-2 mt-1 outline-none transition ${inputClass}`}
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-300">
+                <label
+                  className={`text-[11px] font-bold ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                  }`}
+                >
                   Ações Corretivas / Preventivas Executadas:
                 </label>
                 <textarea
@@ -559,12 +699,18 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   value={actionsTaken}
                   onChange={(e) => setActionsTaken(e.target.value)}
                   placeholder="Descreva o procedimento realizado..."
-                  className="aptis-glass-input w-full text-xs rounded-xl p-2 mt-1 resize-none text-white placeholder:text-slate-500"
+                  className={`w-full text-xs rounded-xl p-2 mt-1 resize-none outline-none transition ${inputClass}`}
                 />
               </div>
 
               {/* Automatic Waze Knowledge Base Sync Checkbox */}
-              <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-cyan-500/10 border border-cyan-400/30 cursor-pointer">
+              <label
+                className={`flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer ${
+                  tintedGlass
+                    ? 'bg-cyan-500/10 border-cyan-400/30'
+                    : 'bg-blue-50/70 border-blue-200'
+                }`}
+              >
                 <input
                   type="checkbox"
                   checked={shareToWaze}
@@ -572,20 +718,36 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                   className="mt-0.5 rounded accent-cyan-500"
                 />
                 <div className="text-[11px] leading-relaxed">
-                  <span className="font-bold text-cyan-300 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  <span
+                    className={`font-bold flex items-center gap-1 ${
+                      tintedGlass ? 'text-cyan-300' : 'text-blue-800'
+                    }`}
+                  >
+                    <Sparkles
+                      className={`w-3.5 h-3.5 ${
+                        tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                      }`}
+                    />
                     Compartilhar solução automaticamente no Waze da Manutenção
                   </span>
-                  <span className="text-slate-300 block">
+                  <span className={`block ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
                     Ao salvar com a Causa Raiz preenchida, o sistema atualizará a base inteligente
-                    do modelo <strong className="text-white">{workOrder.equipmentModel}</strong>.
+                    do modelo{' '}
+                    <strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>
+                      {workOrder.equipmentModel}
+                    </strong>
+                    .
                   </span>
                 </div>
               </label>
 
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1">
-                  <label className="text-[11px] font-bold text-slate-300">
+                  <label
+                    className={`text-[11px] font-bold ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Horas de Mão de Obra:
                   </label>
                   <input
@@ -593,14 +755,24 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     step="0.5"
                     value={laborHours}
                     onChange={(e) => setLaborHours(Number(e.target.value) || 1)}
-                    className="aptis-glass-input w-full text-xs rounded-xl p-2 font-mono font-bold mt-1 text-white"
+                    className={`w-full text-xs rounded-xl p-2 font-mono font-bold mt-1 outline-none transition ${inputClass}`}
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-[11px] font-bold text-slate-300">
+                  <label
+                    className={`text-[11px] font-bold ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Custo Mão de Obra (R$ 120/h):
                   </label>
-                  <div className="p-2 aptis-glass-subcard rounded-xl text-xs font-mono font-bold mt-1 text-emerald-400">
+                  <div
+                    className={`p-2 rounded-xl text-xs font-mono font-bold mt-1 ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard text-emerald-400'
+                        : 'bg-slate-50 border border-slate-200 text-emerald-600'
+                    }`}
+                  >
                     {laborTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </div>
                 </div>
@@ -609,61 +781,104 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
           </div>
 
           {/* Section 5: Programação Automática da Próxima Preventiva */}
-          <div className="space-y-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-400/30">
-            <div className="flex items-center justify-between border-b border-emerald-400/20 pb-2">
-              <h3 className="font-bold text-emerald-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-emerald-400" />
+          <div
+            className={`space-y-3 p-4 rounded-2xl border ${
+              tintedGlass
+                ? 'bg-emerald-500/10 border-emerald-400/30'
+                : 'bg-emerald-50/70 border-emerald-200'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between border-b pb-2 ${
+                tintedGlass ? 'border-emerald-400/20' : 'border-emerald-200'
+              }`}
+            >
+              <h3
+                className={`font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 ${
+                  tintedGlass ? 'text-emerald-300' : 'text-emerald-800'
+                }`}
+              >
+                <Calendar
+                  className={`w-4 h-4 ${
+                    tintedGlass ? 'text-emerald-400' : 'text-emerald-600'
+                  }`}
+                />
                 5. Cálculo Automático da Próxima Preventiva
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/35">
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  tintedGlass
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                }`}
+              >
                 Ciclo Recorrente
               </span>
             </div>
 
-            <p className="text-[11px] text-emerald-100 leading-relaxed">
+            <p
+              className={`text-[11px] leading-relaxed ${
+                tintedGlass ? 'text-emerald-100' : 'text-emerald-900'
+              }`}
+            >
               Ao concluir esta OS hoje, o sistema atualizará automaticamente a{' '}
-              <strong className="text-white">Última Preventiva</strong> do equipamento{' '}
-              <span className="font-mono font-bold text-emerald-300">[{workOrder.equipmentTag}]</span>{' '}
+              <strong className={tintedGlass ? 'text-white' : 'text-emerald-950'}>
+                Última Preventiva
+              </strong>{' '}
+              do equipamento{' '}
+              <span
+                className={`font-mono font-bold ${
+                  tintedGlass ? 'text-emerald-300' : 'text-emerald-700'
+                }`}
+              >
+                [{workOrder.equipmentTag}]
+              </span>{' '}
               e já definirá a data do próximo vencimento:
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                <label
+                  className={`block text-[11px] font-bold mb-1 ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                  }`}
+                >
                   Periodicidade / Ciclo da Máquina:
                 </label>
                 <select
                   value={nextCycleMonths}
                   onChange={(e) => handleCycleChange(Number(e.target.value))}
-                  className="aptis-glass-input w-full text-xs rounded-xl p-2 font-bold text-white outline-none"
+                  className={`w-full text-xs rounded-xl p-2 font-bold outline-none transition ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white'
+                      : 'bg-white border border-emerald-300 text-slate-900 focus:border-emerald-500'
+                  }`}
                 >
-                  <option value={1} className="bg-slate-900 text-white">
-                    Mensal (daqui a 30 dias)
-                  </option>
-                  <option value={2} className="bg-slate-900 text-white">
-                    Bimestral (daqui a 2 meses)
-                  </option>
-                  <option value={3} className="bg-slate-900 text-white">
-                    Trimestral (daqui a 3 meses)
-                  </option>
-                  <option value={6} className="bg-slate-900 text-white">
-                    Semestral (daqui a 6 meses)
-                  </option>
-                  <option value={12} className="bg-slate-900 text-white">
-                    Anual (daqui a 12 meses)
-                  </option>
+                  <option value={1}>Mensal (daqui a 30 dias)</option>
+                  <option value={2}>Bimestral (daqui a 2 meses)</option>
+                  <option value={3}>Trimestral (daqui a 3 meses)</option>
+                  <option value={6}>Semestral (daqui a 6 meses)</option>
+                  <option value={12}>Anual (daqui a 12 meses)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                <label
+                  className={`block text-[11px] font-bold mb-1 ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                  }`}
+                >
                   Data da Próxima Preventiva (Editável):
                 </label>
                 <input
                   type="date"
                   value={nextPreventiveDate}
                   onChange={(e) => setNextPreventiveDate(e.target.value)}
-                  className="aptis-glass-input w-full text-xs rounded-xl p-2 font-mono font-bold text-emerald-300 outline-none"
+                  className={`w-full text-xs rounded-xl p-2 font-mono font-bold outline-none transition ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-emerald-300'
+                      : 'bg-white border border-emerald-300 text-emerald-700 focus:border-emerald-500'
+                  }`}
                 />
               </div>
             </div>
@@ -675,25 +890,43 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                 onChange={(e) => setAutoCreateNextOS(e.target.checked)}
                 className="rounded accent-emerald-500"
               />
-              <span className="text-[11px] font-bold text-emerald-200">
+              <span
+                className={`text-[11px] font-bold ${
+                  tintedGlass ? 'text-emerald-200' : 'text-emerald-800'
+                }`}
+              >
                 Já deixar a próxima Ordem de Serviço Preventiva agendada no calendário para{' '}
-                <span className="underline font-mono text-white">{nextPreventiveDate}</span>
+                <span
+                  className={`underline font-mono ${
+                    tintedGlass ? 'text-white' : 'text-emerald-950'
+                  }`}
+                >
+                  {nextPreventiveDate}
+                </span>
               </span>
             </label>
           </div>
 
           {/* Section 6: Digital Signature Canvas */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="font-bold text-cyan-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <PenTool className="w-4 h-4 text-cyan-400" />
+            <div
+              className={`flex items-center justify-between border-b pb-2 ${
+                tintedGlass ? 'border-white/10' : 'border-slate-200'
+              }`}
+            >
+              <h3 className={sectionHeaderTitleClass}>
+                <PenTool className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 6. Aceite & Assinatura de Conformidade
               </h3>
               {hasSignature && (
                 <button
                   type="button"
                   onClick={clearSignature}
-                  className="text-[11px] font-bold text-slate-400 hover:text-rose-400 flex items-center gap-1 cursor-pointer"
+                  className={`text-[11px] font-bold flex items-center gap-1 cursor-pointer ${
+                    tintedGlass
+                      ? 'text-slate-400 hover:text-rose-400'
+                      : 'text-slate-500 hover:text-red-600'
+                  }`}
                 >
                   <RotateCcw className="w-3 h-3" /> Limpar Assinatura
                 </button>
@@ -703,7 +936,11 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-300">
+                  <label
+                    className={`text-[10px] font-bold ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Nome do Responsável:
                   </label>
                   <input
@@ -711,21 +948,31 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                     value={signedByName}
                     onChange={(e) => setSignedByName(e.target.value)}
                     placeholder="Nome completo"
-                    className="aptis-glass-input w-full text-xs rounded-lg p-2 mt-1 text-white placeholder:text-slate-500"
+                    className={`w-full text-xs rounded-lg p-2 mt-1 outline-none transition ${inputClass}`}
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-300">Cargo / Setor:</label>
+                  <label
+                    className={`text-[10px] font-bold ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
+                    Cargo / Setor:
+                  </label>
                   <input
                     type="text"
                     defaultValue="Gestor / Supervisor de Manutenção"
-                    className="aptis-glass-input w-full text-xs rounded-lg p-2 mt-1 text-white"
+                    className={`w-full text-xs rounded-lg p-2 mt-1 outline-none transition ${inputClass}`}
                   />
                 </div>
               </div>
 
               {/* HTML5 Touch/Mouse Canvas on Crisp White Surface */}
-              <div className="relative border-2 border-dashed border-cyan-400/40 rounded-2xl bg-white overflow-hidden shadow-inner">
+              <div
+                className={`relative border-2 border-dashed rounded-2xl bg-white overflow-hidden shadow-inner ${
+                  tintedGlass ? 'border-cyan-400/40' : 'border-blue-300'
+                }`}
+              >
                 <canvas
                   ref={canvasRef}
                   width={460}
@@ -753,7 +1000,11 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
         </div>
 
         {/* Footer Action Bar */}
-        <div className="p-4 border-t border-white/10 bg-white/[0.02] flex flex-col gap-2">
+        <div
+          className={`p-4 border-t flex flex-col gap-2 ${
+            tintedGlass ? 'border-white/10 bg-white/[0.02]' : 'border-slate-200 bg-slate-50/70'
+          }`}
+        >
           {/* Quick WhatsApp Share Button */}
           <button
             type="button"
@@ -774,7 +1025,11 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             <button
               type="button"
               onClick={() => handleSave(false)}
-              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-slate-200 aptis-glass-subcard hover:text-white transition cursor-pointer"
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition cursor-pointer ${
+                tintedGlass
+                  ? 'text-slate-200 aptis-glass-subcard hover:text-white'
+                  : 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-100'
+              }`}
             >
               Salvar Rascunho
             </button>

@@ -6,18 +6,14 @@ import {
   Printer,
   Copy,
   Check,
-  Download,
   X,
-  ExternalLink,
-  ShieldCheck,
-  Wrench,
   PhoneCall,
   Smartphone,
-  Eye,
 } from 'lucide-react';
 import { Equipment } from '../types';
 
 interface QRCodeManagerModalProps {
+  tintedGlass?: boolean;
   isOpen: boolean;
   onClose: () => void;
   equipment: Equipment | null;
@@ -25,6 +21,7 @@ interface QRCodeManagerModalProps {
 }
 
 export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
+  tintedGlass = false,
   isOpen,
   onClose,
   equipment,
@@ -48,10 +45,20 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
-      <div className="aptis-glass-modal w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-6 flex flex-col text-white animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 overflow-y-auto">
+      <div
+        className={`w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-6 flex flex-col animate-in fade-in zoom-in-95 duration-200 ${
+          tintedGlass
+            ? 'aptis-glass-modal text-white'
+            : 'bg-white text-slate-900 border border-slate-200'
+        }`}
+      >
         {/* Header */}
-        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+        <div
+          className={`p-5 border-b flex items-center justify-between ${
+            tintedGlass ? 'border-white/10 bg-white/[0.02]' : 'border-slate-200 bg-slate-50/70'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl border border-white/25 flex items-center justify-center text-white shadow-sm"
@@ -64,34 +71,56 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-white">
+                <h2
+                  className={`text-lg font-black ${
+                    tintedGlass ? 'text-white' : 'text-slate-900'
+                  }`}
+                >
                   Etiqueta QR Code Inteligente • {equipment.tag}
                 </h2>
-                <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/35 uppercase">
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
+                    tintedGlass
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}
+                >
                   Ativo Rastreado
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className={`text-xs mt-0.5 ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                 Identificação física padrão industrial para carcaça ({equipment.name})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+            className={`p-1.5 rounded-xl transition cursor-pointer ${
+              tintedGlass
+                ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/70'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-white/10 bg-white/[0.01] px-6 pt-2">
+        <div
+          className={`flex border-b px-6 pt-2 ${
+            tintedGlass ? 'border-white/10 bg-white/[0.01]' : 'border-slate-200 bg-slate-50/40'
+          }`}
+        >
           <button
             onClick={() => setActiveTab('label')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'label'
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? tintedGlass
+                  ? 'border-cyan-400 text-cyan-300'
+                  : 'border-blue-600 text-blue-600'
+                : tintedGlass
+                ? 'border-transparent text-slate-400 hover:text-white'
+                : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <Printer className="w-3.5 h-3.5" />
@@ -101,8 +130,12 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
             onClick={() => setActiveTab('client_flow')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition flex items-center gap-2 cursor-pointer ${
               activeTab === 'client_flow'
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? tintedGlass
+                  ? 'border-cyan-400 text-cyan-300'
+                  : 'border-blue-600 text-blue-600'
+                : tintedGlass
+                ? 'border-transparent text-slate-400 hover:text-white'
+                : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
@@ -115,7 +148,11 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
           {activeTab === 'label' && (
             <div className="space-y-6">
               {/* The Physical Industrial Label Preview (kept high-contrast white for physical printing) */}
-              <div className="flex justify-center p-4 aptis-glass-subcard rounded-2xl">
+              <div
+                className={`flex justify-center p-4 rounded-2xl ${
+                  tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                }`}
+              >
                 <div
                   id="printable-industrial-label"
                   className="w-full max-w-md bg-white text-zinc-950 p-5 rounded-xl border-4 border-zinc-900 shadow-xl relative overflow-hidden"
@@ -240,17 +277,31 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
               </div>
 
               {/* Direct Link & Actions */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 aptis-glass-subcard p-3.5 rounded-2xl">
-                <div className="flex-1 w-full text-xs font-mono aptis-glass-input p-2.5 rounded-xl truncate text-cyan-300">
+              <div
+                className={`flex flex-col sm:flex-row items-center gap-3 p-3.5 rounded-2xl ${
+                  tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                }`}
+              >
+                <div
+                  className={`flex-1 w-full text-xs font-mono p-2.5 rounded-xl truncate ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-cyan-300'
+                      : 'bg-white border border-slate-300 text-blue-700'
+                  }`}
+                >
                   {directUrl}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleCopyLink}
-                    className="px-3 py-2 text-xs font-bold rounded-xl aptis-glass-subcard text-slate-200 hover:text-white flex items-center gap-1.5 transition cursor-pointer"
+                    className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition cursor-pointer ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
                     {copied ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )}
@@ -274,25 +325,43 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
 
           {activeTab === 'client_flow' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-400/35 space-y-1.5">
-                <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
-                  <Smartphone className="w-4 h-4 text-amber-400" />
+              <div
+                className={`p-4 rounded-2xl border space-y-1.5 ${
+                  tintedGlass
+                    ? 'bg-amber-500/15 border-amber-400/35'
+                    : 'bg-amber-50 border-amber-200'
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-2 font-bold text-sm ${
+                    tintedGlass ? 'text-amber-300' : 'text-amber-900'
+                  }`}
+                >
+                  <Smartphone
+                    className={`w-4 h-4 ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`}
+                  />
                   Experiência do Operador da Fábrica do Cliente
                 </div>
-                <p className="text-xs text-amber-100">
+                <p className={`text-xs ${tintedGlass ? 'text-amber-100' : 'text-amber-800'}`}>
                   Se a máquina parar no meio do turno, qualquer operador ou líder do cliente pode
                   escanear o QR Code:
                 </p>
               </div>
 
               <div className="space-y-2.5 text-xs">
-                <div className="flex items-start gap-3 p-3.5 rounded-2xl aptis-glass-subcard">
+                <div
+                  className={`flex items-start gap-3 p-3.5 rounded-2xl ${
+                    tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                  }`}
+                >
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
                   <div>
-                    <strong className="text-white font-bold">
+                    <strong
+                      className={`font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}
+                    >
                       Abertura de Chamado via WhatsApp com 1 Toque:
                     </strong>
-                    <p className="text-slate-300 mt-0.5">
+                    <p className={`mt-0.5 ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
                       O QR code já monta uma mensagem de socorro no WhatsApp da sua empresa com a TAG
                       exata ({equipment.tag}), modelo ({equipment.model}) e localização física,
                       eliminando erros de informação.
@@ -300,13 +369,22 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 p-3.5 rounded-2xl aptis-glass-subcard">
+                <div
+                  className={`flex items-start gap-3 p-3.5 rounded-2xl ${
+                    tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                  }`}
+                >
                   <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 mt-1.5 shrink-0" />
                   <div>
-                    <strong className="text-white font-bold">Portal VIP de Transparência:</strong>
-                    <p className="text-slate-300 mt-0.5">
-                      O cliente pode conferir a validade do laudo PMOC, ver quando é a próxima visita
-                      já agendada e comprovar que a máquina está sob contrato de manutenção ativo.
+                    <strong
+                      className={`font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}
+                    >
+                      Histórico Completo na Palma da Mão:
+                    </strong>
+                    <p className={`mt-0.5 ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+                      O técnico ou auditor visualiza instantaneamente a data da última preventiva,
+                      norma aplicável ({equipment.maintenancePlan.legalNorm || 'NR-12'}) e peças
+                      homologadas.
                     </p>
                   </div>
                 </div>
@@ -316,10 +394,18 @@ export const QRCodeManagerModal: React.FC<QRCodeManagerModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-end bg-white/[0.02]">
+        <div
+          className={`p-4 border-t flex items-center justify-end ${
+            tintedGlass ? 'border-white/10 bg-white/[0.02]' : 'border-slate-200 bg-slate-50/70'
+          }`}
+        >
           <button
             onClick={onClose}
-            className="px-5 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
+            className={`px-5 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+              tintedGlass
+                ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                : 'text-slate-600 hover:text-slate-900 bg-slate-200/70 hover:bg-slate-200'
+            }`}
           >
             Fechar
           </button>

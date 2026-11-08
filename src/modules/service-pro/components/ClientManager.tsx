@@ -499,11 +499,23 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
         ))}
       </div>
 
-      {/* Add Client Modal in Liquid Glass */}
+      {/* Add Client Modal in Dual-Mode Liquid Glass */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="aptis-glass-modal w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden my-6 text-white animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 overflow-y-auto">
+          <div
+            className={`w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-200 ${
+              tintedGlass
+                ? 'aptis-glass-modal text-white'
+                : 'bg-white text-slate-900 border border-slate-200'
+            }`}
+          >
+            <div
+              className={`p-5 border-b flex items-center justify-between ${
+                tintedGlass
+                  ? 'border-white/10 bg-white/[0.02]'
+                  : 'border-slate-200 bg-slate-50/70'
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center text-white border border-white/25"
@@ -515,15 +527,29 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-white">Novo Cliente Contratante</h2>
-                  <p className="text-xs text-slate-300 mt-0.5">
+                  <h2
+                    className={`text-lg font-black ${
+                      tintedGlass ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    Novo Cliente Contratante
+                  </h2>
+                  <p
+                    className={`text-xs mt-0.5 ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-500'
+                    }`}
+                  >
                     Cadastre a empresa tomadora de serviços, plantas fabris e contatos
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  tintedGlass
+                    ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/70'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -532,77 +558,127 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
             <form onSubmit={handleCreate} className="p-6 space-y-4 text-xs">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-300 mb-1.5 block">Razão Social *</label>
+                  <label
+                    className={`font-bold mb-1.5 block ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
+                    Razão Social *
+                  </label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ex: Cerâmica Paulista S.A."
-                    className="aptis-glass-input w-full text-xs rounded-xl p-2.5 font-medium text-white placeholder:text-slate-500 outline-none"
+                    className={`w-full text-xs rounded-xl p-2.5 font-medium outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-300 mb-1.5 block">CNPJ *</label>
+                  <label
+                    className={`font-bold mb-1.5 block ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
+                    CNPJ *
+                  </label>
                   <input
                     type="text"
                     required
                     value={cnpj}
                     onChange={(e) => setCnpj(e.target.value)}
                     placeholder="00.000.000/0001-00"
-                    className="aptis-glass-input w-full text-xs rounded-xl p-2.5 font-mono text-white placeholder:text-slate-500 outline-none"
+                    className={`w-full text-xs rounded-xl p-2.5 font-mono outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="font-bold text-slate-300 mb-1.5 block">Segmento</label>
+                  <label
+                    className={`font-bold mb-1.5 block ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
+                    Segmento
+                  </label>
                   <select
                     value={segment}
                     onChange={(e) => setSegment(e.target.value)}
-                    className="aptis-glass-input w-full text-xs rounded-xl p-2.5 font-medium text-white outline-none"
+                    className={`w-full text-xs rounded-xl p-2.5 font-medium outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                    }`}
                   >
-                    <option value="Indústria Alimentícia" className="bg-slate-900 text-white">
-                      Indústria Alimentícia
-                    </option>
-                    <option value="Indústria Farmacêutica" className="bg-slate-900 text-white">
-                      Indústria Farmacêutica
-                    </option>
-                    <option value="Metalurgia & Usinagem" className="bg-slate-900 text-white">
-                      Metalurgia & Usinagem
-                    </option>
-                    <option value="Logística & Armazenagem" className="bg-slate-900 text-white">
-                      Logística & Armazenagem
-                    </option>
-                    <option value="Shopping Center / Predial" className="bg-slate-900 text-white">
-                      Shopping Center / Predial
-                    </option>
+                    <option value="Indústria Alimentícia">Indústria Alimentícia</option>
+                    <option value="Indústria Farmacêutica">Indústria Farmacêutica</option>
+                    <option value="Metalurgia & Usinagem">Metalurgia & Usinagem</option>
+                    <option value="Logística & Armazenagem">Logística & Armazenagem</option>
+                    <option value="Shopping Center / Predial">Shopping Center / Predial</option>
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold text-slate-300 mb-1.5 block">SLA (Horas)</label>
+                  <label
+                    className={`font-bold mb-1.5 block ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
+                    SLA (Horas)
+                  </label>
                   <input
                     type="number"
                     value={slaHours}
                     onChange={(e) => setSlaHours(Number(e.target.value) || 4)}
-                    className="aptis-glass-input w-full text-xs rounded-xl p-2.5 font-mono font-bold text-white outline-none"
+                    className={`w-full text-xs rounded-xl p-2.5 font-mono font-bold outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-300 mb-1.5 block">Mensalidade (R$)</label>
+                  <label
+                    className={`font-bold mb-1.5 block ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
+                    Mensalidade (R$)
+                  </label>
                   <input
                     type="number"
                     value={contractValueMonthly}
                     onChange={(e) => setContractValueMonthly(Number(e.target.value) || 5000)}
-                    className="aptis-glass-input w-full text-xs rounded-xl p-2.5 font-mono font-bold text-white outline-none"
+                    className={`w-full text-xs rounded-xl p-2.5 font-mono font-bold outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                 </div>
               </div>
 
               {/* Branch */}
-              <div className="p-3.5 rounded-2xl aptis-glass-subcard space-y-2">
-                <span className="font-bold text-cyan-300 text-xs block">
+              <div
+                className={`p-3.5 rounded-2xl space-y-2 ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard'
+                    : 'bg-slate-50 border border-slate-200'
+                }`}
+              >
+                <span
+                  className={`font-bold text-xs block ${
+                    tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                  }`}
+                >
                   Unidade / Fábrica Inicial:
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -611,21 +687,39 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                     value={branchName}
                     onChange={(e) => setBranchName(e.target.value)}
                     placeholder="Nome da Planta (ex: Planta 01)"
-                    className="aptis-glass-input w-full text-xs rounded-lg p-2 text-white placeholder:text-slate-500"
+                    className={`w-full text-xs rounded-lg p-2 outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                    }`}
                   />
                   <input
                     type="text"
                     value={branchCity}
                     onChange={(e) => setBranchCity(e.target.value)}
                     placeholder="Cidade / Polo Industrial"
-                    className="aptis-glass-input w-full text-xs rounded-lg p-2 text-white placeholder:text-slate-500"
+                    className={`w-full text-xs rounded-lg p-2 outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                    }`}
                   />
                 </div>
               </div>
 
               {/* Contact */}
-              <div className="p-3.5 rounded-2xl aptis-glass-subcard space-y-2">
-                <span className="font-bold text-cyan-300 text-xs block">
+              <div
+                className={`p-3.5 rounded-2xl space-y-2 ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard'
+                    : 'bg-slate-50 border border-slate-200'
+                }`}
+              >
+                <span
+                  className={`font-bold text-xs block ${
+                    tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                  }`}
+                >
                   Contato Principal do Cliente:
                 </span>
                 <div className="grid grid-cols-3 gap-2">
@@ -634,30 +728,50 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="Nome do Gestor"
-                    className="aptis-glass-input w-full text-xs rounded-lg p-2 text-white placeholder:text-slate-500"
+                    className={`w-full text-xs rounded-lg p-2 outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                    }`}
                   />
                   <input
                     type="text"
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
                     placeholder="(11) 98765-4321"
-                    className="aptis-glass-input w-full text-xs rounded-lg p-2 font-mono text-white placeholder:text-slate-500"
+                    className={`w-full text-xs rounded-lg p-2 font-mono outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                    }`}
                   />
                   <input
                     type="email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="gestor@empresa.com.br"
-                    className="aptis-glass-input w-full text-xs rounded-lg p-2 text-white placeholder:text-slate-500"
+                    className={`w-full text-xs rounded-lg p-2 outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                    }`}
                   />
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+              <div
+                className={`pt-4 border-t flex items-center justify-end gap-3 ${
+                  tintedGlass ? 'border-white/10' : 'border-slate-200'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer ${
+                    tintedGlass
+                      ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                      : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+                  }`}
                 >
                   Cancelar
                 </button>

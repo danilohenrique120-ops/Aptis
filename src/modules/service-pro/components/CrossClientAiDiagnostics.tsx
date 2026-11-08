@@ -634,10 +634,22 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
 
       {/* Modal: Cadastrar / Editar Diagnóstico no Waze */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="aptis-glass-modal rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl my-6 text-white animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 overflow-y-auto">
+          <div
+            className={`rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl my-6 animate-in fade-in zoom-in-95 duration-200 ${
+              tintedGlass
+                ? 'aptis-glass-modal text-white'
+                : 'bg-white text-slate-900 border border-slate-200'
+            }`}
+          >
             {/* Modal Header */}
-            <div className="p-5 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+            <div
+              className={`p-5 border-b flex items-center justify-between ${
+                tintedGlass
+                  ? 'border-white/10 bg-white/[0.02]'
+                  : 'border-slate-200 bg-slate-50/70'
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl border border-amber-400/35 flex items-center justify-center text-white"
@@ -649,12 +661,16 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">
+                  <h3
+                    className={`text-base font-black ${
+                      tintedGlass ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
                     {editingIndex !== null
                       ? 'Editar Diagnóstico do Copiloto (Waze)'
                       : 'Novo Diagnóstico / Defeito Conhecido no Waze'}
                   </h3>
-                  <p className="text-xs text-slate-300">
+                  <p className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                     Registre a causa raiz, o procedimento de solução e as peças recomendadas
                   </p>
                 </div>
@@ -662,7 +678,11 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition cursor-pointer"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  tintedGlass
+                    ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/70'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -674,7 +694,11 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
             >
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block font-bold text-slate-300 mb-1">
+                  <label
+                    className={`block font-bold mb-1 ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Modelo do Equipamento *
                   </label>
                   <input
@@ -684,7 +708,11 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                     value={formModel}
                     onChange={(e) => setFormModel(e.target.value)}
                     placeholder="Ex: Schulz SRP 4030 E ou Bitzer 4NES-14Y"
-                    className="aptis-glass-input w-full px-3 py-2 rounded-xl text-white font-semibold outline-none placeholder:text-slate-500"
+                    className={`w-full px-3 py-2 rounded-xl font-semibold outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                   <datalist id="waze-suggested-models">
                     {suggestedModels.map((m) => (
@@ -694,7 +722,11 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">
+                  <label
+                    className={`block font-bold mb-1 ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Tempo Médio Reparo (h)
                   </label>
                   <input
@@ -703,14 +735,22 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                     min="0.5"
                     value={formRepairHours}
                     onChange={(e) => setFormRepairHours(Number(e.target.value) || 2)}
-                    className="aptis-glass-input w-full px-3 py-2 rounded-xl text-white font-mono font-bold outline-none"
+                    className={`w-full px-3 py-2 rounded-xl font-mono font-bold outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">
+                  <label
+                    className={`block font-bold mb-1 ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Categoria da Máquina
                   </label>
                   <input
@@ -718,12 +758,20 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
                     placeholder="Ex: Compressores de Parafuso, HVAC, Bombas..."
-                    className="aptis-glass-input w-full px-3 py-2 rounded-xl text-white outline-none placeholder:text-slate-500"
+                    className={`w-full px-3 py-2 rounded-xl outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-300 mb-1">
+                  <label
+                    className={`block font-bold mb-1 ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Palavras-Chave de Busca (separadas por vírgula)
                   </label>
                   <input
@@ -731,13 +779,21 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                     value={formKeywords}
                     onChange={(e) => setFormKeywords(e.target.value)}
                     placeholder="Ex: superaquecimento, desarme, 105C, oleo"
-                    className="aptis-glass-input w-full px-3 py-2 rounded-xl text-white font-mono outline-none placeholder:text-slate-500"
+                    className={`w-full px-3 py-2 rounded-xl font-mono outline-none transition ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                    }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-slate-300 mb-1">
+                <label
+                  className={`block font-bold mb-1 ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                  }`}
+                >
                   Sintoma Relatado / Alarme na Máquina *
                 </label>
                 <input
@@ -746,20 +802,36 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                   value={formSymptomTitle}
                   onChange={(e) => setFormSymptomTitle(e.target.value)}
                   placeholder="Ex: Desarme por Alta Temperatura de Descarga (> 105°C)"
-                  className="aptis-glass-input w-full px-3 py-2.5 rounded-xl text-white font-bold outline-none placeholder:text-slate-500"
+                  className={`w-full px-3 py-2.5 rounded-xl font-bold outline-none transition ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                  }`}
                 />
               </div>
 
               {/* Causes List */}
-              <div className="space-y-3 pt-2 border-t border-white/10">
+              <div
+                className={`space-y-3 pt-2 border-t ${
+                  tintedGlass ? 'border-white/10' : 'border-slate-200'
+                }`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-cyan-300 uppercase tracking-wider text-[11px]">
+                  <span
+                    className={`font-bold uppercase tracking-wider text-[11px] ${
+                      tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                    }`}
+                  >
                     Causas Raízes Conhecidas & Peças Recomendadas
                   </span>
                   <button
                     type="button"
                     onClick={handleAddCauseRow}
-                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                    className={`text-xs font-bold flex items-center gap-1 cursor-pointer ${
+                      tintedGlass
+                        ? 'text-cyan-400 hover:text-cyan-300'
+                        : 'text-blue-600 hover:text-blue-700'
+                    }`}
                   >
                     <Plus className="w-3.5 h-3.5" /> Adicionar Outra Causa Possível
                   </button>
@@ -768,17 +840,29 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                 {formCauses.map((causeItem, cIdx) => (
                   <div
                     key={cIdx}
-                    className="p-4 rounded-2xl aptis-glass-subcard space-y-3"
+                    className={`p-4 rounded-2xl space-y-3 ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard'
+                        : 'bg-slate-50 border border-slate-200'
+                    }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black text-amber-300 uppercase">
+                      <span
+                        className={`text-[11px] font-black uppercase ${
+                          tintedGlass ? 'text-amber-300' : 'text-amber-700'
+                        }`}
+                      >
                         Causa Possível #{cIdx + 1}
                       </span>
                       {formCauses.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveCauseRow(cIdx)}
-                          className="text-rose-400 hover:text-rose-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                          className={`text-[11px] font-bold flex items-center gap-1 cursor-pointer ${
+                            tintedGlass
+                              ? 'text-rose-400 hover:text-rose-300'
+                              : 'text-red-600 hover:text-red-700'
+                          }`}
                         >
                           <Trash2 className="w-3 h-3" /> Remover
                         </button>
@@ -787,7 +871,11 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
 
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       <div className="sm:col-span-3">
-                        <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        <label
+                          className={`block text-[11px] font-bold mb-1 ${
+                            tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                          }`}
+                        >
                           Causa Raiz Confirmada *
                         </label>
                         <input
@@ -800,12 +888,20 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                             setFormCauses(updated);
                           }}
                           placeholder="Ex: Válvula Termostática Travada Fechada"
-                          className="aptis-glass-input w-full px-3 py-2 rounded-lg text-white font-semibold placeholder:text-slate-500"
+                          className={`w-full px-3 py-2 rounded-lg font-semibold outline-none transition ${
+                            tintedGlass
+                              ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                              : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                          }`}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        <label
+                          className={`block text-[11px] font-bold mb-1 ${
+                            tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                          }`}
+                        >
                           Probabilidade (%)
                         </label>
                         <input
@@ -818,13 +914,21 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                             updated[cIdx].confidenceScore = Number(e.target.value) || 80;
                             setFormCauses(updated);
                           }}
-                          className="aptis-glass-input w-full px-3 py-2 rounded-lg text-emerald-400 font-mono font-bold"
+                          className={`w-full px-3 py-2 rounded-lg font-mono font-bold outline-none transition ${
+                            tintedGlass
+                              ? 'aptis-glass-input text-emerald-400'
+                              : 'bg-white border border-slate-300 text-emerald-700 focus:border-blue-500'
+                          }`}
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                      <label
+                        className={`block text-[11px] font-bold mb-1 ${
+                          tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                        }`}
+                      >
                         Procedimento / Resolução Padrão
                       </label>
                       <textarea
@@ -836,12 +940,20 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                           setFormCauses(updated);
                         }}
                         placeholder="Ex: Substituição do elemento termostático 85°C e troca de óleo sintético."
-                        className="aptis-glass-input w-full px-3 py-2 rounded-lg text-white resize-none placeholder:text-slate-500"
+                        className={`w-full px-3 py-2 rounded-lg resize-none outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                            : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                        }`}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-cyan-300 mb-1">
+                      <label
+                        className={`block text-[11px] font-bold mb-1 ${
+                          tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                        }`}
+                      >
                         Peças Recomendadas para o Reparo (separadas por vírgula)
                       </label>
                       <input
@@ -853,18 +965,30 @@ export const CrossClientAiDiagnostics: React.FC<CrossClientAiDiagnosticsProps> =
                           setFormCauses(updated);
                         }}
                         placeholder="Ex: Kit Reparo Válvula Termostática (021.0044), Óleo Lubrificante 20L"
-                        className="aptis-glass-input w-full px-3 py-2 rounded-lg text-white font-medium placeholder:text-slate-500"
+                        className={`w-full px-3 py-2 rounded-lg font-medium outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                            : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                        }`}
                       />
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2">
+              <div
+                className={`pt-3 border-t flex items-center justify-end gap-2 ${
+                  tintedGlass ? 'border-white/10' : 'border-slate-200'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 font-bold transition cursor-pointer"
+                  className={`px-4 py-2.5 rounded-xl font-bold transition cursor-pointer ${
+                    tintedGlass
+                      ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                      : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+                  }`}
                 >
                   Cancelar
                 </button>

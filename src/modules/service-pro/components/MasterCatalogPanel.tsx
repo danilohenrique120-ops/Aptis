@@ -752,15 +752,35 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
           MODAL COMPLETO DE CADASTRO / EDIÇÃO DE MODELO MESTRE
       ==================================================================== */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="aptis-glass-modal w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col text-white animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 overflow-y-auto">
+          <div
+            className={`w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 ${
+              tintedGlass
+                ? 'aptis-glass-modal text-white'
+                : 'bg-white text-slate-900 border border-slate-200'
+            }`}
+          >
             {/* Cabeçalho do Modal */}
-            <div className="p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+            <div
+              className={`p-5 border-b flex items-center justify-between ${
+                tintedGlass
+                  ? 'border-white/10 bg-white/[0.02]'
+                  : 'border-slate-200 bg-slate-50/70'
+              }`}
+            >
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 block">
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider block ${
+                    tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                  }`}
+                >
                   Engenharia de Manutenção • Padronização Técnica
                 </span>
-                <h3 className="text-lg font-black text-white">
+                <h3
+                  className={`text-lg font-black ${
+                    tintedGlass ? 'text-white' : 'text-slate-900'
+                  }`}
+                >
                   {editingId
                     ? 'Editar Modelo do Catálogo Mestre'
                     : 'Cadastrar Novo Modelo no Catálogo Mestre'}
@@ -769,7 +789,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEditorOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  tintedGlass
+                    ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/70'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -782,12 +806,24 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
             >
               {/* 1. Identificação do Modelo & Manual */}
               <div className="space-y-3">
-                <h4 className="text-xs font-black uppercase tracking-wider text-cyan-300 border-b border-white/10 pb-1.5">
+                <h4
+                  className={`text-xs font-black uppercase tracking-wider border-b pb-1.5 ${
+                    tintedGlass
+                      ? 'text-cyan-300 border-white/10'
+                      : 'text-blue-700 border-slate-200'
+                  }`}
+                >
                   1. Identificação do Equipamento, Norma & Manual Técnico
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">Categoria *</label>
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
+                      Categoria *
+                    </label>
                     <input
                       type="text"
                       list="catalog-categories"
@@ -795,7 +831,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                       value={formCategory}
                       onChange={(e) => setFormCategory(e.target.value)}
                       placeholder="Ex: Compressor de Ar"
-                      className="aptis-glass-input w-full p-2.5 rounded-xl font-semibold text-white placeholder:text-slate-500"
+                      className={`w-full p-2.5 rounded-xl font-semibold outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
                     <datalist id="catalog-categories">
                       {DEFAULT_CATEGORIES.map((c) => (
@@ -805,7 +845,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
                       Fabricante / Marca *
                     </label>
                     <input
@@ -814,12 +858,20 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                       value={formBrand}
                       onChange={(e) => setFormBrand(e.target.value)}
                       placeholder="Ex: Atlas Copco, Schulz, WEG..."
-                      className="aptis-glass-input w-full p-2.5 rounded-xl font-semibold text-white placeholder:text-slate-500"
+                      className={`w-full p-2.5 rounded-xl font-semibold outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
                       Modelo Comercial *
                     </label>
                     <input
@@ -828,12 +880,20 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                       value={formModel}
                       onChange={(e) => setFormModel(e.target.value)}
                       placeholder="Ex: GA 37 VSD+ / SRP 4030"
-                      className="aptis-glass-input w-full p-2.5 rounded-xl font-semibold text-white placeholder:text-slate-500"
+                      className={`w-full p-2.5 rounded-xl font-semibold outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
                       Capacidade Nominal *
                     </label>
                     <input
@@ -842,39 +902,45 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                       value={formCapacity}
                       onChange={(e) => setFormCapacity(e.target.value)}
                       placeholder="Ex: 50 HP / 210 PCM / 150 TR"
-                      className="aptis-glass-input w-full p-2.5 rounded-xl font-semibold text-white placeholder:text-slate-500"
+                      className={`w-full p-2.5 rounded-xl font-semibold outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
                       Norma Legal Aplicável
                     </label>
                     <select
                       value={formLegalNorm}
                       onChange={(e) => setFormLegalNorm(e.target.value as any)}
-                      className="aptis-glass-input w-full p-2.5 rounded-xl font-semibold text-white"
+                      className={`w-full p-2.5 rounded-xl font-semibold outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                      }`}
                     >
-                      <option value="NR-13" className="bg-slate-900 text-white">
-                        NR-13 (Vasos de Pressão / Caldeiras)
-                      </option>
-                      <option value="PMOC" className="bg-slate-900 text-white">
-                        PMOC (Climatização / Refrigeração)
-                      </option>
-                      <option value="NR-12" className="bg-slate-900 text-white">
-                        NR-12 (Segurança de Máquinas)
-                      </option>
-                      <option value="NR-10" className="bg-slate-900 text-white">
-                        NR-10 (Painéis e Subestações)
-                      </option>
-                      <option value="Outro" className="bg-slate-900 text-white">
-                        Padrão Interno / ISO
-                      </option>
+                      <option value="NR-13">NR-13 (Vasos de Pressão / Caldeiras)</option>
+                      <option value="PMOC">PMOC (Climatização / Refrigeração)</option>
+                      <option value="NR-12">NR-12 (Segurança de Máquinas)</option>
+                      <option value="NR-10">NR-10 (Painéis e Subestações)</option>
+                      <option value="Outro">Padrão Interno / ISO</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
                       Manual Técnico (PDF / Doc)
                     </label>
                     <div className="flex items-center gap-1.5">
@@ -883,10 +949,18 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                         value={formManualPdfName}
                         onChange={(e) => setFormManualPdfName(e.target.value)}
                         placeholder="manual_equipamento.pdf"
-                        className="aptis-glass-input w-full p-2.5 rounded-xl font-mono text-white placeholder:text-slate-500"
+                        className={`w-full p-2.5 rounded-xl font-mono outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                            : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                        }`}
                       />
                       <label
-                        className="p-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/35 text-cyan-300 cursor-pointer shrink-0"
+                        className={`p-2.5 rounded-xl border cursor-pointer shrink-0 transition ${
+                          tintedGlass
+                            ? 'bg-cyan-500/20 hover:bg-cyan-500/30 border-cyan-400/35 text-cyan-300'
+                            : 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700'
+                        }`}
                         title="Selecionar arquivo PDF do computador"
                       >
                         <Upload className="w-4 h-4" />
@@ -907,8 +981,16 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
 
               {/* 2. Ficha Técnica (Especificações Elétricas e Mecânicas) */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-cyan-300">
+                <div
+                  className={`flex items-center justify-between border-b pb-1.5 ${
+                    tintedGlass ? 'border-white/10' : 'border-slate-200'
+                  }`}
+                >
+                  <h4
+                    className={`text-xs font-black uppercase tracking-wider ${
+                      tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                    }`}
+                  >
                     2. Ficha Técnica Padrão (Herdada pelos Equipamentos)
                   </h4>
                   <button
@@ -919,7 +1001,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                         { key: `spec-${Date.now()}`, label: '', value: '' },
                       ])
                     }
-                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                    className={`text-xs font-bold flex items-center gap-1 cursor-pointer ${
+                      tintedGlass
+                        ? 'text-cyan-400 hover:text-cyan-300'
+                        : 'text-blue-600 hover:text-blue-700'
+                    }`}
                   >
                     <Plus className="w-3.5 h-3.5" /> Adicionar Parâmetro
                   </button>
@@ -939,7 +1025,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                           )
                         }
                         placeholder="Parâmetro (ex: Tensão)"
-                        className="aptis-glass-input w-2/5 p-2 rounded-xl font-semibold text-slate-200 placeholder:text-slate-500"
+                        className={`w-2/5 p-2 rounded-xl font-semibold outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-slate-200 placeholder:text-slate-500'
+                            : 'bg-slate-50 border border-slate-300 text-slate-700 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                        }`}
                       />
                       <input
                         type="text"
@@ -952,12 +1042,20 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                           )
                         }
                         placeholder="Valor (ex: 380V Trifásico)"
-                        className="aptis-glass-input flex-1 p-2 rounded-xl font-bold text-white placeholder:text-slate-500"
+                        className={`flex-1 p-2 rounded-xl font-bold outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                            : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setFormSpecs((prev) => prev.filter((_, i) => i !== idx))}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 cursor-pointer"
+                        className={`p-1.5 cursor-pointer ${
+                          tintedGlass
+                            ? 'text-slate-400 hover:text-rose-400'
+                            : 'text-slate-400 hover:text-red-600'
+                        }`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -968,12 +1066,22 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
 
               {/* 3. Plano Preventivo & Checklist Padrão */}
               <div className="space-y-3">
-                <h4 className="text-xs font-black uppercase tracking-wider text-cyan-300 border-b border-white/10 pb-1.5">
+                <h4
+                  className={`text-xs font-black uppercase tracking-wider border-b pb-1.5 ${
+                    tintedGlass
+                      ? 'text-cyan-300 border-white/10'
+                      : 'text-blue-700 border-slate-200'
+                  }`}
+                >
                   3. Plano Preventivo & Checklist de Inspeção
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
                       Periodicidade Preventiva (Meses)
                     </label>
                     <input
@@ -982,11 +1090,19 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                       max={60}
                       value={formIntervalMonths}
                       onChange={(e) => setFormIntervalMonths(Number(e.target.value))}
-                      className="aptis-glass-input w-full p-2.5 rounded-xl font-bold text-white"
+                      className={`w-full p-2.5 rounded-xl font-bold outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-300 block mb-1">
+                    <label
+                      className={`font-bold block mb-1 ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                      }`}
+                    >
                       Periodicidade por Horímetro (Horas)
                     </label>
                     <input
@@ -995,13 +1111,21 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                       step={50}
                       value={formIntervalHours}
                       onChange={(e) => setFormIntervalHours(Number(e.target.value))}
-                      className="aptis-glass-input w-full p-2.5 rounded-xl font-bold text-white"
+                      className={`w-full p-2.5 rounded-xl font-bold outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="font-bold text-slate-300 block">
+                  <label
+                    className={`font-bold block ${
+                      tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                    }`}
+                  >
                     Tarefas do Checklist Preventivo (serão inseridas automaticamente nas OSs):
                   </label>
                   <div className="flex gap-2">
@@ -1010,7 +1134,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                       value={formNewChecklistItem}
                       onChange={(e) => setFormNewChecklistItem(e.target.value)}
                       placeholder="Digite uma nova tarefa de inspeção e clique em + Adicionar..."
-                      className="aptis-glass-input flex-1 p-2.5 rounded-xl text-white placeholder:text-slate-500"
+                      className={`flex-1 p-2.5 rounded-xl outline-none transition ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
                     <button
                       type="button"
@@ -1019,7 +1147,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                         setFormChecklist((prev) => [...prev, formNewChecklistItem.trim()]);
                         setFormNewChecklistItem('');
                       }}
-                      className="px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/35 text-cyan-300 font-bold cursor-pointer shrink-0"
+                      className={`px-4 py-2 rounded-xl border font-bold cursor-pointer shrink-0 transition ${
+                        tintedGlass
+                          ? 'bg-cyan-500/20 hover:bg-cyan-500/30 border-cyan-400/35 text-cyan-300'
+                          : 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700'
+                      }`}
                     >
                       + Adicionar Tarefa
                     </button>
@@ -1029,9 +1161,17 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                     {formChecklist.map((task, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl aptis-glass-subcard"
+                        className={`flex items-center justify-between gap-2 p-2.5 rounded-xl ${
+                          tintedGlass
+                            ? 'aptis-glass-subcard'
+                            : 'bg-slate-50 border border-slate-200'
+                        }`}
                       >
-                        <span className="font-medium text-slate-200">
+                        <span
+                          className={`font-medium ${
+                            tintedGlass ? 'text-slate-200' : 'text-slate-800'
+                          }`}
+                        >
                           {idx + 1}. {task}
                         </span>
                         <button
@@ -1039,7 +1179,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                           onClick={() =>
                             setFormChecklist((prev) => prev.filter((_, i) => i !== idx))
                           }
-                          className="text-slate-400 hover:text-rose-400 cursor-pointer"
+                          className={`cursor-pointer ${
+                            tintedGlass
+                              ? 'text-slate-400 hover:text-rose-400'
+                              : 'text-slate-400 hover:text-red-600'
+                          }`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1051,8 +1195,16 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
 
               {/* 4. Peças de Reposição Homologadas (BOM) */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-cyan-300">
+                <div
+                  className={`flex items-center justify-between border-b pb-1.5 ${
+                    tintedGlass ? 'border-white/10' : 'border-slate-200'
+                  }`}
+                >
+                  <h4
+                    className={`text-xs font-black uppercase tracking-wider ${
+                      tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                    }`}
+                  >
                     4. Peças de Desgaste & Reposição Homologadas
                   </h4>
                   <button
@@ -1067,7 +1219,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                         },
                       ])
                     }
-                    className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+                    className={`text-xs font-bold flex items-center gap-1 cursor-pointer ${
+                      tintedGlass
+                        ? 'text-cyan-400 hover:text-cyan-300'
+                        : 'text-blue-600 hover:text-blue-700'
+                    }`}
                   >
                     <Plus className="w-3.5 h-3.5" /> Adicionar Peça
                   </button>
@@ -1087,7 +1243,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                           )
                         }
                         placeholder="Código (ex: FL-0402)"
-                        className="aptis-glass-input sm:col-span-3 p-2 rounded-xl font-mono font-bold text-cyan-300 placeholder:text-slate-500"
+                        className={`sm:col-span-3 p-2 rounded-xl font-mono font-bold outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-cyan-300 placeholder:text-slate-500'
+                            : 'bg-slate-50 border border-slate-300 text-blue-700 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                        }`}
                       />
                       <input
                         type="text"
@@ -1100,7 +1260,11 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                           )
                         }
                         placeholder="Descrição da peça (ex: Elemento Separador de Ar/Óleo)"
-                        className="aptis-glass-input sm:col-span-5 p-2 rounded-xl font-semibold text-white placeholder:text-slate-500"
+                        className={`sm:col-span-5 p-2 rounded-xl font-semibold outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                            : 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                        }`}
                       />
                       <input
                         type="text"
@@ -1115,14 +1279,22 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
                           )
                         }
                         placeholder="Troca (ex: A cada 2.000h)"
-                        className="aptis-glass-input sm:col-span-3 p-2 rounded-xl text-slate-200 placeholder:text-slate-500"
+                        className={`sm:col-span-3 p-2 rounded-xl outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-slate-200 placeholder:text-slate-500'
+                            : 'bg-slate-50 border border-slate-300 text-slate-700 placeholder:text-slate-400 focus:bg-white focus:border-blue-500'
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() =>
                           setFormSpareParts((prev) => prev.filter((_, i) => i !== idx))
                         }
-                        className="sm:col-span-1 p-2 text-slate-400 hover:text-rose-400 flex justify-center cursor-pointer"
+                        className={`sm:col-span-1 p-2 flex justify-center cursor-pointer ${
+                          tintedGlass
+                            ? 'text-slate-400 hover:text-rose-400'
+                            : 'text-slate-400 hover:text-red-600'
+                        }`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1132,11 +1304,19 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
               </div>
 
               {/* Botões Finais do Modal */}
-              <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-2.5">
+              <div
+                className={`pt-4 border-t flex items-center justify-end gap-2.5 ${
+                  tintedGlass ? 'border-white/10' : 'border-slate-200'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setIsEditorOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 font-bold cursor-pointer"
+                  className={`px-4 py-2.5 rounded-xl font-bold cursor-pointer transition ${
+                    tintedGlass
+                      ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                      : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+                  }`}
                 >
                   Cancelar
                 </button>
@@ -1161,35 +1341,67 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
 
       {/* Deploy to Client Modal */}
       {deployModalOpen && selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-          <div className="aptis-glass-modal w-full max-w-md rounded-3xl shadow-2xl p-6 space-y-4 text-white animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4">
+          <div
+            className={`w-full max-w-md rounded-3xl shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200 ${
+              tintedGlass
+                ? 'aptis-glass-modal text-white'
+                : 'bg-white text-slate-900 border border-slate-200'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between border-b pb-3 ${
+                tintedGlass ? 'border-white/10' : 'border-slate-200'
+              }`}
+            >
+              <h3
+                className={`text-base font-black flex items-center gap-2 ${
+                  tintedGlass ? 'text-white' : 'text-slate-900'
+                }`}
+              >
+                <Building2 className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 Implantar {selectedItem.brand} {selectedItem.model}
               </h3>
               <button
                 onClick={() => setDeployModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                className={`p-1 cursor-pointer ${
+                  tintedGlass
+                    ? 'text-slate-400 hover:text-white'
+                    : 'text-slate-400 hover:text-slate-700'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p
+              className={`text-xs leading-relaxed ${
+                tintedGlass ? 'text-slate-300' : 'text-slate-600'
+              }`}
+            >
               O equipamento herdará todos os parâmetros elétricos, mecânicos, checklist e o plano
               preventivo cadastrado no Catálogo Mestre.
             </p>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-300 mb-1 block">Cliente de Destino</label>
+                <label
+                  className={`font-bold mb-1 block ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                  }`}
+                >
+                  Cliente de Destino
+                </label>
                 <select
                   value={targetClientId}
                   onChange={(e) => setTargetClientId(e.target.value)}
-                  className="aptis-glass-input w-full text-xs rounded-xl p-2.5 font-medium text-white outline-none"
+                  className={`w-full text-xs rounded-xl p-2.5 font-medium outline-none transition ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                  }`}
                 >
                   {clients.map((c) => (
-                    <option key={c.id} value={c.id} className="bg-slate-900 text-white">
+                    <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
@@ -1197,22 +1409,40 @@ export const MasterCatalogPanel: React.FC<MasterCatalogPanelProps> = ({
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 mb-1 block">TAG do Ativo</label>
+                <label
+                  className={`font-bold mb-1 block ${
+                    tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                  }`}
+                >
+                  TAG do Ativo
+                </label>
                 <input
                   type="text"
                   value={targetTag}
                   onChange={(e) => setTargetTag(e.target.value)}
                   placeholder="Ex: COMP-04"
-                  className="aptis-glass-input w-full text-xs rounded-xl p-2.5 font-mono font-bold text-white outline-none"
+                  className={`w-full text-xs rounded-xl p-2.5 font-mono font-bold outline-none transition ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:border-blue-500'
+                  }`}
                 />
               </div>
             </div>
 
-            <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2">
+            <div
+              className={`pt-3 border-t flex items-center justify-end gap-2 ${
+                tintedGlass ? 'border-white/10' : 'border-slate-200'
+              }`}
+            >
               <button
                 type="button"
                 onClick={() => setDeployModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 rounded-xl cursor-pointer"
+                className={`px-4 py-2 text-xs font-semibold rounded-xl cursor-pointer transition ${
+                  tintedGlass
+                    ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                    : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+                }`}
               >
                 Cancelar
               </button>

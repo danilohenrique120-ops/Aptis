@@ -41,8 +41,8 @@ export default function DashboardLayout({
     <div
       className={`flex min-h-screen font-sans relative overflow-x-hidden transition-colors duration-500 ${
         useDarkGlassCanvas
-          ? 'bg-[#060913] text-slate-100'
-          : 'bg-[#eef2f7] text-slate-900'
+          ? 'bg-[#060913] text-slate-100 aptis-mode-dark'
+          : 'bg-[#eef2f7] text-slate-900 aptis-mode-light'
       }`}
     >
       {/* ORBES DE LUZ AMBIENTE DIFUSA (Inspirados no Vídeo 1 - Cimel & Vídeo 4 - Halvo) */}

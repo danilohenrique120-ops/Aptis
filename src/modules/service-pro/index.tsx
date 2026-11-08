@@ -2103,6 +2103,7 @@ export const ServiceProModule: React.FC = () => {
 
       {/* Modals */}
       <SmartDocumentImporterModal
+        tintedGlass={tintedGlass}
         isOpen={isImporterOpen}
         onClose={() => {
           setIsImporterOpen(false);
@@ -2116,12 +2117,14 @@ export const ServiceProModule: React.FC = () => {
       />
 
       <QRCodeManagerModal
+        tintedGlass={tintedGlass}
         isOpen={!!qrCodeModalEquipment}
         onClose={() => setQRCodeModalEquipment(null)}
         equipment={qrCodeModalEquipment}
       />
 
       <DigitalOSMobileModal
+        tintedGlass={tintedGlass}
         isOpen={!!mobileOSModalOrder}
         onClose={() => setMobileOSModalOrder(null)}
         workOrder={mobileOSModalOrder}
@@ -2133,6 +2136,7 @@ export const ServiceProModule: React.FC = () => {
       />
 
       <WorkOrderModal
+        tintedGlass={tintedGlass}
         isOpen={isWorkOrderModalOpen}
         onClose={() => setIsWorkOrderModalOpen(false)}
         clients={clients}
@@ -2142,6 +2146,7 @@ export const ServiceProModule: React.FC = () => {
       />
 
       <ClientPortalModal
+        tintedGlass={tintedGlass}
         isOpen={!!portalSimulationClient}
         onClose={() => setPortalSimulationClient(null)}
         client={portalSimulationClient}
