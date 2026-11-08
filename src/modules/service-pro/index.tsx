@@ -35,6 +35,8 @@ import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 import {
   ClientContractor,
   Equipment,
+  EquipmentServiceItem,
+  ServiceItemStatus,
   MasterCatalogItem,
   MaintenanceWorkOrder,
   CrossClientDiagnostic,
@@ -133,85 +135,225 @@ export const ServiceProModule: React.FC = () => {
     null
   );
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+  const [expandedServiceTableIds, setExpandedServiceTableIds] = useState<Record<string, boolean>>({
+    'eq-maq-01': true,
+  });
+
+  // Garante que o exemplo real "Máquina 01 (Linha de Envase)" e o modelo no Catálogo Mestre estejam disponíveis mesmo se o localStorage já tiver dados antigos salvos
+  useEffect(() => {
+    const maq01Template = INITIAL_EQUIPMENTS.find((e) => e.id === 'eq-maq-01');
+    if (maq01Template && equipments.length > 0 && !equipments.some((e) => e.id === 'eq-maq-01' || e.tag === 'MAQ-01')) {
+      setEquipments((prev) => [maq01Template, ...prev]);
+    }
+    const catMaq01 = INITIAL_MASTER_CATALOG.find((c) => c.id === 'cat-envasadora-maq01');
+    if (catMaq01 && masterCatalog.length > 0 && !masterCatalog.some((c) => c.id === 'cat-envasadora-maq01')) {
+      setMasterCatalog((prev) => [catMaq01, ...prev]);
+    }
+  }, [equipments.length, masterCatalog.length]);
+
+  const formatDateBR = (dateStr?: string): string => {
+    if (!dateStr || dateStr.trim() === '' || dateStr.trim().toUpperCase() === 'N/A') {
+      return 'N/A';
+    }
+    const clean = dateStr.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+      const [yyyy, mm, dd] = clean.split('-');
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return clean;
+  };
+
+  const formatIntervalLabel = (months?: number): string => {
+    if (months === undefined || months === null) return '3m';
+    if (months === 0) return 'Sob Demanda';
+    if (months === 0.25) return '7 dias';
+    if (months === 0.5) return '15 dias';
+    return `${months}m`;
+  };
+
+  const normalizeImportedDate = (rawVal: any): string => {
+    if (rawVal === undefined || rawVal === null) return 'N/A';
+    const str = String(rawVal).trim();
+    if (!str || str.toUpperCase() === 'N/A' || str === '-') return 'N/A';
+    // DD/MM/YYYY -> YYYY-MM-DD
+    const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (brMatch) {
+      const dd = brMatch[1].padStart(2, '0');
+      const mm = brMatch[2].padStart(2, '0');
+      const yyyy = brMatch[3];
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return str;
+    }
+    return str;
+  };
+
+  const normalizeImportedServiceStatus = (rawStatus: any): ServiceItemStatus => {
+    const str = String(rawStatus || '').trim().toLowerCase();
+    if (str.includes('agend')) return 'Agendada';
+    if (str.includes('manut')) return 'Em manutenção';
+    if (str.includes('venc') || str.includes('atras')) return 'Vencida';
+    return 'Em operação';
+  };
+
+  const handleCycleServiceItemStatus = (equipmentId: string, itemId: string) => {
+    const statusOrder: ServiceItemStatus[] = [
+      'Em operação',
+      'Agendada',
+      'Em manutenção',
+      'Vencida',
+    ];
+    setEquipments((prev) =>
+      prev.map((eq) => {
+        if (eq.id !== equipmentId || !eq.serviceItems) return eq;
+        const updatedItems = eq.serviceItems.map((si) => {
+          if (si.id !== itemId) return si;
+          const nextIdx = (statusOrder.indexOf(si.status) + 1) % statusOrder.length;
+          return { ...si, status: statusOrder[nextIdx] };
+        });
+        return { ...eq, serviceItems: updatedItems };
+      })
+    );
+  };
 
   const handleImportServiceProExcel = (rows: Record<string, any>[]) => {
     const updatedClients = [...clients];
-    const newEquipments: Equipment[] = rows.map((row, idx) => {
-      const clientName = (row.clientName || 'Cliente Industrial').trim();
-      let client = updatedClients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
+    const groupedMap = new Map<string, { baseRow: Record<string, any>; items: EquipmentServiceItem[] }>();
+
+    rows.forEach((row, idx) => {
+      const eqName = (row.equipmentName || 'Máquina 01').trim();
+      const clientName = (row.clientName || clients[0]?.name || 'Cliente Industrial').trim();
+      const groupKey = `${clientName.toLowerCase()}::${eqName.toLowerCase()}`;
+
+      if (!groupedMap.has(groupKey)) {
+        groupedMap.set(groupKey, { baseRow: row, items: [] });
+      }
+
+      const partName = (row.serviceOrPartName || '').trim();
+      if (partName) {
+        groupedMap.get(groupKey)!.items.push({
+          id: `si-imp-${Date.now()}-${idx}`,
+          serviceOrPartName: partName,
+          lastRevisionDate: normalizeImportedDate(row.lastRevisionDate),
+          nextRevisionDate: normalizeImportedDate(row.nextRevisionDate),
+          status: normalizeImportedServiceStatus(row.itemStatus),
+          intervalDays: Number(row.preventiveIntervalDays) || undefined,
+        });
+      }
+    });
+
+    const newEquipments: Equipment[] = [];
+    let groupIdx = 0;
+
+    groupedMap.forEach(({ baseRow, items }) => {
+      groupIdx += 1;
+      const clientName = (baseRow.clientName || clients[0]?.name || 'Cliente Industrial').trim();
+      let client = updatedClients.find((c) => c.name.toLowerCase() === clientName.toLowerCase());
       if (!client) {
         client = {
-          id: `client-imp-${Date.now()}-${idx}`,
+          id: `client-imp-${Date.now()}-${groupIdx}`,
           name: clientName,
           tradeName: clientName,
           cnpj: '00.000.000/0001-00',
-          segment: 'Manufatura / Usinagem',
+          segment: 'Manufatura / Industrial',
           slaHours: 4,
           contractValueMonthly: 5500,
           contractStartDate: new Date().toISOString().split('T')[0],
           contractStatus: 'active',
           branches: [
             {
-              id: `br-1-${idx}`,
+              id: `br-1-${groupIdx}`,
               name: 'Planta Principal',
               address: 'Av. Industrial, 1000',
               city: 'São Paulo',
-              state: 'SP'
-            }
+              state: 'SP',
+            },
           ],
           contacts: [
             {
-              id: `ct-1-${idx}`,
+              id: `ct-1-${groupIdx}`,
               name: 'Gestor da Planta',
               role: 'Gerente de Manutenção',
               email: 'manutencao@empresa.com.br',
               phone: '(11) 98765-4321',
-              isPrimary: true
-            }
-          ]
+              isPrimary: true,
+            },
+          ],
         };
         updatedClients.push(client);
       }
 
-      const rawCrit = (row.criticality || '').trim().toLowerCase();
+      const rawCrit = (baseRow.criticality || '').trim().toLowerCase();
       let criticality: 'low' | 'medium' | 'high' = 'medium';
       if (rawCrit.includes('crit') || rawCrit.includes('alt')) criticality = 'high';
       else if (rawCrit.includes('baix')) criticality = 'low';
 
       const branch = client.branches[0];
+      const days = Number(baseRow.preventiveIntervalDays) || 15;
+      const intervalMonths =
+        days <= 7 ? 0.25 : days <= 15 ? 0.5 : Math.max(1, Math.round(days / 30));
 
-      return {
-        id: `eq-imp-${Date.now()}-${idx}`,
+      const validNextDates = items
+        .map((i) => i.nextRevisionDate)
+        .filter((d) => d && d !== 'N/A' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+        .sort();
+      const validLastDates = items
+        .map((i) => i.lastRevisionDate)
+        .filter((d) => d && d !== 'N/A' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+        .sort();
+
+      const computedNext =
+        validNextDates[0] ||
+        (items.length > 0
+          ? 'N/A'
+          : new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+      const computedLast = validLastDates[validLastDates.length - 1] || 'N/A';
+
+      newEquipments.push({
+        id: `eq-imp-${Date.now()}-${groupIdx}`,
         clientId: client.id,
         clientName: client.name,
         branchId: branch?.id || 'branch-1',
         branchName: branch?.name || 'Planta Principal',
-        name: (row.equipmentName || 'Equipamento').trim(),
-        tag: (row.tag || `TAG-${Date.now().toString().slice(-4)}-${idx + 1}`).trim(),
-        category: (row.sector || 'Geral').trim(),
-        brand: (row.manufacturer || 'Industrial').trim(),
+        name: (baseRow.equipmentName || 'Máquina 01').trim(),
+        tag: (baseRow.tag || `MAQ-0${groupIdx}`).trim().toUpperCase(),
+        category: (baseRow.sector || 'Geral').trim(),
+        brand: (baseRow.manufacturer || 'Industrial').trim(),
         model: 'Standard',
         serialNumber: `SN-${Date.now().toString().slice(-6)}`,
-        locationInPlant: (row.sector || 'Chão de Fábrica').trim(),
+        locationInPlant: (baseRow.sector || 'Chão de Fábrica').trim(),
         criticality,
         status: 'operational',
-        nextPreventiveDate: new Date(Date.now() + (Number(row.preventiveIntervalDays) || 60) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        lastServiceDate: computedLast,
+        nextPreventiveDate: computedNext,
         specs: [],
+        serviceItems: items,
         maintenancePlan: {
-          intervalMonths: Math.round((Number(row.preventiveIntervalDays) || 60) / 30),
-          checklistItems: ['Checar lubrificação', 'Inspecionar correias e ruídos anômalos'],
-          recommendedParts: []
+          intervalMonths,
+          intervalDays: days,
+          checklistItems:
+            items.length > 0
+              ? items.map((i) => i.serviceOrPartName)
+              : ['Checar lubrificação', 'Inspecionar correias e ruídos anômalos'],
+          recommendedParts: [],
         },
-        qrCodeId: `QR-${Date.now().toString().slice(-6)}`
-      };
+        qrCodeId: `QR-${Date.now().toString().slice(-6)}-${groupIdx}`,
+      });
     });
 
     setClients(updatedClients);
-    setEquipments(prev => [...newEquipments, ...prev]);
+    setEquipments((prev) => [...newEquipments, ...prev]);
+
+    const totalServicesCount = newEquipments.reduce(
+      (acc, eq) => acc + (eq.serviceItems?.length || 0),
+      0
+    );
 
     return {
       successCount: newEquipments.length,
-      message: `${newEquipments.length} equipamentos e clientes importados com sucesso no catálogo!`
+      message: `${newEquipments.length} máquina(s) e ${totalServicesCount} serviço(s)/peça(s) importados com sucesso!`,
     };
   };
 
@@ -225,9 +367,32 @@ export const ServiceProModule: React.FC = () => {
 
   // Helper para calcular dias restantes e semáforo de vencimento da preventiva
   const getPreventiveStatusInfo = (nextDateStr: string) => {
+    if (!nextDateStr || nextDateStr.trim().toUpperCase() === 'N/A') {
+      return {
+        daysLeft: 9999,
+        status: 'ok' as const,
+        label: 'Sob Demanda (N/A)',
+        badgeClass: tintedGlass
+          ? 'bg-slate-500/20 text-slate-300 border-slate-400/35'
+          : 'bg-slate-100 text-slate-700 border-slate-300',
+        dotClass: 'bg-slate-400',
+      };
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const target = new Date(`${nextDateStr}T00:00:00`);
+    if (isNaN(target.getTime())) {
+      return {
+        daysLeft: 9999,
+        status: 'ok' as const,
+        label: nextDateStr,
+        badgeClass: tintedGlass
+          ? 'bg-slate-500/20 text-slate-300 border-slate-400/35'
+          : 'bg-slate-100 text-slate-700 border-slate-300',
+        dotClass: 'bg-slate-400',
+      };
+    }
     const diffMs = target.getTime() - today.getTime();
     const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
@@ -641,6 +806,7 @@ export const ServiceProModule: React.FC = () => {
         .toISOString()
         .split('T')[0],
       specs: [...model.specs],
+      serviceItems: model.serviceItems ? model.serviceItems.map((s) => ({ ...s })) : undefined,
       maintenancePlan: { ...model.maintenancePlan },
       qrCodeId: `QR-${tag}-${Math.floor(1000 + Math.random() * 9000)}`,
       notes: `Herdado do Catálogo Mestre Industrial (${model.brand} ${model.model})`,
@@ -1647,10 +1813,15 @@ export const ServiceProModule: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredEquipments.map((eq) => {
               const dueInfo = getPreventiveStatusInfo(eq.nextPreventiveDate);
+              const hasServiceItems = !!(eq.serviceItems && eq.serviceItems.length > 0);
+              const isTableExpanded = !!expandedServiceTableIds[eq.id];
+
               return (
                 <div
                   key={eq.id}
                   className={`p-5 rounded-3xl transition-all duration-300 space-y-3 flex flex-col justify-between ${
+                    hasServiceItems && isTableExpanded ? 'md:col-span-2 lg:col-span-3' : ''
+                  } ${
                     tintedGlass
                       ? 'aptis-glass-dark aptis-glass-subcard-interactive text-white'
                       : 'bg-white border border-slate-200/90 shadow-xs hover:shadow-lg hover:-translate-y-1 hover:border-blue-300 text-slate-900'
@@ -1658,15 +1829,38 @@ export const ServiceProModule: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2">
-                      <span
-                        className={`text-xs font-mono font-black px-2.5 py-0.5 rounded-lg border ${
-                          tintedGlass
-                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
-                            : 'bg-blue-50 text-blue-700 border-blue-200'
-                        }`}
-                      >
-                        {eq.tag}
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-xs font-mono font-black px-2.5 py-0.5 rounded-lg border ${
+                            tintedGlass
+                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'
+                          }`}
+                        >
+                          {eq.tag}
+                        </span>
+                        {hasServiceItems && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedServiceTableIds((prev) => ({
+                                ...prev,
+                                [eq.id]: !prev[eq.id],
+                              }))
+                            }
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 cursor-pointer transition ${
+                              tintedGlass
+                                ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border-cyan-400/35'
+                                : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border-sky-200'
+                            }`}
+                          >
+                            <Wrench className="w-3 h-3" />
+                            {eq.serviceItems!.length} Serviços/Peças{' '}
+                            {isTableExpanded ? '▲ Ocultar Tabela' : '▼ Ver Tabela'}
+                          </button>
+                        )}
+                      </div>
+
                       <span
                         className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${dueInfo.badgeClass}`}
                       >
@@ -1708,27 +1902,25 @@ export const ServiceProModule: React.FC = () => {
                           Localização:
                         </span>
                         <span
-                          className={`truncate max-w-[160px] ${
+                          className={`truncate max-w-[200px] ${
                             tintedGlass ? 'text-slate-200' : 'text-slate-800'
                           }`}
                         >
                           {eq.locationInPlant}
                         </span>
                       </div>
-                      {eq.lastServiceDate && (
-                        <div className="flex justify-between">
-                          <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
-                            Última Preventiva:
-                          </span>
-                          <span
-                            className={`font-mono font-bold ${
-                              tintedGlass ? 'text-emerald-400' : 'text-emerald-700'
-                            }`}
-                          >
-                            {eq.lastServiceDate}
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex justify-between">
+                        <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
+                          Última Revisão:
+                        </span>
+                        <span
+                          className={`font-mono font-bold ${
+                            tintedGlass ? 'text-emerald-400' : 'text-emerald-700'
+                          }`}
+                        >
+                          {formatDateBR(eq.lastServiceDate)}
+                        </span>
+                      </div>
                       <div className="flex justify-between">
                         <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
                           Próx. Preventiva:
@@ -1738,10 +1930,210 @@ export const ServiceProModule: React.FC = () => {
                             tintedGlass ? 'text-cyan-300' : 'text-blue-700'
                           }`}
                         >
-                          {eq.nextPreventiveDate} (a cada {eq.maintenancePlan?.intervalMonths || 3}m)
+                          {formatDateBR(eq.nextPreventiveDate)} (a cada{' '}
+                          {formatIntervalLabel(eq.maintenancePlan?.intervalMonths)})
                         </strong>
                       </div>
                     </div>
+
+                    {/* MATRIZ DE SERVIÇOS / PEÇAS DA MÁQUINA (ESTILO PLANILHA MÁQUINA 01) */}
+                    {hasServiceItems && (
+                      <div className="mt-3">
+                        {!isTableExpanded ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedServiceTableIds((prev) => ({
+                                ...prev,
+                                [eq.id]: true,
+                              }))
+                            }
+                            className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-between border transition cursor-pointer ${
+                              tintedGlass
+                                ? 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 border-cyan-400/30'
+                                : 'bg-sky-50/90 hover:bg-sky-100 text-sky-900 border-sky-200'
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <Wrench className="w-3.5 h-3.5" />
+                              Matriz de Serviços / Peças ({eq.serviceItems!.length} itens)
+                            </span>
+                            <span className="text-[11px] underline">Abrir Tabela ▼</span>
+                          </button>
+                        ) : (
+                          <div
+                            className={`rounded-2xl border overflow-hidden ${
+                              tintedGlass
+                                ? 'bg-slate-950/55 border-cyan-400/30'
+                                : 'bg-white border-sky-200 shadow-xs'
+                            }`}
+                          >
+                            {/* Header estilo Planilha Máquina 01 */}
+                            <div
+                              className={`px-4 py-2.5 border-b flex flex-wrap items-center justify-between gap-2 ${
+                                tintedGlass
+                                  ? 'bg-cyan-500/15 border-cyan-400/25'
+                                  : 'bg-sky-100/90 border-sky-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`text-xs font-black uppercase tracking-wider ${
+                                    tintedGlass ? 'text-white' : 'text-slate-900'
+                                  }`}
+                                >
+                                  {eq.name} — Controle de Serviços / Peças
+                                </span>
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    tintedGlass
+                                      ? 'bg-white/10 text-cyan-200'
+                                      : 'bg-white text-sky-800 border border-sky-200'
+                                  }`}
+                                >
+                                  Clique no Status para alternar ou em Editar para alterar datas
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingEquipment(eq);
+                                    setIsImporterOpen(true);
+                                  }}
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer transition ${
+                                    tintedGlass
+                                      ? 'bg-cyan-500/25 hover:bg-cyan-500/35 text-cyan-200 border border-cyan-400/40'
+                                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                  }`}
+                                >
+                                  <Edit3 className="w-3 h-3" /> Editar / Adicionar Peças
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedServiceTableIds((prev) => ({
+                                      ...prev,
+                                      [eq.id]: false,
+                                    }))
+                                  }
+                                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer ${
+                                    tintedGlass
+                                      ? 'text-slate-300 hover:bg-white/10'
+                                      : 'text-slate-600 hover:bg-white'
+                                  }`}
+                                >
+                                  Recolher ▲
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs border-collapse">
+                                <thead>
+                                  <tr
+                                    className={`border-b font-black text-[11px] ${
+                                      tintedGlass
+                                        ? 'bg-white/[0.04] border-white/10 text-cyan-200'
+                                        : 'bg-sky-50/90 border-sky-200 text-slate-800'
+                                    }`}
+                                  >
+                                    <th className="py-2 px-3 text-left border-r border-slate-300/20">
+                                      Serviços / Peças
+                                    </th>
+                                    <th className="py-2 px-3 text-center w-36 border-r border-slate-300/20">
+                                      Última revisão
+                                    </th>
+                                    <th className="py-2 px-3 text-center w-36 border-r border-slate-300/20">
+                                      Próxima revisão
+                                    </th>
+                                    <th className="py-2 px-3 text-center w-44">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-300/20">
+                                  {eq.serviceItems!.map((item, idx) => (
+                                    <tr
+                                      key={item.id || idx}
+                                      className={
+                                        tintedGlass
+                                          ? idx % 2 === 0
+                                            ? 'bg-white/[0.01] hover:bg-white/[0.05]'
+                                            : 'bg-cyan-500/[0.04] hover:bg-white/[0.06]'
+                                          : idx % 2 === 0
+                                          ? 'bg-white hover:bg-sky-50/60'
+                                          : 'bg-sky-50/40 hover:bg-sky-100/50'
+                                      }
+                                    >
+                                      <td
+                                        className={`py-2 px-3 font-semibold border-r border-slate-300/20 ${
+                                          tintedGlass ? 'text-white' : 'text-slate-900'
+                                        }`}
+                                      >
+                                        {item.serviceOrPartName}
+                                      </td>
+                                      <td
+                                        className={`py-2 px-3 text-center font-mono font-bold border-r border-slate-300/20 ${
+                                          item.lastRevisionDate === 'N/A'
+                                            ? tintedGlass
+                                              ? 'text-slate-400'
+                                              : 'text-slate-500'
+                                            : tintedGlass
+                                            ? 'text-slate-200'
+                                            : 'text-slate-800'
+                                        }`}
+                                      >
+                                        {formatDateBR(item.lastRevisionDate)}
+                                      </td>
+                                      <td
+                                        className={`py-2 px-3 text-center font-mono font-bold border-r border-slate-300/20 ${
+                                          item.nextRevisionDate === 'N/A'
+                                            ? tintedGlass
+                                              ? 'text-slate-400'
+                                              : 'text-slate-500'
+                                            : tintedGlass
+                                            ? 'text-cyan-300'
+                                            : 'text-blue-700'
+                                        }`}
+                                      >
+                                        {formatDateBR(item.nextRevisionDate)}
+                                      </td>
+                                      <td className="py-1.5 px-3 text-center">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleCycleServiceItemStatus(eq.id, item.id)
+                                          }
+                                          title="Clique para alternar o status"
+                                          className={`px-3 py-0.5 rounded-full text-[11px] font-bold border cursor-pointer transition ${
+                                            item.status === 'Em operação'
+                                              ? tintedGlass
+                                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/35 hover:bg-emerald-500/30'
+                                                : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                                              : item.status === 'Agendada'
+                                              ? tintedGlass
+                                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35 hover:bg-cyan-500/30'
+                                                : 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
+                                              : item.status === 'Em manutenção'
+                                              ? tintedGlass
+                                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/35 hover:bg-amber-500/30'
+                                                : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                                              : tintedGlass
+                                              ? 'bg-rose-500/20 text-rose-300 border-rose-400/35 hover:bg-rose-500/30'
+                                              : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
+                                          }`}
+                                        >
+                                          {item.status}
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Norm Badge */}
                     {eq.maintenancePlan?.legalNorm && (

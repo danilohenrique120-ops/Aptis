@@ -72,6 +72,10 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   const isDrawingRef = useRef(false);
 
   const computeNextDate = (months: number): string => {
+    if (months < 1) {
+      const days = months === 0.25 ? 7 : 15;
+      return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    }
     const dt = new Date();
     dt.setMonth(dt.getMonth() + months);
     return dt.toISOString().split('T')[0];
@@ -854,6 +858,8 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
                       : 'bg-white border border-emerald-300 text-slate-900 focus:border-emerald-500'
                   }`}
                 >
+                  <option value={0.25}>Semanal (daqui a 7 dias)</option>
+                  <option value={0.5}>Quinzenal (daqui a 15 dias)</option>
                   <option value={1}>Mensal (daqui a 30 dias)</option>
                   <option value={2}>Bimestral (daqui a 2 meses)</option>
                   <option value={3}>Trimestral (daqui a 3 meses)</option>

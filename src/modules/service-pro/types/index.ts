@@ -1,4 +1,4 @@
-﻿export type EquipmentStatus = 'operational' | 'warning' | 'critical' | 'maintenance';
+export type EquipmentStatus = 'operational' | 'warning' | 'critical' | 'maintenance';
 export type WorkOrderStatus = 'scheduled' | 'dispatched' | 'in_progress' | 'completed' | 'cancelled';
 export type WorkOrderType = 'preventive' | 'corrective' | 'predictive' | 'installation';
 
@@ -43,8 +43,20 @@ export interface EquipmentSpec {
   value: string;
 }
 
+export type ServiceItemStatus = 'Em operação' | 'Agendada' | 'Em manutenção' | 'Vencida';
+
+export interface EquipmentServiceItem {
+  id: string;
+  serviceOrPartName: string; // Ex: "Diafragma do bico", "Garra", "Preventiva a cada 15 dias"
+  lastRevisionDate: string; // YYYY-MM-DD ou 'N/A'
+  nextRevisionDate: string; // YYYY-MM-DD ou 'N/A'
+  status: ServiceItemStatus;
+  intervalDays?: number; // Ex: 7, 15, 30, 90
+}
+
 export interface EquipmentMaintenancePlan {
   intervalMonths: number;
+  intervalDays?: number;
   intervalHours?: number;
   checklistItems: string[];
   recommendedParts: string[];
@@ -57,7 +69,7 @@ export interface Equipment {
   clientName?: string;
   branchId: string;
   branchName?: string;
-  tag: string; // Ex: COMP-01, CHILL-02
+  tag: string; // Ex: COMP-01, CHILL-02, MAQ-01
   name: string;
   category: string;
   brand: string;
@@ -71,6 +83,7 @@ export interface Equipment {
   lastServiceDate?: string;
   nextPreventiveDate: string;
   specs: EquipmentSpec[];
+  serviceItems?: EquipmentServiceItem[];
   maintenancePlan: EquipmentMaintenancePlan;
   manualUrl?: string;
   qrCodeId: string;
@@ -85,6 +98,7 @@ export interface MasterCatalogItem {
   model: string;
   capacity: string;
   specs: EquipmentSpec[];
+  serviceItems?: EquipmentServiceItem[];
   maintenancePlan: EquipmentMaintenancePlan;
   commonSpareParts: {
     code: string;

@@ -14,8 +14,18 @@ import {
   Trash2,
   FileText,
   Edit3,
+  Wrench,
+  RefreshCw,
 } from 'lucide-react';
-import { Equipment, ClientContractor, MasterCatalogItem, EquipmentSpec } from '../types';
+import {
+  Equipment,
+  ClientContractor,
+  MasterCatalogItem,
+  EquipmentSpec,
+  EquipmentServiceItem,
+  ServiceItemStatus,
+} from '../types';
+import { MAQUINA_01_SERVICE_ITEMS } from '../mock-data';
 
 interface SmartDocumentImporterModalProps {
   tintedGlass?: boolean;
@@ -66,9 +76,12 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
   const [legalNorm, setLegalNorm] = useState<'PMOC' | 'NR-10' | 'NR-12' | 'NR-13' | 'Outro'>(
     'NR-12'
   );
+  const [lastServiceDate, setLastServiceDate] = useState<string>('N/A');
   const [nextPreventiveDate, setNextPreventiveDate] = useState<string>(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
+
+  const [serviceItems, setServiceItems] = useState<EquipmentServiceItem[]>([]);
 
   const [specs, setSpecs] = useState<EquipmentSpec[]>([
     { key: 'power', label: 'Potência / Capacidade', value: '' },
@@ -99,9 +112,19 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
         setCapacity(editingEquipment.capacity || '');
         setLocationInPlant(editingEquipment.locationInPlant);
         setCriticality(editingEquipment.criticality);
-        setNextPreventiveDate(editingEquipment.nextPreventiveDate);
-        setIntervalMonths(editingEquipment.maintenancePlan?.intervalMonths || 3);
+        setLastServiceDate(editingEquipment.lastServiceDate || 'N/A');
+        setNextPreventiveDate(editingEquipment.nextPreventiveDate || 'N/A');
+        setIntervalMonths(
+          editingEquipment.maintenancePlan?.intervalMonths !== undefined
+            ? editingEquipment.maintenancePlan.intervalMonths
+            : 3
+        );
         setLegalNorm(editingEquipment.maintenancePlan?.legalNorm || 'NR-12');
+        setServiceItems(
+          editingEquipment.serviceItems && editingEquipment.serviceItems.length > 0
+            ? editingEquipment.serviceItems.map((si) => ({ ...si }))
+            : []
+        );
         setSpecs(
           editingEquipment.specs && editingEquipment.specs.length > 0
             ? [...editingEquipment.specs]
@@ -125,9 +148,9 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
         const defaultClient = clients[0];
         setSelectedClientId(defaultClient?.id || '');
         setSelectedBranchId(defaultClient?.branches[0]?.id || '');
-        setTag(`TAG-${Math.floor(100 + Math.random() * 900)}`);
+        setTag(`MAQ-${Math.floor(10 + Math.random() * 89)}`);
         setName('');
-        setCategory('Compressor de Ar');
+        setCategory('Envase & Embalagem Industrial');
         setBrand('');
         setModel('');
         setSerialNumber('');
@@ -135,11 +158,24 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
         setCapacity('');
         setLocationInPlant('Galpão Principal');
         setCriticality('medium');
-        setIntervalMonths(3);
+        setIntervalMonths(0.5);
         setLegalNorm('NR-12');
+        setLastServiceDate('N/A');
         setNextPreventiveDate(
-          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         );
+        setServiceItems([
+          {
+            id: `si-init-1`,
+            serviceOrPartName: 'Preventiva a cada 15 dias',
+            lastRevisionDate: 'N/A',
+            nextRevisionDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split('T')[0],
+            status: 'Agendada',
+            intervalDays: 15,
+          },
+        ]);
         setSpecs([
           { key: 'power', label: 'Potência / Capacidade', value: '' },
           { key: 'voltage', label: 'Tensão Elétrica', value: '380V Trifásico' },
@@ -180,7 +216,11 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
       setName(`${item.category} ${item.brand} ${item.model}`);
     }
     setSpecs(item.specs.length > 0 ? [...item.specs] : []);
-    setIntervalMonths(item.maintenancePlan.intervalMonths || 3);
+    if (item.serviceItems && item.serviceItems.length > 0) {
+      setServiceItems(item.serviceItems.map((si, idx) => ({ ...si, id: `si-cat-${Date.now()}-${idx}` })));
+    }
+    const months = item.maintenancePlan.intervalMonths !== undefined ? item.maintenancePlan.intervalMonths : 3;
+    setIntervalMonths(months);
     if (item.maintenancePlan.legalNorm) {
       setLegalNorm(item.maintenancePlan.legalNorm);
     }
@@ -195,16 +235,104 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
         []
     );
 
-    const nextDt = new Date();
-    nextDt.setMonth(nextDt.getMonth() + (item.maintenancePlan.intervalMonths || 3));
-    setNextPreventiveDate(nextDt.toISOString().split('T')[0]);
+    if (months === 0) {
+      setNextPreventiveDate('N/A');
+    } else if (months < 1) {
+      const days = Math.round(months * 30);
+      const nextDt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      setNextPreventiveDate(nextDt.toISOString().split('T')[0]);
+    } else {
+      const nextDt = new Date();
+      nextDt.setMonth(nextDt.getMonth() + months);
+      setNextPreventiveDate(nextDt.toISOString().split('T')[0]);
+    }
   };
 
   const handleIntervalMonthsChange = (months: number) => {
     setIntervalMonths(months);
+    if (months === 0) {
+      setNextPreventiveDate('N/A');
+      return;
+    }
+    if (months < 1) {
+      const days = months === 0.25 ? 7 : 15;
+      const nextDt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      setNextPreventiveDate(nextDt.toISOString().split('T')[0]);
+      return;
+    }
     const nextDt = new Date();
     nextDt.setMonth(nextDt.getMonth() + months);
     setNextPreventiveDate(nextDt.toISOString().split('T')[0]);
+  };
+
+  const handleAddServiceItem = () => {
+    setServiceItems((prev) => [
+      ...prev,
+      {
+        id: `si-${Date.now()}-${prev.length + 1}`,
+        serviceOrPartName: '',
+        lastRevisionDate: 'N/A',
+        nextRevisionDate: 'N/A',
+        status: 'Em operação',
+      },
+    ]);
+  };
+
+  const handleRemoveServiceItem = (idx: number) => {
+    setServiceItems((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleUpdateServiceItem = (
+    idx: number,
+    field: keyof EquipmentServiceItem,
+    value: string | number
+  ) => {
+    setServiceItems((prev) => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleLoadMaquina01Example = () => {
+    if (!name.trim()) setName('Máquina 01 (Linha de Envase)');
+    if (!tag.trim() || tag.startsWith('TAG-')) setTag('MAQ-01');
+    if (!brand.trim()) setBrand('InoxPack');
+    if (!model.trim()) setModel('Envasadora Rotativa M-01');
+    setCategory('Envase & Embalagem Industrial');
+    setIntervalMonths(0.5);
+    setLastServiceDate('2026-08-05');
+    setNextPreventiveDate('2026-08-10');
+    const cloned = MAQUINA_01_SERVICE_ITEMS.map((item, idx) => ({
+      ...item,
+      id: `si-m01-${Date.now()}-${idx}`,
+    }));
+    setServiceItems(cloned);
+    setChecklistItems(cloned.map((c) => c.serviceOrPartName));
+  };
+
+  const handleSyncDatesFromServiceItems = () => {
+    const validNextDates = serviceItems
+      .map((s) => s.nextRevisionDate)
+      .filter((d) => d && d !== 'N/A' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort();
+    const validLastDates = serviceItems
+      .map((s) => s.lastRevisionDate)
+      .filter((d) => d && d !== 'N/A' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort();
+
+    if (validNextDates.length > 0) {
+      setNextPreventiveDate(validNextDates[0]);
+    } else {
+      setNextPreventiveDate('N/A');
+    }
+    if (validLastDates.length > 0) {
+      setLastServiceDate(validLastDates[validLastDates.length - 1]);
+    }
+    const itemNames = serviceItems.map((s) => s.serviceOrPartName.trim()).filter(Boolean);
+    if (itemNames.length > 0) {
+      setChecklistItems(itemNames);
+    }
   };
 
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,7 +405,30 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
       currentClient.branches[0];
 
     const cleanedSpecs = specs.filter((s) => s.label.trim() !== '' || s.value.trim() !== '');
-    const cleanedChecklist = checklistItems.map((c) => c.trim()).filter(Boolean);
+    const cleanedServiceItems = serviceItems
+      .filter((s) => s.serviceOrPartName.trim() !== '')
+      .map((s) => ({
+        ...s,
+        serviceOrPartName: s.serviceOrPartName.trim(),
+        lastRevisionDate: s.lastRevisionDate || 'N/A',
+        nextRevisionDate: s.nextRevisionDate || 'N/A',
+      }));
+
+    const cleanedChecklist =
+      checklistItems.map((c) => c.trim()).filter(Boolean).length > 0
+        ? checklistItems.map((c) => c.trim()).filter(Boolean)
+        : cleanedServiceItems.map((s) => s.serviceOrPartName);
+
+    // Se houver itens na matriz com data válida e a data geral estiver N/A ou vazia, ou para manter sincronizado:
+    const validItemNextDates = cleanedServiceItems
+      .map((s) => s.nextRevisionDate)
+      .filter((d) => d && d !== 'N/A' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort();
+
+    const finalNextDate =
+      nextPreventiveDate && nextPreventiveDate !== 'N/A'
+        ? nextPreventiveDate
+        : validItemNextDates[0] || 'N/A';
 
     const newEquipment: Equipment = {
       id: editingEquipment?.id || `eq-${Date.now()}`,
@@ -296,11 +447,18 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
       locationInPlant: locationInPlant.trim() || 'Planta Principal',
       criticality,
       status: editingEquipment?.status || 'operational',
-      lastServiceDate: editingEquipment?.lastServiceDate,
-      nextPreventiveDate,
+      lastServiceDate: lastServiceDate && lastServiceDate !== 'N/A' ? lastServiceDate : 'N/A',
+      nextPreventiveDate: finalNextDate,
       specs: cleanedSpecs,
+      serviceItems: cleanedServiceItems,
       maintenancePlan: {
-        intervalMonths: Number(intervalMonths) || 3,
+        intervalMonths: Number(intervalMonths),
+        intervalDays:
+          intervalMonths === 0.25
+            ? 7
+            : intervalMonths === 0.5
+            ? 15
+            : Math.round(Number(intervalMonths) * 30),
         legalNorm,
         checklistItems:
           cleanedChecklist.length > 0 ? cleanedChecklist : ['Inspeção preventiva periódica'],
@@ -326,11 +484,17 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
         manualPdfName: uploadedFileName || undefined,
         activeDeploymentsCount: 1,
         specs: newEquipment.specs,
+        serviceItems: newEquipment.serviceItems,
         maintenancePlan: newEquipment.maintenancePlan,
         commonSpareParts: newEquipment.maintenancePlan.recommendedParts.map((p, idx) => ({
           code: `PEC-0${idx + 1}`,
           description: p,
-          suggestedReplacementInterval: `A cada ${newEquipment.maintenancePlan.intervalMonths} meses`,
+          suggestedReplacementInterval:
+            newEquipment.maintenancePlan.intervalMonths === 0.5
+              ? 'A cada 15 dias'
+              : newEquipment.maintenancePlan.intervalMonths === 0.25
+              ? 'A cada 7 dias'
+              : `A cada ${newEquipment.maintenancePlan.intervalMonths} meses`,
         })),
       };
       onSaveCatalogItem(catalogItem);
@@ -755,37 +919,69 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
                 </div>
               </div>
 
-              {/* 3. Ciclo Preventivo e Próximo Vencimento */}
+              {/* 3. Ciclo Preventivo, Matriz de Serviços/Peças e Próximo Vencimento */}
               <div
-                className={`p-4 rounded-2xl border space-y-3 ${
+                className={`p-4 rounded-2xl border space-y-4 ${
                   tintedGlass
                     ? 'bg-emerald-500/10 border-emerald-400/30'
                     : 'bg-emerald-50/70 border-emerald-200'
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Calendar
-                    className={`w-4 h-4 ${
-                      tintedGlass ? 'text-emerald-400' : 'text-emerald-600'
-                    }`}
-                  />
-                  <span
-                    className={`text-xs font-bold uppercase tracking-wider ${
-                      tintedGlass ? 'text-emerald-300' : 'text-emerald-800'
-                    }`}
-                  >
-                    Plano & Ciclo de Manutenção Preventiva
-                  </span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar
+                      className={`w-4 h-4 ${
+                        tintedGlass ? 'text-emerald-400' : 'text-emerald-600'
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-bold uppercase tracking-wider ${
+                        tintedGlass ? 'text-emerald-300' : 'text-emerald-800'
+                      }`}
+                    >
+                      Plano Preventivo & Matriz de Serviços / Peças
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleLoadMaquina01Example}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 border transition cursor-pointer ${
+                        tintedGlass
+                          ? 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border-cyan-400/40'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-2xs'
+                      }`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Carregar Exemplo Máquina 01 (9 itens)
+                    </button>
+                    {serviceItems.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleSyncDatesFromServiceItems}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 border transition cursor-pointer ${
+                          tintedGlass
+                            ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-400/40'
+                            : 'bg-white hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                        }`}
+                        title="Define a Última e Próxima Preventiva geral da máquina a partir das datas da tabela abaixo"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Sincronizar Vencimento pela Tabela
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div>
                     <label
                       className={`block text-[11px] font-bold mb-1 ${
                         tintedGlass ? 'text-slate-300' : 'text-slate-700'
                       }`}
                     >
-                      Periodicidade Preventiva
+                      Periodicidade Padrão
                     </label>
                     <select
                       value={intervalMonths}
@@ -796,33 +992,127 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
                           : 'bg-white border border-emerald-300 text-slate-900 focus:border-emerald-500'
                       }`}
                     >
-                      <option value={1}>Mensal (a cada 1 mês)</option>
+                      <option value={0.25}>Semanal (a cada 7 dias)</option>
+                      <option value={0.5}>Quinzenal (a cada 15 dias)</option>
+                      <option value={1}>Mensal (a cada 30 dias)</option>
                       <option value={2}>Bimestral (a cada 2 meses)</option>
                       <option value={3}>Trimestral (a cada 3 meses)</option>
                       <option value={6}>Semestral (a cada 6 meses)</option>
                       <option value={12}>Anual (a cada 12 meses)</option>
+                      <option value={0}>Sob Demanda (N/A)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label
-                      className={`block text-[11px] font-bold mb-1 ${
-                        tintedGlass ? 'text-slate-300' : 'text-slate-700'
-                      }`}
-                    >
-                      Data da Próxima Preventiva *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={nextPreventiveDate}
-                      onChange={(e) => setNextPreventiveDate(e.target.value)}
-                      className={`w-full text-xs rounded-xl p-2 font-mono font-bold outline-none transition ${
-                        tintedGlass
-                          ? 'aptis-glass-input text-emerald-300'
-                          : 'bg-white border border-emerald-300 text-emerald-700 focus:border-emerald-500'
-                      }`}
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label
+                        className={`text-[11px] font-bold ${
+                          tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                        }`}
+                      >
+                        Última Revisão Geral
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLastServiceDate(
+                            lastServiceDate === 'N/A'
+                              ? new Date().toISOString().split('T')[0]
+                              : 'N/A'
+                          )
+                        }
+                        className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded cursor-pointer border ${
+                          lastServiceDate === 'N/A'
+                            ? tintedGlass
+                              ? 'bg-amber-500/25 text-amber-300 border-amber-400/40'
+                              : 'bg-amber-100 text-amber-800 border-amber-300'
+                            : tintedGlass
+                            ? 'bg-white/10 text-slate-300 border-white/15'
+                            : 'bg-slate-200 text-slate-700 border-slate-300'
+                        }`}
+                      >
+                        {lastServiceDate === 'N/A' ? 'Definir Data' : 'Marcar N/A'}
+                      </button>
+                    </div>
+                    {lastServiceDate === 'N/A' ? (
+                      <div
+                        className={`w-full text-xs rounded-xl p-2 font-mono font-bold text-center border ${
+                          tintedGlass
+                            ? 'bg-white/[0.04] border-white/15 text-slate-400'
+                            : 'bg-white border-emerald-200 text-slate-500'
+                        }`}
+                      >
+                        N/A (Sem registro anterior)
+                      </div>
+                    ) : (
+                      <input
+                        type="date"
+                        value={lastServiceDate}
+                        onChange={(e) => setLastServiceDate(e.target.value || 'N/A')}
+                        className={`w-full text-xs rounded-xl p-2 font-mono font-bold outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-white'
+                            : 'bg-white border border-emerald-300 text-slate-900 focus:border-emerald-500'
+                        }`}
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label
+                        className={`text-[11px] font-bold ${
+                          tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                        }`}
+                      >
+                        Próxima Revisão Geral *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setNextPreventiveDate(
+                            nextPreventiveDate === 'N/A'
+                              ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+                                  .toISOString()
+                                  .split('T')[0]
+                              : 'N/A'
+                          )
+                        }
+                        className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded cursor-pointer border ${
+                          nextPreventiveDate === 'N/A'
+                            ? tintedGlass
+                              ? 'bg-amber-500/25 text-amber-300 border-amber-400/40'
+                              : 'bg-amber-100 text-amber-800 border-amber-300'
+                            : tintedGlass
+                            ? 'bg-white/10 text-slate-300 border-white/15'
+                            : 'bg-slate-200 text-slate-700 border-slate-300'
+                        }`}
+                      >
+                        {nextPreventiveDate === 'N/A' ? 'Definir Data' : 'Marcar N/A'}
+                      </button>
+                    </div>
+                    {nextPreventiveDate === 'N/A' ? (
+                      <div
+                        className={`w-full text-xs rounded-xl p-2 font-mono font-bold text-center border ${
+                          tintedGlass
+                            ? 'bg-white/[0.04] border-white/15 text-slate-400'
+                            : 'bg-white border-emerald-200 text-slate-500'
+                        }`}
+                      >
+                        N/A (Sob Demanda)
+                      </div>
+                    ) : (
+                      <input
+                        type="date"
+                        value={nextPreventiveDate}
+                        onChange={(e) => setNextPreventiveDate(e.target.value || 'N/A')}
+                        className={`w-full text-xs rounded-xl p-2 font-mono font-bold outline-none transition ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-emerald-300'
+                            : 'bg-white border border-emerald-300 text-emerald-700 focus:border-emerald-500'
+                        }`}
+                      />
+                    )}
                   </div>
 
                   <div>
@@ -851,15 +1141,306 @@ export const SmartDocumentImporterModal: React.FC<SmartDocumentImporterModalProp
                   </div>
                 </div>
 
+                {/* MATRIZ INDIVIDUAL DE SERVIÇOS / PEÇAS (ESTILO PLANILHA MÁQUINA 01) */}
+                <div
+                  className={`p-3.5 rounded-2xl border space-y-2.5 ${
+                    tintedGlass
+                      ? 'bg-slate-950/45 border-white/10'
+                      : 'bg-white border-emerald-200 shadow-2xs'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span
+                        className={`text-xs font-black flex items-center gap-1.5 ${
+                          tintedGlass ? 'text-cyan-300' : 'text-slate-900'
+                        }`}
+                      >
+                        <Wrench
+                          className={`w-3.5 h-3.5 ${
+                            tintedGlass ? 'text-cyan-400' : 'text-blue-600'
+                          }`}
+                        />
+                        Tabela de Serviços / Peças Monitoradas na Máquina ({serviceItems.length})
+                      </span>
+                      <p
+                        className={`text-[11px] ${
+                          tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      >
+                        Controle individualmente cada peça ou serviço (Ex: Diafragma do bico, Garra, Válvula do manifold, Preventiva 15 dias) com datas próprias ou N/A.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddServiceItem}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer transition border ${
+                        tintedGlass
+                          ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-400/35'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                      }`}
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Adicionar Serviço / Peça
+                    </button>
+                  </div>
+
+                  {serviceItems.length === 0 ? (
+                    <div
+                      className={`text-center py-5 rounded-xl border border-dashed text-xs ${
+                        tintedGlass
+                          ? 'border-white/15 text-slate-400'
+                          : 'border-slate-300 text-slate-500'
+                      }`}
+                    >
+                      Nenhum serviço/peça individual cadastrado. Clique em{' '}
+                      <strong>&ldquo;+ Adicionar Serviço / Peça&rdquo;</strong> ou{' '}
+                      <strong>&ldquo;Carregar Exemplo Máquina 01&rdquo;</strong>.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr
+                            className={`border-b text-[10px] font-black uppercase tracking-wider ${
+                              tintedGlass
+                                ? 'border-white/10 text-slate-300 bg-white/[0.03]'
+                                : 'border-slate-200 text-slate-700 bg-sky-50/80'
+                            }`}
+                          >
+                            <th className="py-2 px-2.5 rounded-tl-lg">Serviços / Peças</th>
+                            <th className="py-2 px-2.5 w-44">Última revisão</th>
+                            <th className="py-2 px-2.5 w-44">Próxima revisão</th>
+                            <th className="py-2 px-2.5 w-40">Status</th>
+                            <th className="py-2 px-2 w-10 text-center rounded-tr-lg">Ação</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200/40">
+                          {serviceItems.map((row, idx) => (
+                            <tr
+                              key={row.id || idx}
+                              className={
+                                tintedGlass
+                                  ? 'hover:bg-white/[0.03]'
+                                  : idx % 2 === 0
+                                  ? 'bg-white'
+                                  : 'bg-sky-50/30'
+                              }
+                            >
+                              {/* Col 1: Serviço / Peça */}
+                              <td className="py-1.5 px-2">
+                                <input
+                                  type="text"
+                                  value={row.serviceOrPartName}
+                                  onChange={(e) =>
+                                    handleUpdateServiceItem(
+                                      idx,
+                                      'serviceOrPartName',
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Ex: Diafragma do bico, Garra..."
+                                  className={`w-full text-xs rounded-lg px-2.5 py-1.5 font-semibold outline-none transition ${
+                                    tintedGlass
+                                      ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                                      : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                                  }`}
+                                />
+                              </td>
+
+                              {/* Col 2: Última revisão (Date or N/A) */}
+                              <td className="py-1.5 px-2">
+                                <div className="flex items-center gap-1">
+                                  {row.lastRevisionDate === 'N/A' ? (
+                                    <span
+                                      className={`flex-1 text-center py-1.5 px-2 rounded-lg font-mono font-bold text-xs border ${
+                                        tintedGlass
+                                          ? 'bg-white/[0.04] border-white/10 text-slate-400'
+                                          : 'bg-slate-100 border-slate-200 text-slate-600'
+                                      }`}
+                                    >
+                                      N/A
+                                    </span>
+                                  ) : (
+                                    <input
+                                      type="date"
+                                      value={row.lastRevisionDate}
+                                      onChange={(e) =>
+                                        handleUpdateServiceItem(
+                                          idx,
+                                          'lastRevisionDate',
+                                          e.target.value || 'N/A'
+                                        )
+                                      }
+                                      className={`flex-1 text-xs rounded-lg px-2 py-1 font-mono font-bold outline-none ${
+                                        tintedGlass
+                                          ? 'aptis-glass-input text-white'
+                                          : 'bg-white border border-slate-300 text-slate-900'
+                                      }`}
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateServiceItem(
+                                        idx,
+                                        'lastRevisionDate',
+                                        row.lastRevisionDate === 'N/A'
+                                          ? new Date().toISOString().split('T')[0]
+                                          : 'N/A'
+                                      )
+                                    }
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border cursor-pointer shrink-0 transition ${
+                                      row.lastRevisionDate === 'N/A'
+                                        ? tintedGlass
+                                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
+                                          : 'bg-blue-50 text-blue-700 border-blue-200'
+                                        : tintedGlass
+                                        ? 'bg-white/10 text-slate-300 border-white/15'
+                                        : 'bg-slate-100 text-slate-600 border-slate-300'
+                                    }`}
+                                    title="Alternar entre Data e N/A"
+                                  >
+                                    {row.lastRevisionDate === 'N/A' ? 'Data' : 'N/A'}
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* Col 3: Próxima revisão (Date or N/A) */}
+                              <td className="py-1.5 px-2">
+                                <div className="flex items-center gap-1">
+                                  {row.nextRevisionDate === 'N/A' ? (
+                                    <span
+                                      className={`flex-1 text-center py-1.5 px-2 rounded-lg font-mono font-bold text-xs border ${
+                                        tintedGlass
+                                          ? 'bg-white/[0.04] border-white/10 text-slate-400'
+                                          : 'bg-slate-100 border-slate-200 text-slate-600'
+                                      }`}
+                                    >
+                                      N/A
+                                    </span>
+                                  ) : (
+                                    <input
+                                      type="date"
+                                      value={row.nextRevisionDate}
+                                      onChange={(e) =>
+                                        handleUpdateServiceItem(
+                                          idx,
+                                          'nextRevisionDate',
+                                          e.target.value || 'N/A'
+                                        )
+                                      }
+                                      className={`flex-1 text-xs rounded-lg px-2 py-1 font-mono font-bold outline-none ${
+                                        tintedGlass
+                                          ? 'aptis-glass-input text-emerald-300'
+                                          : 'bg-white border border-emerald-300 text-emerald-800'
+                                      }`}
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateServiceItem(
+                                        idx,
+                                        'nextRevisionDate',
+                                        row.nextRevisionDate === 'N/A'
+                                          ? new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+                                              .toISOString()
+                                              .split('T')[0]
+                                          : 'N/A'
+                                      )
+                                    }
+                                    className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border cursor-pointer shrink-0 transition ${
+                                      row.nextRevisionDate === 'N/A'
+                                        ? tintedGlass
+                                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/35'
+                                          : 'bg-blue-50 text-blue-700 border-blue-200'
+                                        : tintedGlass
+                                        ? 'bg-white/10 text-slate-300 border-white/15'
+                                        : 'bg-slate-100 text-slate-600 border-slate-300'
+                                    }`}
+                                    title="Alternar entre Data e N/A"
+                                  >
+                                    {row.nextRevisionDate === 'N/A' ? 'Data' : 'N/A'}
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* Col 4: Status */}
+                              <td className="py-1.5 px-2">
+                                <select
+                                  value={row.status}
+                                  onChange={(e) =>
+                                    handleUpdateServiceItem(
+                                      idx,
+                                      'status',
+                                      e.target.value as ServiceItemStatus
+                                    )
+                                  }
+                                  className={`w-full text-xs rounded-lg px-2 py-1.5 font-bold outline-none transition ${
+                                    row.status === 'Em operação'
+                                      ? tintedGlass
+                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/35'
+                                        : 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                                      : row.status === 'Agendada'
+                                      ? tintedGlass
+                                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/35'
+                                        : 'bg-blue-50 text-blue-800 border border-blue-300'
+                                      : row.status === 'Em manutenção'
+                                      ? tintedGlass
+                                        ? 'bg-amber-500/20 text-amber-300 border border-amber-400/35'
+                                        : 'bg-amber-50 text-amber-800 border border-amber-300'
+                                      : tintedGlass
+                                      ? 'bg-rose-500/20 text-rose-300 border border-rose-400/35'
+                                      : 'bg-rose-50 text-rose-800 border border-rose-300'
+                                  }`}
+                                >
+                                  <option value="Em operação" className="bg-slate-900 text-white">
+                                    Em operação
+                                  </option>
+                                  <option value="Agendada" className="bg-slate-900 text-white">
+                                    Agendada
+                                  </option>
+                                  <option value="Em manutenção" className="bg-slate-900 text-white">
+                                    Em manutenção
+                                  </option>
+                                  <option value="Vencida" className="bg-slate-900 text-white">
+                                    Vencida
+                                  </option>
+                                </select>
+                              </td>
+
+                              {/* Remove button */}
+                              <td className="py-1.5 px-2 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveServiceItem(idx)}
+                                  className={`p-1 rounded-lg cursor-pointer transition ${
+                                    tintedGlass
+                                      ? 'text-slate-400 hover:text-rose-400 hover:bg-white/10'
+                                      : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                                  }`}
+                                  title="Remover item"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
                 {/* Checklist Items */}
-                <div className="pt-2">
+                <div className="pt-1">
                   <div className="flex items-center justify-between mb-1.5">
                     <span
                       className={`text-[11px] font-bold ${
                         tintedGlass ? 'text-emerald-200' : 'text-emerald-800'
                       }`}
                     >
-                      Itens do Checklist Preventivo desta Máquina:
+                      Itens do Checklist da Ordem de Serviço (OS):
                     </span>
                     <button
                       type="button"

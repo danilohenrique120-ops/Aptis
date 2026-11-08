@@ -1,11 +1,81 @@
 import {
   ClientContractor,
   Equipment,
+  EquipmentServiceItem,
   MasterCatalogItem,
   MaintenanceWorkOrder,
   CrossClientDiagnostic,
   NotificationRule
 } from './types';
+
+export const MAQUINA_01_SERVICE_ITEMS: EquipmentServiceItem[] = [
+  {
+    id: 'si-m01-1',
+    serviceOrPartName: 'Diafragma do bico',
+    lastRevisionDate: '2026-08-05',
+    nextRevisionDate: '2026-08-20',
+    status: 'Em operação',
+    intervalDays: 15
+  },
+  {
+    id: 'si-m01-2',
+    serviceOrPartName: 'Garra',
+    lastRevisionDate: '2026-07-29',
+    nextRevisionDate: 'N/A',
+    status: 'Em operação'
+  },
+  {
+    id: 'si-m01-3',
+    serviceOrPartName: 'Regulagem do "carro"',
+    lastRevisionDate: 'N/A',
+    nextRevisionDate: 'N/A',
+    status: 'Em operação'
+  },
+  {
+    id: 'si-m01-4',
+    serviceOrPartName: 'Pistão da garra',
+    lastRevisionDate: 'N/A',
+    nextRevisionDate: 'N/A',
+    status: 'Em operação'
+  },
+  {
+    id: 'si-m01-5',
+    serviceOrPartName: 'Sensor de presença',
+    lastRevisionDate: '2026-07-29',
+    nextRevisionDate: 'N/A',
+    status: 'Em operação'
+  },
+  {
+    id: 'si-m01-6',
+    serviceOrPartName: 'Mangueira de envase',
+    lastRevisionDate: 'N/A',
+    nextRevisionDate: 'N/A',
+    status: 'Em operação'
+  },
+  {
+    id: 'si-m01-7',
+    serviceOrPartName: 'Válvula do manifold',
+    lastRevisionDate: 'N/A',
+    nextRevisionDate: '2026-08-30',
+    status: 'Em operação',
+    intervalDays: 30
+  },
+  {
+    id: 'si-m01-8',
+    serviceOrPartName: 'Luz UV',
+    lastRevisionDate: 'N/A',
+    nextRevisionDate: 'N/A',
+    status: 'Em operação'
+  },
+  {
+    id: 'si-m01-9',
+    serviceOrPartName: 'Preventiva a cada 15 dias',
+    lastRevisionDate: 'N/A',
+    nextRevisionDate: '2026-08-10',
+    status: 'Agendada',
+    intervalDays: 15
+  }
+];
 
 export const INITIAL_CLIENTS: ClientContractor[] = [
   {
@@ -165,6 +235,48 @@ export const INITIAL_CLIENTS: ClientContractor[] = [
 
 export const INITIAL_MASTER_CATALOG: MasterCatalogItem[] = [
   {
+    id: 'cat-envasadora-maq01',
+    category: 'Envase & Embalagem Industrial',
+    brand: 'InoxPack',
+    model: 'Envasadora Rotativa Automática M-01',
+    capacity: '4.500 envases/h / Inox 316L',
+    specs: [
+      { key: 'voltage', label: 'Tensão', value: '220V / 380V Trifásico' },
+      { key: 'pneumatic', label: 'Pressão Pneumática', value: '6 bar (Manifold / Garra)' },
+      { key: 'sterilization', label: 'Esterilização', value: 'Lâmpada Luz UV Germicida' }
+    ],
+    serviceItems: MAQUINA_01_SERVICE_ITEMS,
+    maintenancePlan: {
+      intervalMonths: 0.5,
+      intervalDays: 15,
+      checklistItems: [
+        'Diafragma do bico',
+        'Garra',
+        'Regulagem do "carro"',
+        'Pistão da garra',
+        'Sensor de presença',
+        'Mangueira de envase',
+        'Válvula do manifold',
+        'Luz UV',
+        'Preventiva a cada 15 dias'
+      ],
+      recommendedParts: [
+        'Diafragma do bico em PTFE/Silicone',
+        'Kit vedação Pistão da Garra',
+        'Válvula solenoide do Manifold',
+        'Lâmpada Luz UV 254nm'
+      ],
+      legalNorm: 'NR-12'
+    },
+    commonSpareParts: [
+      { code: 'DIA-BIC-01', description: 'Diafragma do bico', suggestedReplacementInterval: '15 dias' },
+      { code: 'VAL-MAN-01', description: 'Válvula do manifold', suggestedReplacementInterval: '30 dias' },
+      { code: 'LUZ-UV-01', description: 'Luz UV Esterilizadora', suggestedReplacementInterval: 'Sob Demanda (N/A)' }
+    ],
+    manualPdfName: 'Manual_Envasadora_Maquina_01.pdf',
+    activeDeploymentsCount: 1
+  },
+  {
     id: 'cat-schulz-srp4030',
     category: 'Ar Comprimido & Compressores',
     brand: 'Schulz',
@@ -312,6 +424,56 @@ export const INITIAL_MASTER_CATALOG: MasterCatalogItem[] = [
 ];
 
 export const INITIAL_EQUIPMENTS: Equipment[] = [
+  {
+    id: 'eq-maq-01',
+    clientId: 'cli-2',
+    clientName: 'Laticínios Alvorada Ltda',
+    branchId: 'br-201',
+    branchName: 'Fábrica de Processamento & Queijos',
+    tag: 'MAQ-01',
+    name: 'Máquina 01 (Linha de Envase)',
+    category: 'Envase & Embalagem Industrial',
+    brand: 'InoxPack',
+    model: 'Envasadora Rotativa Automática M-01',
+    serialNumber: 'ENV-2025-0001',
+    manufacturingYear: 2025,
+    capacity: '4.500 envases/h',
+    locationInPlant: 'Setor de Envase Principal - Linha 01',
+    criticality: 'high',
+    status: 'operational',
+    lastServiceDate: '2026-08-05',
+    nextPreventiveDate: '2026-08-10',
+    specs: [
+      { key: 'voltage', label: 'Tensão', value: '220V / 380V Trifásico' },
+      { key: 'pneumatic', label: 'Pressão Pneumática', value: '6 bar (Manifold / Garra)' },
+      { key: 'sterilization', label: 'Esterilização', value: 'Luz UV Germicida' }
+    ],
+    serviceItems: MAQUINA_01_SERVICE_ITEMS,
+    maintenancePlan: {
+      intervalMonths: 0.5,
+      intervalDays: 15,
+      checklistItems: [
+        'Diafragma do bico',
+        'Garra',
+        'Regulagem do "carro"',
+        'Pistão da garra',
+        'Sensor de presença',
+        'Mangueira de envase',
+        'Válvula do manifold',
+        'Luz UV',
+        'Preventiva a cada 15 dias'
+      ],
+      recommendedParts: [
+        'Diafragma do bico',
+        'Válvula do manifold',
+        'Luz UV'
+      ],
+      legalNorm: 'NR-12'
+    },
+    qrCodeId: 'QR-MAQ-01-ENV',
+    qrCodeUrl: 'https://aptis.io/qr/eq-maq-01',
+    notes: 'Controle individual de peças e serviços (Diafragma do bico, Garra, Carro, Pistão, Sensor, Mangueira, Manifold, Luz UV e Preventiva a cada 15 dias).'
+  },
   {
     id: 'eq-1',
     clientId: 'cli-1',

@@ -608,38 +608,70 @@ export const EXCEL_IMPORT_CONFIGS: Record<string, ToolExcelConfig> = {
   'service-pro': {
     toolId: 'service-pro',
     toolTitle: 'Aptis Service Pro',
-    subtitle: 'Importe catálogo de máquinas, clientes e periodicidades de manutenção',
-    templateFilename: 'aptis_service_pro_maquinas.xlsx',
+    subtitle: 'Importe máquinas e a matriz de Serviços / Peças (Última revisão, Próxima revisão e Status)',
+    templateFilename: 'aptis_service_pro_maquinas_servicos.xlsx',
     columns: [
+      {
+        key: 'equipmentName',
+        label: 'Nome da Maquina',
+        required: true,
+        example: 'Máquina 01',
+        description: 'Nome da máquina ou ativo (linhas com o mesmo nome são agrupadas na mesma máquina)',
+        synonyms: ['equipamento', 'maquina', 'ativo', 'nome do equipamento', 'nome da maquina', 'maquina 01']
+      },
+      {
+        key: 'serviceOrPartName',
+        label: 'Servicos / Pecas',
+        required: false,
+        example: 'Diafragma do bico',
+        description: 'Peça ou serviço monitorado individualmente na máquina',
+        synonyms: ['servicos / pecas', 'servicos', 'pecas', 'servico', 'peca', 'componente', 'item']
+      },
+      {
+        key: 'lastRevisionDate',
+        label: 'Ultima revisao',
+        required: false,
+        example: '05/08/2026',
+        description: 'Data da última revisão (DD/MM/AAAA, AAAA-MM-DD ou N/A)',
+        synonyms: ['ultima revisao', 'ultima preventiva', 'ultima', 'data ultima revisao']
+      },
+      {
+        key: 'nextRevisionDate',
+        label: 'Proxima revisao',
+        required: false,
+        example: '20/08/2026',
+        description: 'Data da próxima revisão (DD/MM/AAAA, AAAA-MM-DD ou N/A)',
+        synonyms: ['proxima revisao', 'proxima preventiva', 'proxima', 'vencimento', 'data proxima revisao']
+      },
+      {
+        key: 'itemStatus',
+        label: 'Status',
+        required: false,
+        example: 'Em operação',
+        description: 'Em operação, Agendada, Em manutenção ou Vencida',
+        synonyms: ['status', 'situacao', 'estado']
+      },
       {
         key: 'clientName',
         label: 'Nome da Empresa Cliente',
-        required: true,
-        example: 'Metalúrgica São Bento S/A',
-        description: 'Razão social ou fantasia da planta cliente',
+        required: false,
+        example: 'Laticínios Alvorada Ltda',
+        description: 'Razão social ou fantasia da planta cliente (opcional)',
         synonyms: ['cliente', 'empresa', 'contratante', 'fabrica']
-      },
-      {
-        key: 'equipmentName',
-        label: 'Nome do Equipamento',
-        required: true,
-        example: 'Compressor Parafuso 50HP',
-        description: 'Nome da máquina ou ativo',
-        synonyms: ['equipamento', 'maquina', 'ativo', 'nome do equipamento']
       },
       {
         key: 'tag',
         label: 'TAG ou Codigo Patrimonial',
         required: false,
-        example: 'COMP-04',
+        example: 'MAQ-01',
         description: 'TAG identificadora na planta',
         synonyms: ['tag', 'codigo', 'patrimonio', 'identificacao']
       },
       {
         key: 'sector',
         label: 'Setor ou Linha',
-        required: true,
-        example: 'Casa de Compressores',
+        required: false,
+        example: 'Linha de Envase 01',
         description: 'Localização física do ativo',
         synonyms: ['setor', 'linha', 'area', 'local']
       },
@@ -647,7 +679,7 @@ export const EXCEL_IMPORT_CONFIGS: Record<string, ToolExcelConfig> = {
         key: 'manufacturer',
         label: 'Fabricante ou Modelo',
         required: false,
-        example: 'Atlas Copco GA-37',
+        example: 'InoxPack M-01',
         description: 'Marca e modelo do equipamento',
         synonyms: ['fabricante', 'marca', 'modelo']
       },
@@ -663,29 +695,63 @@ export const EXCEL_IMPORT_CONFIGS: Record<string, ToolExcelConfig> = {
         key: 'preventiveIntervalDays',
         label: 'Intervalo Preventivo (Dias)',
         required: false,
-        example: '90',
-        description: 'Frequência da manutenção preventiva em dias',
+        example: '15',
+        description: 'Frequência da manutenção preventiva em dias (ex: 7, 15, 30, 90)',
         synonyms: ['periodicidade', 'dias', 'intervalo', 'frequencia preventiva']
       }
     ],
     sampleRows: [
       {
-        clientName: 'Metalúrgica São Bento S/A',
-        equipmentName: 'Prensa Excêntrica 200T',
-        tag: 'PREN-02',
-        sector: 'Estamparia & Prensas',
-        manufacturer: 'Schuler',
-        criticality: 'Crítica',
-        preventiveIntervalDays: '30'
+        equipmentName: 'Máquina 01',
+        serviceOrPartName: 'Diafragma do bico',
+        lastRevisionDate: '05/08/2026',
+        nextRevisionDate: '20/08/2026',
+        itemStatus: 'Em operação',
+        clientName: 'Laticínios Alvorada Ltda',
+        tag: 'MAQ-01',
+        sector: 'Linha de Envase 01',
+        manufacturer: 'InoxPack M-01',
+        criticality: 'Alta',
+        preventiveIntervalDays: '15'
       },
       {
-        clientName: 'Metalúrgica São Bento S/A',
-        equipmentName: 'Torno CNC Romi D800',
-        tag: 'CNC-01',
-        sector: 'Usinagem CNC',
-        manufacturer: 'Romi',
+        equipmentName: 'Máquina 01',
+        serviceOrPartName: 'Garra',
+        lastRevisionDate: '29/07/2026',
+        nextRevisionDate: 'N/A',
+        itemStatus: 'Em operação',
+        clientName: 'Laticínios Alvorada Ltda',
+        tag: 'MAQ-01',
+        sector: 'Linha de Envase 01',
+        manufacturer: 'InoxPack M-01',
         criticality: 'Alta',
-        preventiveIntervalDays: '60'
+        preventiveIntervalDays: '15'
+      },
+      {
+        equipmentName: 'Máquina 01',
+        serviceOrPartName: 'Válvula do manifold',
+        lastRevisionDate: 'N/A',
+        nextRevisionDate: '30/08/2026',
+        itemStatus: 'Em operação',
+        clientName: 'Laticínios Alvorada Ltda',
+        tag: 'MAQ-01',
+        sector: 'Linha de Envase 01',
+        manufacturer: 'InoxPack M-01',
+        criticality: 'Alta',
+        preventiveIntervalDays: '15'
+      },
+      {
+        equipmentName: 'Máquina 01',
+        serviceOrPartName: 'Preventiva a cada 15 dias',
+        lastRevisionDate: 'N/A',
+        nextRevisionDate: '10/08/2026',
+        itemStatus: 'Agendada',
+        clientName: 'Laticínios Alvorada Ltda',
+        tag: 'MAQ-01',
+        sector: 'Linha de Envase 01',
+        manufacturer: 'InoxPack M-01',
+        criticality: 'Alta',
+        preventiveIntervalDays: '15'
       }
     ]
   },
