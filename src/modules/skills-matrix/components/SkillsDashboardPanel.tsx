@@ -41,6 +41,7 @@ interface SkillsDashboardPanelProps {
   trainingActions: TrainingAction[];
   onSelectSector: (sectorId: string) => void;
   onNavigateTab: (tab: 'matrix' | 'succession' | 'gap_analysis') => void;
+  tintedGlass?: boolean;
 }
 
 export function SkillsDashboardPanel({
@@ -51,7 +52,8 @@ export function SkillsDashboardPanel({
   successionPlans,
   trainingActions,
   onSelectSector,
-  onNavigateTab
+  onNavigateTab,
+  tintedGlass = false
 }: SkillsDashboardPanelProps) {
   // Filtros múltiplos dinâmicos
   const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('current');
@@ -222,17 +224,29 @@ export function SkillsDashboardPanel({
   return (
     <div className="space-y-6">
       {/* 1. BARRA DE FILTROS DINÂMICOS DO GESTOR */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+      <div className={`rounded-2xl p-4 border space-y-3 transition-all ${
+        tintedGlass
+          ? 'aptis-glass-dark text-white'
+          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+      }`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3 ${
+          tintedGlass ? 'border-white/10' : 'border-slate-100'
+        }`}>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-200">
+            <div className={`p-1.5 rounded-lg border ${
+              tintedGlass
+                ? 'bg-blue-500/20 text-cyan-400 border-blue-500/30'
+                : 'bg-blue-50 text-blue-600 border-blue-200'
+            }`}>
               <Filter className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+              <h3 className={`text-xs font-bold uppercase tracking-wider ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}>
                 Filtros Dinâmicos de Gestão & Inteligência
               </h3>
-              <p className="text-[11px] text-slate-500">
+              <p className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                 Cruze dados de polivalência, turnos, gargalos de linha e plano de sucessão em tempo real.
               </p>
             </div>
@@ -241,7 +255,11 @@ export function SkillsDashboardPanel({
           {isFiltered && (
             <button
               onClick={handleResetFilters}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
+              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer self-start sm:self-auto ${
+                tintedGlass
+                  ? 'text-rose-400 hover:bg-rose-500/15'
+                  : 'text-rose-600 hover:bg-rose-50'
+              }`}
             >
               <RefreshCw className="w-3 h-3" />
               Limpar Filtros
@@ -252,11 +270,17 @@ export function SkillsDashboardPanel({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
           {/* Filtro Setor */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Setor / Linha</label>
+            <label className={`block text-[10px] font-bold uppercase mb-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+              Setor / Linha
+            </label>
             <select
               value={selectedSectorFilter}
               onChange={e => setSelectedSectorFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className={`w-full px-2.5 py-1.5 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'bg-slate-50 border border-slate-200 text-slate-800'
+              }`}
             >
               <option value="current">Setor Ativo: {activeSector.code}</option>
               <option value="all">🏭 Fábrica Inteira (Todos os Setores)</option>
@@ -268,11 +292,17 @@ export function SkillsDashboardPanel({
 
           {/* Filtro Turno */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Turno de Trabalho</label>
+            <label className={`block text-[10px] font-bold uppercase mb-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+              Turno de Trabalho
+            </label>
             <select
               value={selectedShiftFilter}
               onChange={e => setSelectedShiftFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className={`w-full px-2.5 py-1.5 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'bg-slate-50 border border-slate-200 text-slate-800'
+              }`}
             >
               <option value="all">Todos os Turnos</option>
               <option value="Turno A">Turno A (Manhã)</option>
@@ -283,11 +313,17 @@ export function SkillsDashboardPanel({
 
           {/* Filtro Nível ILUO */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Competência Dominante</label>
+            <label className={`block text-[10px] font-bold uppercase mb-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+              Competência Dominante
+            </label>
             <select
               value={selectedIluoFilter}
               onChange={e => setSelectedIluoFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className={`w-full px-2.5 py-1.5 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'bg-slate-50 border border-slate-200 text-slate-800'
+              }`}
             >
               <option value="all">Todas as Competências</option>
               <option value="4">N4 - Multiplicadores (O)</option>
@@ -299,11 +335,17 @@ export function SkillsDashboardPanel({
 
           {/* Filtro Risco de Posto */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Risco dos Postos</label>
+            <label className={`block text-[10px] font-bold uppercase mb-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+              Risco dos Postos
+            </label>
             <select
               value={selectedStationRiskFilter}
               onChange={e => setSelectedStationRiskFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className={`w-full px-2.5 py-1.5 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'bg-slate-50 border border-slate-200 text-slate-800'
+              }`}
             >
               <option value="all">Todos os Postos</option>
               <option value="critical">🔴 Apenas Gargalos (Abaixo do Mínimo)</option>
@@ -313,7 +355,9 @@ export function SkillsDashboardPanel({
 
           {/* Busca Rápida */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Busca Operador / Cargo</label>
+            <label className={`block text-[10px] font-bold uppercase mb-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+              Busca Operador / Cargo
+            </label>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
@@ -321,7 +365,11 @@ export function SkillsDashboardPanel({
                 placeholder="Filtrar por nome..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full pl-8 pr-2.5 py-1.5 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                    : 'bg-slate-50 border border-slate-200 text-slate-800'
+                }`}
               />
             </div>
           </div>
@@ -365,17 +413,25 @@ export function SkillsDashboardPanel({
         </div>
 
         {/* Cobertura de Postos Críticos */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
+        <div className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
           <div>
-            <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+            <div className={`flex items-center justify-between text-xs font-semibold ${
+              tintedGlass ? 'text-slate-300' : 'text-slate-500'
+            }`}>
               <span>Cobertura de Postos Críticos</span>
               <ShieldCheck className="w-4 h-4 text-blue-500" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">{stationsCoverageRate}%</span>
-              <span className="text-xs text-slate-500">dos postos atendidos</span>
+              <span className={`text-3xl font-black ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                {stationsCoverageRate}%
+              </span>
+              <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>dos postos atendidos</span>
             </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
               <div
                 className={`h-full rounded-full transition-all ${
                   stationsCoverageRate >= 90 ? 'bg-emerald-500' :
@@ -385,59 +441,89 @@ export function SkillsDashboardPanel({
               />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500">Postos em Gargalo:</span>
-            <span className={`font-bold ${criticalStationsCount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+          <div className={`mt-3 pt-2 border-t flex items-center justify-between text-xs ${
+            tintedGlass ? 'border-white/10' : 'border-slate-100'
+          }`}>
+            <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>Postos em Gargalo:</span>
+            <span className={`font-bold ${
+              criticalStationsCount > 0
+                ? tintedGlass ? 'text-rose-400' : 'text-rose-600'
+                : tintedGlass ? 'text-emerald-400' : 'text-emerald-600'
+            }`}>
               {criticalStationsCount} posto(s)
             </span>
           </div>
         </div>
 
         {/* Taxa de Polivalência Multifuncional */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
+        <div className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
           <div>
-            <div className="flex items-center justify-between text-emerald-700 text-xs font-semibold">
+            <div className={`flex items-center justify-between text-xs font-semibold ${
+              tintedGlass ? 'text-emerald-400' : 'text-emerald-700'
+            }`}>
               <span>Taxa de Polivalência (2+ Postos)</span>
               <Award className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-emerald-600">{polyvalenceRate}%</span>
-              <span className="text-xs text-slate-500">do quadro ativo</span>
+              <span className={`text-3xl font-black ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                {polyvalenceRate}%
+              </span>
+              <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>do quadro ativo</span>
             </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all"
                 style={{ width: `${polyvalenceRate}%` }}
               />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+          <div className={`mt-3 pt-2 border-t flex items-center justify-between text-xs ${
+            tintedGlass ? 'border-white/10 text-slate-400' : 'border-slate-100 text-slate-600'
+          }`}>
             <span>Operadores Multifuncionais:</span>
-            <span className="font-bold text-slate-900">{polyvalentEmployees.length} de {totalEmployeesCount}</span>
+            <span className={`font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              {polyvalentEmployees.length} de {totalEmployeesCount}
+            </span>
           </div>
         </div>
 
         {/* Governança de Sucessão */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
+        <div className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
           <div>
-            <div className="flex items-center justify-between text-indigo-700 text-xs font-semibold">
+            <div className={`flex items-center justify-between text-xs font-semibold ${
+              tintedGlass ? 'text-indigo-400' : 'text-indigo-700'
+            }`}>
               <span>Pipeline de Sucessão de Gestão</span>
               <UserCheck className="w-4 h-4 text-indigo-500" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-indigo-600">{successionMetrics.coverage}%</span>
-              <span className="text-xs text-slate-500">de cobertura</span>
+              <span className={`text-3xl font-black ${tintedGlass ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                {successionMetrics.coverage}%
+              </span>
+              <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>de cobertura</span>
             </div>
-            <div className="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
               <div
                 className="h-full bg-indigo-500 rounded-full transition-all"
                 style={{ width: `${successionMetrics.coverage}%` }}
               />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span className="text-slate-500">Prontos Imediatos:</span>
-            <span className="font-bold text-emerald-600">{successionMetrics.readyNow} liderança(s)</span>
+          <div className={`mt-3 pt-2 border-t flex items-center justify-between text-xs ${
+            tintedGlass ? 'border-white/10' : 'border-slate-100'
+          }`}>
+            <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>Prontos Imediatos:</span>
+            <span className={`font-bold ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>
+              {successionMetrics.readyNow} liderança(s)
+            </span>
           </div>
         </div>
       </div>
@@ -446,6 +532,7 @@ export function SkillsDashboardPanel({
       <SkillsRadarChart
         stations={baseStations}
         employees={filteredEmployees}
+        tintedGlass={tintedGlass}
       />
 
       {/* 4. GRÁFICO DE PIZZA/DONUT ILUO & DIAGRAMA DE PARETO (80/20) */}
@@ -453,20 +540,33 @@ export function SkillsDashboardPanel({
         stations={baseStations}
         employees={baseEmployees}
         iluoDistribution={iluoDistribution}
+        tintedGlass={tintedGlass}
       />
 
       {/* 5. GARGALOS OPERACIONAIS & AÇÕES DE SUPORTE */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className={`rounded-2xl p-5 border space-y-3 transition-all ${
+        tintedGlass
+          ? 'aptis-glass-dark text-white'
+          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+      }`}>
+        <div className={`flex items-center justify-between border-b pb-3 ${
+          tintedGlass ? 'border-white/10' : 'border-slate-100'
+        }`}>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200">
+            <div className={`p-1.5 rounded-lg border ${
+              tintedGlass
+                ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                : 'bg-rose-50 text-rose-600 border-rose-200'
+            }`}>
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+              <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}>
                 Detalhamento dos Gargalos de Linha & Postos Abaixo do Mínimo
               </h4>
-              <span className="text-[11px] text-slate-500">
+              <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                 Postos sem operadores autônomos suficientes para garantir o plano de produção
               </span>
             </div>
@@ -474,7 +574,9 @@ export function SkillsDashboardPanel({
 
           <button
             onClick={() => onNavigateTab('gap_analysis')}
-            className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 cursor-pointer"
+            className={`text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer ${
+              tintedGlass ? 'text-cyan-400 hover:text-cyan-300' : 'text-blue-600 hover:text-blue-800'
+            }`}
           >
             <span>Abrir Diagnóstico Completo</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -482,57 +584,85 @@ export function SkillsDashboardPanel({
         </div>
 
         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-            {stationAnalysis.filter(s => s.isUnderStaffed).length === 0 ? (
-              <div className="p-6 text-center bg-emerald-50/50 rounded-xl border border-emerald-200 text-emerald-800">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-1.5" />
-                <p className="font-bold text-xs">Todos os postos possuem operadores autônomos suficientes!</p>
-                <p className="text-[11px] text-emerald-600 mt-0.5">A linha está protegida contra paradas por falta de qualificação.</p>
-              </div>
-            ) : (
-              stationAnalysis.filter(s => s.isUnderStaffed).map(item => (
-                <div 
-                  key={item.station.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-rose-50/60 border border-rose-200 hover:bg-rose-50 transition-colors"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900">{item.station.name}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-bold">
-                        Déficit: -{item.deficit} operador(es)
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">
-                      Disponíveis: <strong>{item.qualifiedCount}</strong> autônomos / Mínimo exigido: <strong>{item.station.minOperatorsRequired}</strong>
+          {stationAnalysis.filter(s => s.isUnderStaffed).length === 0 ? (
+            <div className={`p-6 text-center rounded-xl border ${
+              tintedGlass
+                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300'
+                : 'bg-emerald-50/50 border-emerald-200 text-emerald-800'
+            }`}>
+              <CheckCircle2 className={`w-8 h-8 mx-auto mb-1.5 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`} />
+              <p className="font-bold text-xs">Todos os postos possuem operadores autônomos suficientes!</p>
+              <p className={`text-[11px] mt-0.5 ${tintedGlass ? 'text-emerald-400/80' : 'text-emerald-600'}`}>
+                A linha está protegida contra paradas por falta de qualificação.
+              </p>
+            </div>
+          ) : (
+            stationAnalysis.filter(s => s.isUnderStaffed).map(item => (
+              <div 
+                key={item.station.id}
+                className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
+                  tintedGlass
+                    ? 'bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/15'
+                    : 'bg-rose-50/60 border-rose-200 hover:bg-rose-50'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                      {item.station.name}
+                    </span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                      tintedGlass ? 'bg-rose-500/25 text-rose-300' : 'bg-rose-100 text-rose-700'
+                    }`}>
+                      Déficit: -{item.deficit} operador(es)
                     </span>
                   </div>
-
-                  <button
-                    onClick={() => onNavigateTab('gap_analysis')}
-                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
-                  >
-                    Treinar Suporte
-                  </button>
+                  <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Disponíveis: <strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>{item.qualifiedCount}</strong> autônomos / Mínimo exigido: <strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>{item.station.minOperatorsRequired}</strong>
+                  </span>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
 
-      {/* 4. RESUMO DINÂMICO DOS OPERADORES FILTRADOS */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <button
+                  onClick={() => onNavigateTab('gap_analysis')}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 shadow-xs"
+                >
+                  Treinar Suporte
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* 6. RESUMO DINÂMICO DOS OPERADORES FILTRADOS */}
+      <div className={`rounded-2xl border overflow-hidden transition-all ${
+        tintedGlass
+          ? 'aptis-glass-dark text-white'
+          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+      }`}>
+        <div className={`p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+          tintedGlass ? 'border-white/10' : 'border-slate-100'
+        }`}>
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-              <Users className="w-4 h-4 text-slate-500" />
+            <h4 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
+              tintedGlass ? 'text-white' : 'text-slate-900'
+            }`}>
+              <Users className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-slate-500'}`} />
               Quadro de Operadores Filtrados ({filteredEmployees.length} colaboradores)
             </h4>
-            <span className="text-[11px] text-slate-500">Visão consolidada para tomada de decisão do gestor</span>
+            <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+              Visão consolidada para tomada de decisão do gestor
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => onNavigateTab('matrix')}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                tintedGlass
+                  ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-sm'
+                  : 'bg-slate-900 hover:bg-slate-800 text-white'
+              }`}
             >
               <span>Abrir Matriz Operacional Completa</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -542,7 +672,11 @@ export function SkillsDashboardPanel({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold uppercase tracking-wider">
+            <thead className={`border-b font-bold uppercase tracking-wider ${
+              tintedGlass
+                ? 'bg-slate-950/60 text-slate-400 border-white/10'
+                : 'bg-slate-50 text-slate-600 border-slate-200'
+            }`}>
               <tr>
                 <th className="py-2.5 px-4">Operador / Função</th>
                 <th className="py-2.5 px-3">Setor</th>
@@ -552,7 +686,7 @@ export function SkillsDashboardPanel({
                 <th className="py-2.5 px-3 text-right">Ação</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className={`divide-y ${tintedGlass ? 'divide-white/5' : 'divide-slate-100'}`}>
               {filteredEmployees.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400">
@@ -566,30 +700,40 @@ export function SkillsDashboardPanel({
                   const empSector = sectors.find(s => s.id === emp.sectorId);
 
                   return (
-                    <tr key={emp.employeeId} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-900">
+                    <tr key={emp.employeeId} className={`transition-colors ${
+                      tintedGlass ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                    }`}>
+                      <td className={`py-3 px-4 font-semibold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                         <div>{emp.employeeName}</div>
                         <span className="text-[11px] text-slate-400 font-normal">{emp.role}</span>
                       </td>
                       <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                        <span className={`px-2 py-0.5 rounded font-medium ${
+                          tintedGlass ? 'bg-white/10 text-slate-200' : 'bg-slate-100 text-slate-700'
+                        }`}>
                           {empSector?.code || 'Geral'}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-slate-600">
+                      <td className={`py-3 px-3 ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
                         {emp.shift}
                       </td>
-                      <td className="py-3 px-3 font-bold text-slate-800">
+                      <td className={`py-3 px-3 font-bold ${tintedGlass ? 'text-slate-200' : 'text-slate-800'}`}>
                         {autonomousCount} postos aptos
                       </td>
                       <td className="py-3 px-3">
                         {isMulti ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            tintedGlass
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}>
                             <CheckCircle2 className="w-3 h-3" />
                             Multifuncional
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                            tintedGlass ? 'bg-white/10 text-slate-400' : 'bg-slate-100 text-slate-600'
+                          }`}>
                             Especialista Único
                           </span>
                         )}
@@ -597,7 +741,9 @@ export function SkillsDashboardPanel({
                       <td className="py-3 px-3 text-right">
                         <button
                           onClick={() => onNavigateTab('matrix')}
-                          className="text-blue-600 hover:text-blue-800 font-bold text-[11px] hover:underline cursor-pointer"
+                          className={`font-bold text-[11px] hover:underline cursor-pointer ${
+                            tintedGlass ? 'text-cyan-400 hover:text-cyan-300' : 'text-blue-600 hover:text-blue-800'
+                          }`}
                         >
                           Ver na Matriz →
                         </button>

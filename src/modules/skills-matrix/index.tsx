@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/context/tenant-context';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { 
@@ -417,6 +417,22 @@ export default function SkillsMatrixModule() {
   const [highlightGaps, setHighlightGaps] = useState<boolean>(false);
   const [search, setSearch] = useState('');
   const [selectedShift, setSelectedShift] = useState('all');
+  const [tintedGlass, setTintedGlass] = useState<boolean>(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('aptis_tinted_glass_mode');
+    if (saved !== null) {
+      setTintedGlass(saved === 'true');
+    }
+    const handleModeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      setTintedGlass(customEvent.detail);
+    };
+    window.addEventListener('aptis-glass-mode-change', handleModeChange);
+    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
+  }, []);
+
+  const isDark = tintedGlass || activeTab === 'gestao_a_vista';
 
   // Modals
   const [isSectorModalOpen, setIsSectorModalOpen] = useState(false);
@@ -691,14 +707,16 @@ export default function SkillsMatrixModule() {
 
       {/* 1. SELETOR DE SETOR FABRIL & SIMULADOR DE ACESSO */}
       <div className={`rounded-2xl p-4 border transition-all ${
-        activeTab === 'gestao_a_vista' ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-slate-200 shadow-xs'
+        isDark ? 'aptis-glass-dark text-white' : 'bg-white border-slate-200 shadow-xs text-slate-900'
       }`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Tabs de Setores */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <Building2 className={`w-4 h-4 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
+              <span className={`text-xs font-bold uppercase tracking-wider ${
+                isDark ? 'text-slate-300' : 'text-slate-500'
+              }`}>
                 Selecione a Célula / Setor Operacional:
               </span>
             </div>
@@ -715,13 +733,21 @@ export default function SkillsMatrixModule() {
                     onClick={() => setSelectedSectorId(sec.id)}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer border ${
                       isSelected
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                        : activeTab === 'gestao_a_vista'
-                        ? 'bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        ? isDark
+                          ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/30 text-white border-cyan-400/50 shadow-sm'
+                          : 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                        : isDark
+                          ? 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">
+                    <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
+                      isSelected
+                        ? 'bg-cyan-500/30 text-cyan-200'
+                        : isDark
+                          ? 'bg-blue-500/20 text-blue-300'
+                          : 'bg-blue-500/15 text-blue-600'
+                    }`}>
                       {sec.code}
                     </span>
                     <span>{sec.name}</span>
@@ -734,7 +760,11 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setIsSectorModalOpen(true)}
-                className="px-3 py-2 rounded-xl text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  isDark
+                    ? 'text-cyan-300 hover:text-cyan-200 bg-cyan-500/15 hover:bg-cyan-500/25 border-cyan-500/30'
+                    : 'text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200'
+                }`}
                 title="Central de Áreas: cadastrar, editar ou excluir setores da planta"
               >
                 <PlusCircle className="w-4 h-4" />
@@ -744,13 +774,23 @@ export default function SkillsMatrixModule() {
           </div>
 
           {/* Simulador de Permissão de Acesso por Área */}
-          <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs shrink-0 self-start lg:self-auto">
-            <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span className="text-[11px] font-semibold text-slate-600">Simulador de Permissão:</span>
+          <div className={`flex items-center gap-2 p-2 rounded-xl border text-xs shrink-0 self-start lg:self-auto ${
+            isDark
+              ? 'aptis-glass-subcard border-white/10 text-slate-300'
+              : 'bg-slate-50 border-slate-200 text-slate-600'
+          }`}>
+            <Lock className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+            <span className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              Simulador de Permissão:
+            </span>
             <select
               value={simulatedAccessRole}
               onChange={e => setSimulatedAccessRole(e.target.value)}
-              className="bg-white border border-slate-200 rounded px-2 py-1 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+              className={`border rounded-lg px-2 py-1 text-xs font-bold focus:outline-none cursor-pointer ${
+                isDark
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'bg-white border-slate-200 text-slate-800'
+              }`}
               title="Alterne o perfil para testar a restrição de acesso entre setores"
             >
               <option value="all_access">👑 Gestor Geral (Acesso a Todos os Setores)</option>
@@ -764,17 +804,29 @@ export default function SkillsMatrixModule() {
 
       {/* CASO O USUÁRIO NÃO TENHA PERMISSÃO PARA O SETOR ATIVO */}
       {!hasAccess ? (
-        <div className="bg-white rounded-2xl p-10 border border-rose-200 text-center max-w-xl mx-auto my-8 shadow-sm">
-          <div className="w-16 h-16 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-4">
+        <div className={`rounded-2xl p-10 border text-center max-w-xl mx-auto my-8 shadow-sm ${
+          isDark
+            ? 'aptis-glass-dark border-rose-500/30 text-white'
+            : 'bg-white border-rose-200 text-slate-900'
+        }`}>
+          <div className={`w-16 h-16 rounded-full border flex items-center justify-center mx-auto mb-4 ${
+            isDark
+              ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+              : 'bg-rose-50 border-rose-200 text-rose-600'
+          }`}>
             <Lock className="w-8 h-8" />
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+          <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
+            isDark
+              ? 'text-rose-300 bg-rose-500/15 border-rose-500/30'
+              : 'text-rose-600 bg-rose-50 border-rose-200'
+          }`}>
             Acesso Restrito por Área
           </span>
-          <h2 className="text-xl font-bold text-slate-900 mt-3 mb-2">
+          <h2 className={`text-xl font-bold mt-3 mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Permissão Insuficiente para {activeSector.name}
           </h2>
-          <p className="text-xs text-slate-600 leading-relaxed mb-6">
+          <p className={`text-xs leading-relaxed mb-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             Seu perfil atual de supervisor está autorizado apenas para a sua respectiva célula de trabalho. Você não possui credencial para visualizar nem alterar as notas dos operadores deste setor.
           </p>
           <div className="flex items-center justify-center gap-3">
@@ -785,13 +837,17 @@ export default function SkillsMatrixModule() {
                   setSelectedSectorId(simulatedAccessRole);
                 }
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-500 transition-colors cursor-pointer"
             >
               Voltar ao Meu Setor Autorizado
             </button>
             <button
               onClick={() => setSimulatedAccessRole('all_access')}
-              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-colors"
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                isDark
+                  ? 'bg-white/10 text-slate-200 hover:bg-white/20'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
             >
               Liberar Modo Gestor Geral (Teste)
             </button>
@@ -800,20 +856,26 @@ export default function SkillsMatrixModule() {
       ) : (
         <>
           {/* HEADER DO SETOR ATIVO & AÇÕES */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 ${
+            isDark ? 'border-white/10' : 'border-slate-200'
+          }`}>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">
+                <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded border ${
+                  isDark
+                    ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30'
+                    : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                }`}>
                   Setor Ativo: {activeSector.code}
                 </span>
-                <span className="text-xs text-slate-500">
-                  Líder: <strong>{activeSector.managerName}</strong> ({activeSector.managerRole})
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Líder: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{activeSector.managerName}</strong> ({activeSector.managerRole})
                 </span>
               </div>
-              <h1 className="text-2xl font-bold text-slate-900 mt-1">
+              <h1 className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Matriz de Habilidades: {activeSector.name}
               </h1>
-              <p className="text-xs text-slate-600">
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 {activeSector.description}
               </p>
             </div>
@@ -829,9 +891,13 @@ export default function SkillsMatrixModule() {
                     setSuccessionPlans(INITIAL_SUCCESSION_PLANS);
                   }}
                   title="Carregar dados de demonstração para teste"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition-colors cursor-pointer"
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
+                    isDark
+                      ? 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/15'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
                   Carregar Exemplos
                 </button>
               ) : (
@@ -845,7 +911,9 @@ export default function SkillsMatrixModule() {
                     }
                   }}
                   title="Limpar matriz de competências e sucessão"
-                  className="inline-flex items-center gap-1 px-2.5 py-2 text-slate-400 hover:text-rose-600 text-xs transition-colors cursor-pointer"
+                  className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs transition-colors cursor-pointer ${
+                    isDark ? 'text-slate-400 hover:text-rose-400' : 'text-slate-400 hover:text-rose-600'
+                  }`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Limpar Matriz
@@ -853,7 +921,7 @@ export default function SkillsMatrixModule() {
               )}
               <button
                 onClick={() => setIsSuccessionModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
                 title="Mapear plano de sucessão de liderança"
               >
                 <UserCheck className="w-4 h-4" />
@@ -862,7 +930,7 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setIsOperatorModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 Adicionar Operador
@@ -870,7 +938,7 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setIsStationModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Adicionar Posto
@@ -878,16 +946,24 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setIsExcelImporterOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer border border-emerald-300"
+                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer border ${
+                  isDark
+                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                }`}
                 title="Importar operadores e notas ILUO a partir do Excel"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <FileSpreadsheet className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 Importar Excel
               </button>
 
               <button
                 onClick={handleExportCSV}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer border border-slate-200"
+                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer border ${
+                  isDark
+                    ? 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/15'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                }`}
                 title="Exportar dados da matriz em CSV / Excel"
               >
                 <Download className="w-4 h-4" />
@@ -898,15 +974,23 @@ export default function SkillsMatrixModule() {
 
 
           {/* NAVEGAÇÃO DE ABAS & CONTROLES VISUAIS */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 rounded-2xl border transition-all ${
+            isDark
+              ? 'aptis-glass-dark text-white'
+              : 'bg-white border-slate-200 shadow-xs text-slate-900'
+          }`}>
             {/* Abas Principais */}
             <div className="flex flex-wrap items-center gap-1">
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'dashboard'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? isDark
+                      ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/30 text-white border border-cyan-400/40 shadow-xs'
+                      : 'bg-slate-900 text-white shadow-xs'
+                    : isDark
+                      ? 'text-slate-300 hover:bg-white/10'
+                      : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
@@ -915,10 +999,14 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setActiveTab('matrix')}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'matrix'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? isDark
+                      ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/30 text-white border border-cyan-400/40 shadow-xs'
+                      : 'bg-slate-900 text-white shadow-xs'
+                    : isDark
+                      ? 'text-slate-300 hover:bg-white/10'
+                      : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 Matriz Operacional ILUO
@@ -926,13 +1014,15 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setActiveTab('succession')}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'succession'
                     ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : isDark
+                      ? 'text-slate-300 hover:bg-white/10'
+                      : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                <UserCheck className="w-3.5 h-3.5 text-indigo-300" />
+                <UserCheck className={`w-3.5 h-3.5 ${activeTab === 'succession' ? 'text-indigo-200' : 'text-indigo-400'}`} />
                 Matriz de Sucessão
                 {successionPlans.filter(p => p.sectorId === activeSector.id && p.readiness === 'none').length > 0 && (
                   <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center font-black" title="Posições sem sucessor">
@@ -943,10 +1033,12 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setActiveTab('gap_analysis')}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'gap_analysis'
                     ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    : isDark
+                      ? 'text-slate-300 hover:bg-white/10'
+                      : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -960,10 +1052,12 @@ export default function SkillsMatrixModule() {
 
               <button
                 onClick={() => setActiveTab('gestao_a_vista')}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'gestao_a_vista'
-                    ? 'bg-slate-800 text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-cyan-500 text-slate-950 shadow-xs'
+                    : isDark
+                      ? 'text-slate-300 hover:bg-white/10'
+                      : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
@@ -972,15 +1066,23 @@ export default function SkillsMatrixModule() {
             </div>
 
             {/* Alternadores Visuais (ILUO vs Badges & Gaps) */}
-            <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+            <div className={`flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 ${
+              isDark ? 'border-white/10' : 'border-slate-100'
+            }`}>
               {/* Formato de Exibição */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs">
+              <div className={`flex items-center gap-1 p-1 rounded-xl text-xs ${
+                isDark ? 'aptis-meniscus-track' : 'bg-slate-100'
+              }`}>
                 <button
                   onClick={() => setDisplayFormat('iluo_circles')}
-                  className={`px-2.5 py-1 rounded font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 cursor-pointer ${
                     displayFormat === 'iluo_circles'
-                      ? 'bg-white text-blue-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? isDark
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-blue-700 shadow-xs'
+                      : isDark
+                        ? 'text-slate-300 hover:text-white'
+                        : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <IluoCircle level={3} size={16} />
@@ -988,10 +1090,14 @@ export default function SkillsMatrixModule() {
                 </button>
                 <button
                   onClick={() => setDisplayFormat('badges')}
-                  className={`px-2.5 py-1 rounded font-semibold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
                     displayFormat === 'badges'
-                      ? 'bg-white text-blue-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? isDark
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-blue-700 shadow-xs'
+                      : isDark
+                        ? 'text-slate-300 hover:text-white'
+                        : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   Badges (N1..N4)
@@ -1001,10 +1107,14 @@ export default function SkillsMatrixModule() {
               {/* Destacar Gaps */}
               <button
                 onClick={() => setHighlightGaps(!highlightGaps)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                   highlightGaps
-                    ? 'bg-amber-100 text-amber-900 border-amber-300'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    ? isDark
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-amber-100 text-amber-900 border-amber-300'
+                    : isDark
+                      ? 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
                 title="Destacar células onde a nota está abaixo do nível desejado (N3)"
               >
@@ -1017,26 +1127,38 @@ export default function SkillsMatrixModule() {
           {(activeTab === 'matrix' || activeTab === 'gestao_a_vista') && (
             <div className="space-y-4">
               {/* Legenda dos Níveis ILUO */}
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <div className={`p-3.5 rounded-2xl border transition-all ${
+                isDark
+                  ? 'aptis-glass-dark text-white'
+                  : 'bg-slate-50 border-slate-200 text-slate-900'
+              }`}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                    <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+                  <h3 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                    isDark ? 'text-slate-200' : 'text-slate-700'
+                  }`}>
+                    <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
                     Escala de Competência Lean (ILUO) • Clique na nota para avançar (1 a 4)
                   </h3>
-                  <span className="text-[11px] text-slate-500">
-                    Nível desejado de autonomia: <strong>N3 (3/4)</strong>
+                  <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Nível desejado de autonomia: <strong className={isDark ? 'text-cyan-300' : 'text-slate-900'}>N3 (3/4)</strong>
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
                   {Object.values(SKILL_LEVEL_DEFINITIONS).map(info => (
-                    <div key={info.level} className="bg-white p-2.5 rounded-lg border border-slate-200 flex items-center gap-2.5 shadow-2xs">
+                    <div key={info.level} className={`p-2.5 rounded-xl border flex items-center gap-2.5 shadow-2xs ${
+                      isDark
+                        ? 'aptis-glass-subcard border-white/10'
+                        : 'bg-white border-slate-200'
+                    }`}>
                       <IluoCircle level={info.level} size={28} />
                       <div>
-                        <span className="font-bold text-slate-900 flex items-center gap-1">
+                        <span className={`font-bold flex items-center gap-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           {info.code} - {info.name.split(' ')[0]}
                         </span>
-                        <span className="text-[10px] text-slate-500 block leading-tight">{info.iluoLabel}</span>
+                        <span className={`text-[10px] block leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {info.iluoLabel}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -1044,7 +1166,11 @@ export default function SkillsMatrixModule() {
               </div>
 
               {/* Filtros da Matriz */}
-              <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-lg border border-slate-200">
+              <div className={`flex flex-col sm:flex-row gap-3 p-3 rounded-2xl border transition-all ${
+                isDark
+                  ? 'aptis-glass-dark text-white'
+                  : 'bg-white border-slate-200 text-slate-900'
+              }`}>
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
@@ -1052,15 +1178,23 @@ export default function SkillsMatrixModule() {
                     placeholder={`Buscar operadores em ${activeSector.name}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                    className={`w-full pl-9 pr-3 py-1.5 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isDark
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white'
+                    }`}
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500 font-medium">Turno:</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Turno:</span>
                   <select
                     value={selectedShift}
                     onChange={(e) => setSelectedShift(e.target.value)}
-                    className="text-xs border border-slate-200 bg-slate-50 rounded-md py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    className={`text-xs border rounded-xl py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
+                      isDark
+                        ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                        : 'border-slate-200 bg-slate-50 text-slate-800'
+                    }`}
                   >
                     <option value="all">Todos os Turnos</option>
                     <option value="Turno A">Turno A</option>
@@ -1072,17 +1206,25 @@ export default function SkillsMatrixModule() {
 
               {/* TABELA DA MATRIZ */}
               {sectorStations.length === 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200 p-12 text-center space-y-3">
-                  <p className="text-slate-500 text-sm">Nenhum posto de trabalho cadastrado para {activeSector.name}.</p>
+                <div className={`rounded-2xl border p-12 text-center space-y-3 ${
+                  isDark ? 'aptis-glass-dark text-white' : 'bg-white border-slate-200 text-slate-900'
+                }`}>
+                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Nenhum posto de trabalho cadastrado para {activeSector.name}.
+                  </p>
                   <button
                     onClick={() => setIsStationModalOpen(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer"
                   >
                     Cadastrar Primeiro Posto
                   </button>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+                <div className={`rounded-2xl border overflow-hidden transition-all ${
+                  isDark
+                    ? 'aptis-glass-dark text-white'
+                    : 'bg-white border-slate-200 shadow-xs text-slate-900'
+                }`}>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead>
@@ -1106,14 +1248,14 @@ export default function SkillsMatrixModule() {
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200">
+                      <tbody className={`divide-y ${isDark ? 'divide-white/10' : 'divide-slate-200'}`}>
                         {filteredEmployees.length === 0 ? (
                           <tr>
-                            <td colSpan={sectorStations.length + 3} className="py-12 text-center text-slate-500 text-xs">
+                            <td colSpan={sectorStations.length + 3} className="py-12 text-center text-slate-400 text-xs">
                               <p className="mb-2">Nenhum operador cadastrado para este setor.</p>
                               <button
                                 onClick={() => setIsOperatorModalOpen(true)}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer"
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer"
                               >
                                 <UserPlus className="w-3.5 h-3.5" />
                                 Cadastrar Primeiro Operador
@@ -1124,13 +1266,25 @@ export default function SkillsMatrixModule() {
                           filteredEmployees.map(emp => {
                             const autonomousCount = Object.values(emp.skills).filter(l => l >= 3).length;
                             return (
-                              <tr key={emp.employeeId} className="hover:bg-slate-50 transition-colors">
-                                <td className="py-3 px-4 font-medium text-slate-900 sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-100">
-                                  <div className="font-semibold text-slate-900">{emp.employeeName}</div>
-                                  <div className="text-xs text-slate-500">{emp.role}</div>
+                              <tr key={emp.employeeId} className={`transition-colors group ${
+                                isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                              }`}>
+                                <td className={`py-3 px-4 font-medium sticky left-0 z-10 border-r ${
+                                  isDark
+                                    ? 'bg-slate-900/95 group-hover:bg-slate-800/95 border-white/10 text-white'
+                                    : 'bg-white group-hover:bg-slate-50 border-slate-100 text-slate-900'
+                                }`}>
+                                  <div className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                    {emp.employeeName}
+                                  </div>
+                                  <div className="text-xs text-slate-400">{emp.role}</div>
                                 </td>
-                                <td className="py-3 px-3 text-center text-xs text-slate-600">
-                                  <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
+                                <td className="py-3 px-3 text-center text-xs">
+                                  <span className={`px-2 py-0.5 rounded border ${
+                                    isDark
+                                      ? 'bg-white/10 border-white/15 text-slate-300'
+                                      : 'bg-slate-100 border-slate-200 text-slate-600'
+                                  }`}>
                                     {emp.shift}
                                   </span>
                                 </td>
@@ -1143,8 +1297,14 @@ export default function SkillsMatrixModule() {
                                   return (
                                     <td 
                                       key={st.id} 
-                                      className={`py-2.5 px-3 text-center border-l border-slate-100 transition-colors ${
-                                        isGap ? 'bg-rose-50/70 ring-1 ring-rose-300 inset-0' : ''
+                                      className={`py-2.5 px-3 text-center border-l transition-colors ${
+                                        isDark ? 'border-white/10' : 'border-slate-100'
+                                      } ${
+                                        isGap
+                                          ? isDark
+                                            ? 'bg-rose-500/15 ring-1 ring-rose-500/40 inset-0'
+                                            : 'bg-rose-50/70 ring-1 ring-rose-300 inset-0'
+                                          : ''
                                       }`}
                                     >
                                       <button
@@ -1152,14 +1312,18 @@ export default function SkillsMatrixModule() {
                                         className={`p-1.5 rounded-lg font-bold text-xs transition-all transform active:scale-90 border cursor-pointer inline-flex items-center justify-center gap-1.5 min-w-[50px] ${
                                           displayFormat === 'badges'
                                             ? info.color
-                                            : 'bg-white hover:bg-slate-50 border-slate-200'
+                                            : isDark
+                                              ? 'bg-slate-900/70 hover:bg-slate-800 border-white/15 text-white'
+                                              : 'bg-white hover:bg-slate-50 border-slate-200'
                                         }`}
                                         title={`${emp.employeeName} em ${st.name}: ${info.name}. Clique para alternar.`}
                                       >
                                         {displayFormat === 'iluo_circles' ? (
                                           <>
                                             <IluoCircle level={lvl} size={24} />
-                                            <span className="text-[11px] font-bold text-slate-700">{info.code}</span>
+                                            <span className={`text-[11px] font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                                              {info.code}
+                                            </span>
                                           </>
                                         ) : (
                                           <span>{info.code}</span>
@@ -1169,13 +1333,13 @@ export default function SkillsMatrixModule() {
                                   );
                                 })}
 
-                                <td className="py-3 px-3 text-center border-l border-slate-100">
+                                <td className={`py-3 px-3 text-center border-l ${isDark ? 'border-white/10' : 'border-slate-100'}`}>
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
                                     autonomousCount >= 3 
-                                      ? 'bg-emerald-100 text-emerald-800' 
+                                      ? isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-800'
                                       : autonomousCount >= 2 
-                                      ? 'bg-blue-100 text-blue-800' 
-                                      : 'bg-slate-100 text-slate-700'
+                                      ? isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-800'
+                                      : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700'
                                   }`}>
                                     {autonomousCount} / {sectorStations.length}
                                   </span>
@@ -1188,8 +1352,14 @@ export default function SkillsMatrixModule() {
 
                       {/* Linha de Cobertura Crítica */}
                       <tfoot>
-                        <tr className="bg-slate-50 border-t-2 border-slate-300 font-semibold text-xs text-slate-800">
-                          <td className="py-3 px-4 sticky left-0 bg-slate-50 z-10">
+                        <tr className={`border-t-2 font-semibold text-xs ${
+                          isDark
+                            ? 'bg-slate-900/80 border-white/15 text-slate-200'
+                            : 'bg-slate-50 border-slate-300 text-slate-800'
+                        }`}>
+                          <td className={`py-3 px-4 sticky left-0 z-10 ${
+                            isDark ? 'bg-slate-900' : 'bg-slate-50'
+                          }`}>
                             Operadores Autônomos (N3 ou N4)
                           </td>
                           <td className="py-3 px-3 text-center">-</td>
@@ -1199,20 +1369,30 @@ export default function SkillsMatrixModule() {
                             return (
                               <td 
                                 key={st.id} 
-                                className={`py-3 px-3 text-center border-l border-slate-200 ${
-                                  isUnder ? 'bg-rose-50 text-rose-700 font-bold' : 'text-slate-900'
+                                className={`py-3 px-3 text-center border-l ${
+                                  isDark ? 'border-white/10' : 'border-slate-200'
+                                } ${
+                                  isUnder
+                                    ? isDark
+                                      ? 'bg-rose-500/15 text-rose-300 font-bold'
+                                      : 'bg-rose-50 text-rose-700 font-bold'
+                                    : isDark
+                                      ? 'text-white'
+                                      : 'text-slate-900'
                                 }`}
                               >
                                 {count} / {st.minOperatorsRequired} req.
                                 {isUnder && (
-                                  <span className="block text-[10px] text-rose-600 uppercase font-bold">
+                                  <span className={`block text-[10px] uppercase font-bold ${
+                                    isDark ? 'text-rose-400' : 'text-rose-600'
+                                  }`}>
                                     Abaixo do mín.
                                   </span>
                                 )}
                               </td>
                             );
                           })}
-                          <td className="py-3 px-3 text-center border-l border-slate-200">-</td>
+                          <td className={`py-3 px-3 text-center border-l ${isDark ? 'border-white/10' : 'border-slate-200'}`}>-</td>
                         </tr>
                       </tfoot>
                     </table>
@@ -1233,6 +1413,7 @@ export default function SkillsMatrixModule() {
               trainingActions={trainingActions}
               onSelectSector={(sectorId) => setSelectedSectorId(sectorId)}
               onNavigateTab={(tab) => setActiveTab(tab)}
+              tintedGlass={isDark}
             />
           )}
 
@@ -1245,6 +1426,7 @@ export default function SkillsMatrixModule() {
               onAddSuccessionClick={() => setIsSuccessionModalOpen(true)}
               onUpdateSuccession={handleUpdateSuccession}
               onDeleteSuccession={handleDeleteSuccession}
+              tintedGlass={isDark}
             />
           )}
 
@@ -1259,6 +1441,7 @@ export default function SkillsMatrixModule() {
               onUpdateActionStatus={handleUpdateActionStatus}
               onDeleteTrainingAction={handleDeleteTrainingAction}
               onCycleLevel={handleCycleLevel}
+              tintedGlass={isDark}
             />
           )}
         </>
@@ -1269,6 +1452,7 @@ export default function SkillsMatrixModule() {
         isOpen={isSectorModalOpen}
         onClose={() => setIsSectorModalOpen(false)}
         tenantName={currentTenant?.name}
+        tintedGlass={tintedGlass}
       />
 
       <AddOperatorModal
@@ -1277,6 +1461,7 @@ export default function SkillsMatrixModule() {
         sector={activeSector}
         stations={sectorStations}
         onAddOperator={handleAddOperator}
+        tintedGlass={tintedGlass}
       />
 
       <AddStationModal
@@ -1284,6 +1469,7 @@ export default function SkillsMatrixModule() {
         onClose={() => setIsStationModalOpen(false)}
         sector={activeSector}
         onAddStation={handleAddStation}
+        tintedGlass={tintedGlass}
       />
 
       <AddSuccessionModal
@@ -1292,6 +1478,7 @@ export default function SkillsMatrixModule() {
         sector={activeSector}
         employees={sectorEmployees}
         onAddSuccession={handleAddSuccession}
+        tintedGlass={tintedGlass}
       />
 
       <SmartExcelImporterModal

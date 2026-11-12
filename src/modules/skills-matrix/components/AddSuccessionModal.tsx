@@ -10,6 +10,7 @@ interface AddSuccessionModalProps {
   sector: Sector;
   employees: EmployeeSkillRecord[];
   onAddSuccession: (plan: SuccessionPlan) => void;
+  tintedGlass?: boolean;
 }
 
 export function AddSuccessionModal({
@@ -17,7 +18,8 @@ export function AddSuccessionModal({
   onClose,
   sector,
   employees,
-  onAddSuccession
+  onAddSuccession,
+  tintedGlass = false
 }: AddSuccessionModalProps) {
   const [keyPosition, setKeyPosition] = useState('');
   const [positionCategory, setPositionCategory] = useState<PositionCategory>('leadership');
@@ -78,21 +80,41 @@ export function AddSuccessionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 px-6 py-4 flex items-center justify-between text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-md p-4 overflow-y-auto">
+      <div className={`rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
+        tintedGlass
+          ? 'aptis-glass-modal text-white'
+          : 'bg-white text-slate-900 border border-slate-200'
+      }`}>
+        <div className={`px-6 py-4 flex items-center justify-between border-b ${
+          tintedGlass
+            ? 'bg-gradient-to-r from-slate-900/90 via-indigo-950/60 to-slate-900/90 border-white/10 text-white'
+            : 'bg-slate-50/90 border-slate-200 text-slate-900'
+        }`}>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400">
+            <div className={`p-2 rounded-xl border ${
+              tintedGlass
+                ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400'
+                : 'bg-indigo-50 border-indigo-200 text-indigo-600'
+            }`}>
               <UserCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-base">Mapear Sucessão & Plano de Desenvolvimento</h3>
-              <p className="text-xs text-slate-300">Setor: {sector.name} ({sector.code})</p>
+              <h3 className={`font-bold text-base ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                Mapear Sucessão & Plano de Desenvolvimento
+              </h3>
+              <p className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+                Setor: {sector.name} ({sector.code})
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
+              tintedGlass
+                ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-400 hover:text-slate-800 hover:bg-slate-200/70'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -102,7 +124,7 @@ export function AddSuccessionModal({
           {/* Cargo / Posição Crítica */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Cargo / Posição Chave *
               </label>
               <input
@@ -111,18 +133,26 @@ export function AddSuccessionModal({
                 placeholder="Ex: Supervisor de Produção, Líder de Turno..."
                 value={keyPosition}
                 onChange={e => setKeyPosition(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                    : 'bg-slate-50 border border-slate-300 text-slate-900'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Categoria da Posição
               </label>
               <select
                 value={positionCategory}
                 onChange={e => setPositionCategory(e.target.value as PositionCategory)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white cursor-pointer"
+                className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                    : 'bg-white border border-slate-300 text-slate-900'
+                }`}
               >
                 <option value="leadership">Liderança & Supervisão (Gestão)</option>
                 <option value="technical_specialist">Especialista Técnico Chave</option>
@@ -132,27 +162,39 @@ export function AddSuccessionModal({
           </div>
 
           {/* Ocupante Atual / Gestor */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl border ${
+            tintedGlass
+              ? 'aptis-glass-subcard border-white/10'
+              : 'bg-slate-50 border-slate-200'
+          }`}>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Gestor / Titular Atual
               </label>
               <input
                 type="text"
                 value={currentIncumbent}
                 onChange={e => setCurrentIncumbent(e.target.value)}
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none"
+                className={`w-full px-3 py-1.5 rounded-lg focus:outline-none ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'border border-slate-300 bg-white text-slate-900'
+                }`}
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Função Atual do Gestor
               </label>
               <input
                 type="text"
                 value={currentIncumbentRole}
                 onChange={e => setCurrentIncumbentRole(e.target.value)}
-                className="w-full px-3 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none"
+                className={`w-full px-3 py-1.5 rounded-lg focus:outline-none ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'border border-slate-300 bg-white text-slate-900'
+                }`}
               />
             </div>
           </div>
@@ -160,10 +202,12 @@ export function AddSuccessionModal({
           {/* Sucessor Indicado */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="block font-semibold text-slate-700">
+              <label className={`block font-semibold ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Sucessor Mapeado (Talento a Desenvolver)
               </label>
-              <span className="text-[10px] text-indigo-600 font-medium">Selecione da equipe ou digite</span>
+              <span className={`text-[10px] font-medium ${tintedGlass ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                Selecione da equipe ou digite
+              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -174,7 +218,11 @@ export function AddSuccessionModal({
                     setSelectedEmployeeId(e.target.value);
                     if (e.target.value) setCustomSuccessorName('');
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white cursor-pointer"
+                  className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                      : 'border border-slate-300 bg-white text-slate-900'
+                  }`}
                 >
                   <option value="">-- Selecionar Operador do Setor --</option>
                   {employees.map(emp => (
@@ -192,7 +240,11 @@ export function AddSuccessionModal({
                   value={customSuccessorName}
                   disabled={Boolean(selectedEmployeeId)}
                   onChange={e => setCustomSuccessorName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-slate-100"
+                  className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white placeholder:text-slate-500 disabled:opacity-40'
+                      : 'border border-slate-300 bg-white text-slate-900 disabled:bg-slate-100'
+                  }`}
                 />
               </div>
             </div>
@@ -201,7 +253,7 @@ export function AddSuccessionModal({
           {/* Nível de Prontidão & Risco de Vacância */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Nível de Prontidão
               </label>
               <select
@@ -214,7 +266,11 @@ export function AddSuccessionModal({
                   else if (val === 'in_development') setReadinessScore(45);
                   else setReadinessScore(0);
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white cursor-pointer font-medium"
+                className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer font-medium ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                    : 'border border-slate-300 bg-white text-slate-900'
+                }`}
               >
                 <option value="ready_now">🟢 Pronto Imediato (0-3 meses)</option>
                 <option value="ready_medium">🟡 Médio Prazo (3-12 meses)</option>
@@ -224,8 +280,8 @@ export function AddSuccessionModal({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Aptidão Atual: <strong className="text-indigo-600">{readinessScore}%</strong>
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                Aptidão Atual: <strong className={tintedGlass ? 'text-indigo-400' : 'text-indigo-600'}>{readinessScore}%</strong>
               </label>
               <input
                 type="range"
@@ -240,13 +296,17 @@ export function AddSuccessionModal({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Risco de Vacância
               </label>
               <select
                 value={vacancyRisk}
                 onChange={e => setVacancyRisk(e.target.value as VacancyRisk)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white cursor-pointer font-medium"
+                className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer font-medium ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                    : 'border border-slate-300 bg-white text-slate-900'
+                }`}
               >
                 <option value="low">Baixo (Célula estável com backup)</option>
                 <option value="medium">Médio (Em preparação)</option>
@@ -258,7 +318,7 @@ export function AddSuccessionModal({
 
           {/* Plano de Desenvolvimento Individual (PDI) */}
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">
+            <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
               Plano de Desenvolvimento Individual (PDI) / Ações de Capacitação
             </label>
             <textarea
@@ -266,14 +326,18 @@ export function AddSuccessionModal({
               placeholder="Ex: Mentoria semanal com o coordenador, curso de liderança operacional Lean, rotação em postos críticos N4..."
               value={developmentPlan}
               onChange={e => setDevelopmentPlan(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                  : 'border border-slate-300 bg-white text-slate-900'
+              }`}
             />
           </div>
 
           {/* Gaps de Competências e Data Alvo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Gaps de Competência (separados por vírgula)
               </label>
               <input
@@ -281,34 +345,48 @@ export function AddSuccessionModal({
                 placeholder="Ex: Gestão de Pessoas, Leitura de Desenho, Kamishibai"
                 value={gapsInput}
                 onChange={e => setGapsInput(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                    : 'border border-slate-300 bg-white text-slate-900'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Data Prevista de Prontidão Total
               </label>
               <input
                 type="date"
                 value={targetDate}
                 onChange={e => setTargetDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                className={`w-full px-3 py-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'border border-slate-300 bg-white text-slate-900'
+                }`}
               />
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+          <div className={`pt-3 border-t flex items-center justify-end gap-2 ${
+            tintedGlass ? 'border-white/10' : 'border-slate-200'
+          }`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold cursor-pointer"
+              className={`px-4 py-2 rounded-xl font-semibold cursor-pointer transition-colors ${
+                tintedGlass
+                  ? 'text-slate-300 hover:bg-white/10'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md shadow-indigo-600/20 transition-colors cursor-pointer flex items-center gap-1.5"
             >
               <UserCheck className="w-4 h-4" />
               Salvar Mapeamento de Sucessão

@@ -29,6 +29,7 @@ interface GapAnalysisPanelProps {
   onUpdateActionStatus: (actionId: string, status: TrainingAction['status']) => void;
   onDeleteTrainingAction: (actionId: string) => void;
   onCycleLevel: (empId: string, stationId: string) => void;
+  tintedGlass?: boolean;
 }
 
 export function GapAnalysisPanel({
@@ -39,7 +40,8 @@ export function GapAnalysisPanel({
   onAddTrainingAction,
   onUpdateActionStatus,
   onDeleteTrainingAction,
-  onCycleLevel
+  onCycleLevel,
+  tintedGlass = false
 }: GapAnalysisPanelProps) {
   // Parâmetros customizados por card: stationId -> { operatorId, mentorId, scheduledDate, isCustomized }
   const [cardConfigs, setCardConfigs] = useState<Record<string, {
@@ -198,7 +200,7 @@ export function GapAnalysisPanel({
   return (
     <div className="space-y-8">
       {/* Header do Diagnóstico */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-2xl p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-2xl p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md border border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded">
@@ -229,8 +231,12 @@ export function GapAnalysisPanel({
 
       {/* Alerta de Feedback */}
       {feedbackMessage && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-          <Check className="w-4 h-4 text-emerald-600" />
+        <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 animate-in fade-in ${
+          tintedGlass
+            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+        }`}>
+          <Check className="w-4 h-4 text-emerald-500" />
           {feedbackMessage}
         </div>
       )}
@@ -238,20 +244,30 @@ export function GapAnalysisPanel({
       {/* 1. Diagnóstico de Gargalos Críticos (CARDS MENORES E OTIMIZADOS) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-600" />
+          <h3 className={`text-base font-bold flex items-center gap-2 ${
+            tintedGlass ? 'text-white' : 'text-slate-900'
+          }`}>
+            <ShieldAlert className="w-5 h-5 text-rose-500" />
             Postos com Déficit de Cobertura
           </h3>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+            tintedGlass
+              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              : 'bg-rose-50 text-rose-700 border-rose-200'
+          }`}>
             {criticalOnly.length} de {stations.length} postos em alerta
           </span>
         </div>
 
         {criticalOnly.length === 0 ? (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 text-center text-emerald-800">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+          <div className={`border rounded-xl p-6 text-center ${
+            tintedGlass
+              ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          }`}>
+            <CheckCircle2 className={`w-8 h-8 mx-auto mb-2 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`} />
             <h4 className="font-bold text-sm">Cobertura 100% em Dia!</h4>
-            <p className="text-xs text-emerald-700 mt-0.5">
+            <p className={`text-xs mt-0.5 ${tintedGlass ? 'text-emerald-400/80' : 'text-emerald-700'}`}>
               Todos os postos do setor {sector.name} possuem a quantidade mínima de operadores autônomos (N3/N4) garantida.
             </p>
           </div>
@@ -272,22 +288,34 @@ export function GapAnalysisPanel({
               return (
                 <div 
                   key={station.id} 
-                  className="bg-white rounded-2xl p-5 border border-rose-200 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow"
+                  className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
+                    tintedGlass
+                      ? 'aptis-glass-dark border-rose-500/30 hover:border-rose-500/50 text-white'
+                      : 'bg-white border-rose-200 shadow-xs hover:shadow-md text-slate-900'
+                  }`}
                 >
                   <div>
                     {/* Topo do Card: Identificação do Posto e Déficit */}
-                    <div className="flex items-start justify-between gap-3 pb-2.5 border-b border-slate-100">
+                    <div className={`flex items-start justify-between gap-3 pb-2.5 border-b ${
+                      tintedGlass ? 'border-white/10' : 'border-slate-100'
+                    }`}>
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                          tintedGlass
+                            ? 'text-rose-300 bg-rose-500/20 border-rose-500/30'
+                            : 'text-rose-700 bg-rose-50 border-rose-200'
+                        }`}>
                           Déficit de {deficit} operador(es)
                         </span>
-                        <h4 className="text-base font-bold text-slate-900 mt-1">
+                        <h4 className={`text-base font-bold mt-1 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                           {station.name}
                         </h4>
-                        <span className="text-xs text-slate-500">Família: {station.category}</span>
+                        <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                          Família: {station.category}
+                        </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-black text-rose-600">
+                        <span className={`text-2xl font-black ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`}>
                           {autonomousCount}
                         </span>
                         <span className="text-xs text-slate-400 block font-medium">
@@ -298,14 +326,24 @@ export function GapAnalysisPanel({
 
                     {/* Recomendação Inteligente (Compacta & Atualizada) */}
                     {currentCandidate && (
-                      <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3 text-xs text-slate-700 mt-3 space-y-1">
+                      <div className={`border rounded-xl p-3 text-xs mt-3 space-y-1 ${
+                        tintedGlass
+                          ? 'bg-amber-500/10 border-amber-500/25 text-slate-200'
+                          : 'bg-amber-50/80 border-amber-200/90 text-slate-700'
+                      }`}>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 font-bold text-amber-900">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <div className={`flex items-center gap-1.5 font-bold ${
+                            tintedGlass ? 'text-amber-300' : 'text-amber-900'
+                          }`}>
+                            <Sparkles className={`w-3.5 h-3.5 shrink-0 ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`} />
                             Sugestão do Algoritmo Lean:
                           </div>
                           {config.isCustomized && (
-                            <span className="text-[10px] font-bold text-blue-700 bg-blue-100/70 px-1.5 py-0.2 rounded border border-blue-200">
+                            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
+                              tintedGlass
+                                ? 'text-cyan-300 bg-cyan-500/20 border-cyan-500/30'
+                                : 'text-blue-700 bg-blue-100/70 border-blue-200'
+                            }`}>
                               Personalizado
                             </span>
                           )}
@@ -318,21 +356,27 @@ export function GapAnalysisPanel({
                   </div>
 
                   {/* Rodapé do Card Otimizado: Atalho de Ajuste + Botão de Agendamento */}
-                  <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div className={`pt-3 mt-3 border-t flex items-center justify-between gap-2 ${
+                    tintedGlass ? 'border-white/10' : 'border-slate-100'
+                  }`}>
                     <button
                       type="button"
                       onClick={() => handleOpenConfigModal(station, primaryCandidate, primaryMentor)}
-                      className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 font-medium px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200"
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer border ${
+                        tintedGlass
+                          ? 'text-slate-300 hover:text-cyan-400 hover:bg-white/10 border-white/15'
+                          : 'text-slate-600 hover:text-blue-600 hover:bg-slate-100 border-slate-200'
+                      }`}
                       title="Clique para mudar o tutor, o operador ou o prazo deste gap"
                     >
-                      <Settings2 className="w-3.5 h-3.5 text-slate-500" />
+                      <Settings2 className="w-3.5 h-3.5 text-slate-400" />
                       <span>Ajustar ({formatDate(config.scheduledDate)})</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleScheduleFromCard(station, primaryCandidate, primaryMentor)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
                     >
                       Agendar Capacitação
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -346,23 +390,33 @@ export function GapAnalysisPanel({
       </div>
 
       {/* 2. Tabela de Ações em Andamento com Lixeira */}
-      <div className="space-y-4 pt-4 border-t border-slate-200">
+      <div className={`space-y-4 pt-4 border-t ${tintedGlass ? 'border-white/10' : 'border-slate-200'}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-blue-600" />
+          <h3 className={`text-base font-bold flex items-center gap-2 ${
+            tintedGlass ? 'text-white' : 'text-slate-900'
+          }`}>
+            <GraduationCap className={`w-5 h-5 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
             Plano de Ação de Capacitações em Andamento ({sectorActions.length})
           </h3>
-          <span className="text-xs text-slate-500">
+          <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
             Ações ativas para {sector.name}
           </span>
         </div>
 
         {sectorActions.length === 0 ? (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-slate-400 text-xs italic">
+          <div className={`border rounded-xl p-8 text-center text-xs italic ${
+            tintedGlass
+              ? 'aptis-glass-dark text-slate-400'
+              : 'bg-slate-50 border-slate-200 text-slate-400'
+          }`}>
             Nenhuma ação de treinamento cadastrada para este setor até o momento.
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className={`rounded-xl border overflow-hidden transition-all ${
+            tintedGlass
+              ? 'aptis-glass-dark text-white'
+              : 'bg-white border-slate-200 shadow-xs text-slate-900'
+          }`}>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
@@ -376,10 +430,12 @@ export function GapAnalysisPanel({
                     <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wider text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-xs">
+                <tbody className={`divide-y text-xs ${tintedGlass ? 'divide-white/5' : 'divide-slate-200'}`}>
                   {sectorActions.map(action => (
-                    <tr key={action.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="py-3 px-4 font-bold text-slate-900">
+                    <tr key={action.id} className={`transition-colors group ${
+                      tintedGlass ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                    }`}>
+                      <td className={`py-3 px-4 font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                         {action.stationName}
                         {action.notes && (
                           <span className="block text-[10px] text-slate-400 font-normal truncate max-w-xs" title={action.notes}>
@@ -387,32 +443,48 @@ export function GapAnalysisPanel({
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-800">
+                      <td className={`py-3 px-4 font-semibold ${tintedGlass ? 'text-slate-200' : 'text-slate-800'}`}>
                         {action.operatorName}
                         <span className="block text-[10px] text-slate-400 font-normal">Nível de entrada: N{action.currentLevel}</span>
                       </td>
-                      <td className="py-3 px-4 text-slate-700 font-medium">
+                      <td className={`py-3 px-4 font-medium ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                         {action.mentorName}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-800">
+                        <span className={`px-2 py-0.5 rounded font-bold ${
+                          tintedGlass ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-800'
+                        }`}>
                           N{action.targetLevel}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-center text-slate-600 font-mono font-medium">
+                      <td className={`py-3 px-3 text-center font-mono font-medium ${
+                        tintedGlass ? 'text-slate-300' : 'text-slate-600'
+                      }`}>
                         {formatDate(action.scheduledDate)}
                       </td>
                       <td className="py-3 px-3 text-center">
                         {action.status === 'completed' ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                            tintedGlass
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                              : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          }`}>
                             Concluído
                           </span>
                         ) : action.status === 'in_progress' ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                            tintedGlass
+                              ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                              : 'bg-blue-100 text-blue-800 border-blue-200'
+                          }`}>
                             Em Andamento
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                            tintedGlass
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                              : 'bg-amber-100 text-amber-800 border-amber-200'
+                          }`}>
                             Pendente
                           </span>
                         )}
@@ -427,13 +499,15 @@ export function GapAnalysisPanel({
                                 setFeedbackMessage(`Operador ${action.operatorName} promovido a N3 na Matriz!`);
                                 setTimeout(() => setFeedbackMessage(null), 3000);
                               }}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold transition-colors cursor-pointer shadow-2xs"
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-semibold transition-colors cursor-pointer shadow-2xs"
                               title="Concluir capacitação e promover operador para N3 na matriz"
                             >
                               Aprovar N3
                             </button>
                           ) : (
-                            <span className="text-emerald-700 font-semibold text-[11px] flex items-center gap-1 pr-1">
+                            <span className={`font-semibold text-[11px] flex items-center gap-1 pr-1 ${
+                              tintedGlass ? 'text-emerald-400' : 'text-emerald-700'
+                            }`}>
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Aprovado
                             </span>
@@ -448,7 +522,11 @@ export function GapAnalysisPanel({
                                 setTimeout(() => setFeedbackMessage(null), 2500);
                               }
                             }}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                              tintedGlass
+                                ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
+                                : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                            }`}
                             title="Excluir este plano de ação"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -466,43 +544,63 @@ export function GapAnalysisPanel({
 
       {/* MODAL PARA AJUSTAR PRÉ-DETERMINAÇÕES (TUTOR, OPERADOR E PRAZO) */}
       {activeConfigStation && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 relative animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className={`rounded-3xl shadow-2xl max-w-lg w-full p-6 relative animate-in fade-in zoom-in-95 duration-150 ${
+            tintedGlass
+              ? 'aptis-glass-modal text-white'
+              : 'bg-white text-slate-900 border border-slate-200'
+          }`}>
             <button
               onClick={() => setActiveConfigStation(null)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              className={`absolute right-4 top-4 p-1.5 rounded-xl transition-colors cursor-pointer ${
+                tintedGlass
+                  ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                  : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+              }`}
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
+              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
+                tintedGlass
+                  ? 'bg-blue-500/20 border-blue-500/30 text-cyan-400'
+                  : 'bg-blue-50 border-blue-200 text-blue-600'
+              }`}>
                 <Settings2 className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                  tintedGlass
+                    ? 'text-cyan-300 bg-cyan-500/15 border-cyan-500/30'
+                    : 'text-blue-600 bg-blue-50 border-blue-200'
+                }`}>
                   Ajustar Pré-determinações
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight mt-0.5">
+                <h3 className={`text-lg font-bold leading-tight mt-0.5 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                   {activeConfigStation.name}
                 </h3>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 mb-4">
+            <p className={`text-xs mb-4 ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
               Personalize o operador que receberá o treinamento, o instrutor/tutor responsável e a data limite estimada.
             </p>
 
             <div className="space-y-3.5">
               {/* Operador */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                   Operador a Capacitar:
                 </label>
                 <select
                   value={modalOperatorId}
                   onChange={e => setModalOperatorId(e.target.value)}
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 cursor-pointer"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                      : 'bg-slate-50 border border-slate-300 text-slate-800'
+                  }`}
                 >
                   {employees.map(emp => {
                     const lvl = emp.skills[activeConfigStation.id] || 1;
@@ -517,13 +615,17 @@ export function GapAnalysisPanel({
 
               {/* Tutor */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                   Tutor / Instrutor Responsável:
                 </label>
                 <select
                   value={modalMentorId}
                   onChange={e => setModalMentorId(e.target.value)}
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 cursor-pointer"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                      : 'bg-slate-50 border border-slate-300 text-slate-800'
+                  }`}
                 >
                   <option value="supervisor">👔 Supervisor da Célula ({sector.managerName})</option>
                   {employees.map(emp => {
@@ -540,7 +642,9 @@ export function GapAnalysisPanel({
 
               {/* Prazo com Atalhos */}
               <div>
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-1">
+                <div className={`flex items-center justify-between text-xs font-semibold mb-1 ${
+                  tintedGlass ? 'text-slate-300' : 'text-slate-700'
+                }`}>
                   <span>Data Limite Estimada:</span>
                   <span className="text-[10px] text-slate-400 font-normal">Atalhos rápidos:</span>
                 </div>
@@ -549,7 +653,11 @@ export function GapAnalysisPanel({
                     type="date"
                     value={modalScheduledDate}
                     onChange={e => setModalScheduledDate(e.target.value)}
-                    className="flex-1 text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 font-mono"
+                    className={`flex-1 text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 font-mono ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   />
                   <div className="flex items-center gap-1">
                     <button
@@ -558,7 +666,11 @@ export function GapAnalysisPanel({
                         const d = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                         setModalScheduledDate(d);
                       }}
-                      className="px-2.5 py-2 rounded bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 transition-colors"
+                      className={`px-2.5 py-2 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                        tintedGlass
+                          ? 'bg-white/10 hover:bg-white/20 text-slate-200'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
                     >
                       +15d
                     </button>
@@ -568,7 +680,11 @@ export function GapAnalysisPanel({
                         const d = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                         setModalScheduledDate(d);
                       }}
-                      className="px-2.5 py-2 rounded bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 transition-colors"
+                      className={`px-2.5 py-2 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                        tintedGlass
+                          ? 'bg-white/10 hover:bg-white/20 text-slate-200'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
                     >
                       +30d
                     </button>
@@ -578,7 +694,11 @@ export function GapAnalysisPanel({
                         const d = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                         setModalScheduledDate(d);
                       }}
-                      className="px-2.5 py-2 rounded bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 transition-colors"
+                      className={`px-2.5 py-2 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                        tintedGlass
+                          ? 'bg-white/10 hover:bg-white/20 text-slate-200'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
                     >
                       +60d
                     </button>
@@ -588,7 +708,7 @@ export function GapAnalysisPanel({
 
               {/* Observações */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                   Instruções / Observações (Opcional):
                 </label>
                 <textarea
@@ -596,15 +716,25 @@ export function GapAnalysisPanel({
                   value={modalNotes}
                   onChange={e => setModalNotes(e.target.value)}
                   placeholder="Ex: Treinamento em setup rápido e controle de qualidade..."
-                  className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900'
+                  }`}
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
+              <div className={`flex items-center justify-between gap-2 pt-3 border-t ${
+                tintedGlass ? 'border-white/10' : 'border-slate-100'
+              }`}>
                 <button
                   type="button"
                   onClick={() => setActiveConfigStation(null)}
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
+                    tintedGlass
+                      ? 'text-slate-300 hover:bg-white/10'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 >
                   Cancelar
                 </button>
@@ -613,7 +743,11 @@ export function GapAnalysisPanel({
                   <button
                     type="button"
                     onClick={() => handleSaveModalConfig(false)}
-                    className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer border border-slate-300"
+                    className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer border ${
+                      tintedGlass
+                        ? 'text-slate-200 bg-white/10 hover:bg-white/20 border-white/15'
+                        : 'text-slate-700 bg-slate-100 hover:bg-slate-200 border-slate-300'
+                    }`}
                     title="Apenas atualiza as escolhas no card sem agendar agora"
                   >
                     Salvar no Card
@@ -621,7 +755,7 @@ export function GapAnalysisPanel({
                   <button
                     type="button"
                     onClick={() => handleSaveModalConfig(true)}
-                    className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors cursor-pointer shadow-sm"
+                    className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors cursor-pointer shadow-sm"
                   >
                     Salvar & Agendar Agora
                   </button>

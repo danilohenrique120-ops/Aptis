@@ -37,6 +37,7 @@ interface SuccessionMatrixPanelProps {
   onAddSuccessionClick: () => void;
   onUpdateSuccession: (plan: SuccessionPlan) => void;
   onDeleteSuccession: (id: string) => void;
+  tintedGlass?: boolean;
 }
 
 export function SuccessionMatrixPanel({
@@ -45,7 +46,8 @@ export function SuccessionMatrixPanel({
   successionPlans,
   onAddSuccessionClick,
   onUpdateSuccession,
-  onDeleteSuccession
+  onDeleteSuccession,
+  tintedGlass = false
 }: SuccessionMatrixPanelProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | PositionCategory>('all');
@@ -87,21 +89,27 @@ export function SuccessionMatrixPanel({
         return {
           label: 'Pronto Imediato (0-3 meses)',
           shortLabel: 'Pronto Agora',
-          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          badge: tintedGlass
+            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+            : 'bg-emerald-50 text-emerald-700 border-emerald-200',
           dot: 'bg-emerald-500'
         };
       case 'ready_medium':
         return {
           label: 'Médio Prazo (3-12 meses)',
           shortLabel: '3-12 Meses',
-          badge: 'bg-amber-50 text-amber-700 border-amber-200',
+          badge: tintedGlass
+            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+            : 'bg-amber-50 text-amber-700 border-amber-200',
           dot: 'bg-amber-500'
         };
       case 'in_development':
         return {
           label: 'Em Formação (1-2 anos)',
           shortLabel: '1-2 Anos',
-          badge: 'bg-blue-50 text-blue-700 border-blue-200',
+          badge: tintedGlass
+            ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+            : 'bg-blue-50 text-blue-700 border-blue-200',
           dot: 'bg-blue-500'
         };
       case 'none':
@@ -109,7 +117,9 @@ export function SuccessionMatrixPanel({
         return {
           label: 'Sem Sucessor (Risco Imediato)',
           shortLabel: 'Sem Sucessor',
-          badge: 'bg-rose-50 text-rose-700 border-rose-200',
+          badge: tintedGlass
+            ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+            : 'bg-rose-50 text-rose-700 border-rose-200',
           dot: 'bg-rose-500'
         };
     }
@@ -118,14 +128,34 @@ export function SuccessionMatrixPanel({
   const getRiskBadge = (risk: VacancyRisk) => {
     switch (risk) {
       case 'critical':
-        return { label: 'Risco Crítico', badge: 'bg-rose-100 text-rose-800 border-rose-300' };
+        return {
+          label: 'Risco Crítico',
+          badge: tintedGlass
+            ? 'bg-rose-500/25 text-rose-300 border-rose-500/40'
+            : 'bg-rose-100 text-rose-800 border-rose-300'
+        };
       case 'high':
-        return { label: 'Risco Alto', badge: 'bg-orange-100 text-orange-800 border-orange-300' };
+        return {
+          label: 'Risco Alto',
+          badge: tintedGlass
+            ? 'bg-orange-500/25 text-orange-300 border-orange-500/40'
+            : 'bg-orange-100 text-orange-800 border-orange-300'
+        };
       case 'medium':
-        return { label: 'Risco Médio', badge: 'bg-amber-100 text-amber-800 border-amber-300' };
+        return {
+          label: 'Risco Médio',
+          badge: tintedGlass
+            ? 'bg-amber-500/25 text-amber-300 border-amber-500/40'
+            : 'bg-amber-100 text-amber-800 border-amber-300'
+        };
       case 'low':
       default:
-        return { label: 'Risco Baixo', badge: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+        return {
+          label: 'Risco Baixo',
+          badge: tintedGlass
+            ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/40'
+            : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+        };
     }
   };
 
@@ -152,13 +182,13 @@ export function SuccessionMatrixPanel({
               Matriz de Sucessão: {sector.name}
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
-              "Todo gestor de excelência mapeia e desenvolve o seu sucessor". Garanta que nenhuma ausência, promoção ou transição gere paradas na linha de produção.
+              &quot;Todo gestor de excelência mapeia e desenvolve o seu sucessor&quot;. Garanta que nenhuma ausência, promoção ou transição gere paradas na linha de produção.
             </p>
           </div>
 
           <button
             onClick={onAddSuccessionClick}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer shrink-0 self-start md:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-400 hover:to-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer shrink-0 self-start md:self-auto"
           >
             <UserPlus className="w-4 h-4" />
             Mapear Novo Sucessor
@@ -168,54 +198,78 @@ export function SuccessionMatrixPanel({
 
       {/* KPI Cards do Pipeline de Sucessão */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+        <div className={`p-4 rounded-2xl border transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
+          <div className={`flex items-center justify-between text-xs font-medium ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
             <span>Posições Mapeadas</span>
             <Layers className="w-4 h-4 text-slate-400" />
           </div>
-          <p className="text-2xl font-black text-slate-900 mt-2">{totalPositions}</p>
-          <span className="text-[11px] text-slate-500">Cargos sob governança</span>
+          <p className={`text-2xl font-black mt-2 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>{totalPositions}</p>
+          <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Cargos sob governança</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-emerald-600 text-xs font-medium">
+        <div className={`p-4 rounded-2xl border transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
+          <div className={`flex items-center justify-between text-xs font-medium ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>
             <span>Prontos Imediatos</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-black text-emerald-600 mt-2">{readyNowCount}</p>
-          <span className="text-[11px] text-slate-500">Prontos em 0 a 3 meses</span>
+          <p className={`text-2xl font-black mt-2 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>{readyNowCount}</p>
+          <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Prontos em 0 a 3 meses</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-amber-600 text-xs font-medium">
+        <div className={`p-4 rounded-2xl border transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
+          <div className={`flex items-center justify-between text-xs font-medium ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`}>
             <span>Em Preparação</span>
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-black text-amber-600 mt-2">{mediumTermCount + inDevCount}</p>
-          <span className="text-[11px] text-slate-500">{mediumTermCount} médio / {inDevCount} longo</span>
+          <p className={`text-2xl font-black mt-2 ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`}>{mediumTermCount + inDevCount}</p>
+          <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>{mediumTermCount} médio / {inDevCount} longo</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-rose-600 text-xs font-medium">
+        <div className={`p-4 rounded-2xl border transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
+          <div className={`flex items-center justify-between text-xs font-medium ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`}>
             <span>Sem Sucessor</span>
             <AlertTriangle className="w-4 h-4 text-rose-500" />
           </div>
-          <p className="text-2xl font-black text-rose-600 mt-2">{noSuccessorCount}</p>
-          <span className="text-[11px] text-rose-600 font-semibold">Gargalo de Liderança</span>
+          <p className={`text-2xl font-black mt-2 ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`}>{noSuccessorCount}</p>
+          <span className={`text-[11px] font-semibold ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`}>Gargalo de Liderança</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-indigo-600 text-xs font-medium">
+        <div className={`p-4 rounded-2xl border transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        }`}>
+          <div className={`flex items-center justify-between text-xs font-medium ${tintedGlass ? 'text-indigo-400' : 'text-indigo-600'}`}>
             <span>Aptidão de Sucessão</span>
             <TrendingUp className="w-4 h-4 text-indigo-500" />
           </div>
-          <p className="text-2xl font-black text-indigo-600 mt-2">{avgReadinessScore}%</p>
-          <span className="text-[11px] text-slate-500">Cobertura: {successionCoverageRate}%</span>
+          <p className={`text-2xl font-black mt-2 ${tintedGlass ? 'text-indigo-400' : 'text-indigo-600'}`}>{avgReadinessScore}%</p>
+          <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Cobertura: {successionCoverageRate}%</span>
         </div>
       </div>
 
       {/* Controles de Busca, Filtros & Alternância de Visualização */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+      <div className={`flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-2xl border transition-all ${
+        tintedGlass
+          ? 'aptis-glass-dark text-white'
+          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+      }`}>
         <div className="flex flex-wrap items-center gap-2 flex-1">
           <div className="relative min-w-[200px] flex-1 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -224,16 +278,24 @@ export function SuccessionMatrixPanel({
               placeholder="Buscar por cargo, gestor ou sucessor..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={`w-full pl-9 pr-3 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                  : 'bg-slate-50 border border-slate-200 text-slate-900'
+              }`}
             />
           </div>
 
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-slate-500 font-medium">Categoria:</span>
+            <span className={`font-medium ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Categoria:</span>
             <select
               value={categoryFilter}
               onChange={e => setCategoryFilter(e.target.value as any)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs cursor-pointer focus:outline-none"
+              className={`px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:outline-none ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'bg-slate-50 border border-slate-200 text-slate-800'
+              }`}
             >
               <option value="all">Todas as Categorias</option>
               <option value="leadership">Liderança & Gestão</option>
@@ -243,11 +305,15 @@ export function SuccessionMatrixPanel({
           </div>
 
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-slate-500 font-medium">Prontidão:</span>
+            <span className={`font-medium ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Prontidão:</span>
             <select
               value={readinessFilter}
               onChange={e => setReadinessFilter(e.target.value as any)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs cursor-pointer focus:outline-none"
+              className={`px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:outline-none ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'bg-slate-50 border border-slate-200 text-slate-800'
+              }`}
             >
               <option value="all">Todos os Status</option>
               <option value="ready_now">Pronto Imediato (0-3m)</option>
@@ -258,19 +324,33 @@ export function SuccessionMatrixPanel({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs self-start md:self-auto">
+        <div className={`flex items-center gap-1 p-1 rounded-xl text-xs self-start md:self-auto ${
+          tintedGlass ? 'aptis-meniscus-track' : 'bg-slate-100'
+        }`}>
           <button
             onClick={() => setViewMode('cards')}
-            className={`px-3 py-1 rounded font-semibold transition-all cursor-pointer ${
-              viewMode === 'cards' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              viewMode === 'cards'
+                ? tintedGlass
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-white text-indigo-700 shadow-xs'
+                : tintedGlass
+                  ? 'text-slate-300 hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Grade / Cards Detalhados
           </button>
           <button
             onClick={() => setViewMode('kanban')}
-            className={`px-3 py-1 rounded font-semibold transition-all cursor-pointer ${
-              viewMode === 'kanban' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              viewMode === 'kanban'
+                ? tintedGlass
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-white text-indigo-700 shadow-xs'
+                : tintedGlass
+                  ? 'text-slate-300 hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Pipeline por Prontidão
@@ -282,13 +362,17 @@ export function SuccessionMatrixPanel({
       {viewMode === 'cards' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredPlans.length === 0 ? (
-            <div className="col-span-full bg-white rounded-2xl border border-slate-200 p-12 text-center">
-              <UserCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-700 font-bold text-sm">Nenhum plano de sucessão encontrado para os filtros aplicados.</p>
+            <div className={`col-span-full rounded-2xl border p-12 text-center ${
+              tintedGlass ? 'aptis-glass-dark text-white' : 'bg-white border-slate-200 text-slate-900'
+            }`}>
+              <UserCheck className={`w-12 h-12 mx-auto mb-3 ${tintedGlass ? 'text-slate-600' : 'text-slate-300'}`} />
+              <p className={`font-bold text-sm ${tintedGlass ? 'text-slate-200' : 'text-slate-700'}`}>
+                Nenhum plano de sucessão encontrado para os filtros aplicados.
+              </p>
               <p className="text-slate-400 text-xs mt-1">Cadastre os gestores e seus sucessores para proteger as operações de {sector.name}.</p>
               <button
                 onClick={onAddSuccessionClick}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors inline-flex items-center gap-2 cursor-pointer"
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-500 transition-colors inline-flex items-center gap-2 cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" />
                 Mapear Primeiro Sucessor
@@ -302,21 +386,33 @@ export function SuccessionMatrixPanel({
               return (
                 <div 
                   key={plan.id}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 shadow-xs hover:shadow-md transition-all p-5 flex flex-col justify-between"
+                  className={`rounded-2xl border transition-all p-5 flex flex-col justify-between ${
+                    tintedGlass
+                      ? 'aptis-glass-dark hover:border-indigo-400/40 text-white'
+                      : 'bg-white border-slate-200 hover:border-indigo-300 shadow-xs hover:shadow-md text-slate-900'
+                  }`}
                 >
                   <div className="space-y-3.5">
                     {/* Cabeçalho do Card */}
-                    <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className={`flex items-start justify-between gap-2 border-b pb-3 ${
+                      tintedGlass ? 'border-white/10' : 'border-slate-100'
+                    }`}>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                            tintedGlass
+                              ? 'bg-white/10 text-slate-300 border-white/15'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}>
                             {getCategoryLabel(plan.positionCategory)}
                           </span>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${riskInfo.badge}`}>
                             {riskInfo.label}
                           </span>
                         </div>
-                        <h3 className="text-base font-black text-slate-900 mt-1.5 flex items-center gap-2">
+                        <h3 className={`text-base font-black mt-1.5 flex items-center gap-2 ${
+                          tintedGlass ? 'text-white' : 'text-slate-900'
+                        }`}>
                           {plan.keyPosition}
                         </h3>
                       </div>
@@ -327,7 +423,11 @@ export function SuccessionMatrixPanel({
                             onDeleteSuccession(plan.id);
                           }
                         }}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          tintedGlass
+                            ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
+                            : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                        }`}
                         title="Remover plano de sucessão"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -335,19 +435,33 @@ export function SuccessionMatrixPanel({
                     </div>
 
                     {/* Comparativo: Titular Atual vs Sucessor */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl border ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard border-white/10'
+                        : 'bg-slate-50/70 border-slate-100'
+                    }`}>
                       <div>
                         <span className="text-[10px] font-bold uppercase text-slate-400 block">Titular / Gestor Atual:</span>
-                        <p className="font-bold text-slate-800 text-xs mt-0.5">{plan.currentIncumbent}</p>
-                        <span className="text-[11px] text-slate-500">{plan.currentIncumbentRole}</span>
+                        <p className={`font-bold text-xs mt-0.5 ${tintedGlass ? 'text-white' : 'text-slate-800'}`}>
+                          {plan.currentIncumbent}
+                        </p>
+                        <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {plan.currentIncumbentRole}
+                        </span>
                       </div>
 
-                      <div className="sm:border-l sm:border-slate-200 sm:pl-3">
-                        <span className="text-[10px] font-bold uppercase text-indigo-600 block flex items-center gap-1">
+                      <div className={`sm:border-l sm:pl-3 ${tintedGlass ? 'sm:border-white/10' : 'sm:border-slate-200'}`}>
+                        <span className={`text-[10px] font-bold uppercase block flex items-center gap-1 ${
+                          tintedGlass ? 'text-indigo-400' : 'text-indigo-600'
+                        }`}>
                           <UserCheck className="w-3 h-3" />
                           Sucessor Indicado:
                         </span>
-                        <p className={`font-bold text-xs mt-0.5 ${plan.readiness === 'none' ? 'text-rose-600 italic' : 'text-slate-900'}`}>
+                        <p className={`font-bold text-xs mt-0.5 ${
+                          plan.readiness === 'none'
+                            ? tintedGlass ? 'text-rose-400 italic' : 'text-rose-600 italic'
+                            : tintedGlass ? 'text-white' : 'text-slate-900'
+                        }`}>
                           {plan.successorName}
                         </p>
                         <div className="mt-1">
@@ -363,12 +477,14 @@ export function SuccessionMatrixPanel({
                     {plan.readiness !== 'none' && (
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-500 font-semibold text-[11px]">
+                          <span className={`font-semibold text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                             Índice de Aptidão para Assumir:
                           </span>
-                          <span className="font-bold text-indigo-700">{plan.readinessScore}%</span>
+                          <span className={`font-bold ${tintedGlass ? 'text-indigo-400' : 'text-indigo-700'}`}>
+                            {plan.readinessScore}%
+                          </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div className={`w-full h-2 rounded-full overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
                           <div
                             className={`h-full rounded-full transition-all ${
                               plan.readinessScore >= 85 ? 'bg-emerald-500' :
@@ -383,14 +499,20 @@ export function SuccessionMatrixPanel({
                     {/* Gaps de Competência & PDI */}
                     <div className="space-y-2 pt-1 text-xs">
                       <div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1 ${
+                          tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                        }`}>
                           Gaps de Competência Identificados:
                         </span>
                         <div className="flex flex-wrap gap-1">
                           {plan.competencyGaps.map((gap, i) => (
                             <span 
                               key={i} 
-                              className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-semibold rounded-md border border-slate-200"
+                              className={`px-2 py-0.5 text-[10px] font-semibold rounded-md border ${
+                                tintedGlass
+                                  ? 'bg-white/10 text-slate-200 border-white/15'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200'
+                              }`}
                             >
                               • {gap}
                             </span>
@@ -398,21 +520,31 @@ export function SuccessionMatrixPanel({
                         </div>
                       </div>
 
-                      <div className="bg-indigo-50/50 p-2.5 rounded-lg border border-indigo-100 text-[11px] text-slate-700">
-                        <strong className="text-indigo-900 block mb-0.5 flex items-center gap-1">
-                          <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                      <div className={`p-2.5 rounded-lg border text-[11px] ${
+                        tintedGlass
+                          ? 'bg-indigo-500/10 border-indigo-500/25 text-slate-200'
+                          : 'bg-indigo-50/50 border-indigo-100 text-slate-700'
+                      }`}>
+                        <strong className={`block mb-0.5 flex items-center gap-1 ${
+                          tintedGlass ? 'text-indigo-300' : 'text-indigo-900'
+                        }`}>
+                          <GraduationCap className={`w-3.5 h-3.5 ${tintedGlass ? 'text-indigo-400' : 'text-indigo-600'}`} />
                           Plano de Ação de Desenvolvimento (PDI):
                         </strong>
-                        <p className="text-slate-600 leading-relaxed">{plan.developmentPlan}</p>
+                        <p className={`leading-relaxed ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+                          {plan.developmentPlan}
+                        </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Rodapé do Card com Data e Ação Rápida */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs ${
+                    tintedGlass ? 'border-white/10 text-slate-400' : 'border-slate-100 text-slate-500'
+                  }`}>
                     <span className="flex items-center gap-1 text-[11px]">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      Prontidão prevista: <strong>{plan.targetDate}</strong>
+                      Prontidão prevista: <strong className={tintedGlass ? 'text-slate-200' : 'text-slate-800'}>{plan.targetDate}</strong>
                     </span>
 
                     <button
@@ -428,7 +560,9 @@ export function SuccessionMatrixPanel({
                           readinessScore: nextScore
                         });
                       }}
-                      className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-bold text-[11px] hover:underline cursor-pointer"
+                      className={`inline-flex items-center gap-1 font-bold text-[11px] hover:underline cursor-pointer ${
+                        tintedGlass ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-800'
+                      }`}
                       title="Avançar status no pipeline"
                     >
                       <span>Avançar Prontidão</span>
@@ -446,22 +580,44 @@ export function SuccessionMatrixPanel({
       {viewMode === 'kanban' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Coluna 1: Sem Sucessor (Alerta) */}
-          <div className="bg-rose-50/40 rounded-xl p-3 border border-rose-200">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-rose-200">
-              <span className="text-xs font-black text-rose-800 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+          <div className={`rounded-xl p-3 border ${
+            tintedGlass
+              ? 'bg-rose-500/10 border-rose-500/25'
+              : 'bg-rose-50/40 border-rose-200'
+          }`}>
+            <div className={`flex items-center justify-between mb-3 pb-2 border-b ${
+              tintedGlass ? 'border-rose-500/25' : 'border-rose-200'
+            }`}>
+              <span className={`text-xs font-black flex items-center gap-1.5 ${
+                tintedGlass ? 'text-rose-300' : 'text-rose-800'
+              }`}>
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
                 Sem Sucessor (Risco)
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 text-xs font-bold">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                tintedGlass ? 'bg-rose-500/25 text-rose-200' : 'bg-rose-200 text-rose-900'
+              }`}>
                 {sectorPlans.filter(p => p.readiness === 'none').length}
               </span>
             </div>
             <div className="space-y-2.5">
               {sectorPlans.filter(p => p.readiness === 'none').map(plan => (
-                <div key={plan.id} className="bg-white p-3 rounded-lg border border-rose-200 shadow-2xs space-y-1.5">
-                  <span className="text-[10px] font-bold text-rose-600 uppercase block">{plan.keyPosition}</span>
-                  <p className="text-xs font-bold text-slate-800">Titular: {plan.currentIncumbent}</p>
-                  <p className="text-[11px] text-rose-700 bg-rose-50 p-1.5 rounded border border-rose-200">
+                <div key={plan.id} className={`p-3 rounded-lg border shadow-2xs space-y-1.5 ${
+                  tintedGlass
+                    ? 'bg-slate-900/70 border-rose-500/30 text-white'
+                    : 'bg-white border-rose-200 text-slate-900'
+                }`}>
+                  <span className={`text-[10px] font-bold uppercase block ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`}>
+                    {plan.keyPosition}
+                  </span>
+                  <p className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-800'}`}>
+                    Titular: {plan.currentIncumbent}
+                  </p>
+                  <p className={`text-[11px] p-1.5 rounded border ${
+                    tintedGlass
+                      ? 'text-rose-200 bg-rose-500/15 border-rose-500/30'
+                      : 'text-rose-700 bg-rose-50 border-rose-200'
+                  }`}>
                     Vulnerabilidade alta para a fábrica. Mapeie um sucessor.
                   </p>
                 </div>
@@ -470,23 +626,41 @@ export function SuccessionMatrixPanel({
           </div>
 
           {/* Coluna 2: Em Formação (1-2 anos) */}
-          <div className="bg-blue-50/40 rounded-xl p-3 border border-blue-200">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-blue-200">
-              <span className="text-xs font-black text-blue-800 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-blue-600" />
+          <div className={`rounded-xl p-3 border ${
+            tintedGlass
+              ? 'bg-blue-500/10 border-blue-500/25'
+              : 'bg-blue-50/40 border-blue-200'
+          }`}>
+            <div className={`flex items-center justify-between mb-3 pb-2 border-b ${
+              tintedGlass ? 'border-blue-500/25' : 'border-blue-200'
+            }`}>
+              <span className={`text-xs font-black flex items-center gap-1.5 ${
+                tintedGlass ? 'text-blue-300' : 'text-blue-800'
+              }`}>
+                <Clock className="w-3.5 h-3.5 text-blue-500" />
                 Em Formação (1-2a)
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-blue-200 text-blue-900 text-xs font-bold">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                tintedGlass ? 'bg-blue-500/25 text-blue-200' : 'bg-blue-200 text-blue-900'
+              }`}>
                 {sectorPlans.filter(p => p.readiness === 'in_development').length}
               </span>
             </div>
             <div className="space-y-2.5">
               {sectorPlans.filter(p => p.readiness === 'in_development').map(plan => (
-                <div key={plan.id} className="bg-white p-3 rounded-lg border border-blue-200 shadow-2xs space-y-1.5">
-                  <span className="text-[10px] font-bold text-blue-700 uppercase block">{plan.keyPosition}</span>
-                  <p className="text-xs font-bold text-slate-900">{plan.successorName}</p>
-                  <div className="text-[10px] text-slate-500">Substitui: {plan.currentIncumbent}</div>
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div key={plan.id} className={`p-3 rounded-lg border shadow-2xs space-y-1.5 ${
+                  tintedGlass
+                    ? 'bg-slate-900/70 border-blue-500/30 text-white'
+                    : 'bg-white border-blue-200 text-slate-900'
+                }`}>
+                  <span className={`text-[10px] font-bold uppercase block ${tintedGlass ? 'text-blue-400' : 'text-blue-700'}`}>
+                    {plan.keyPosition}
+                  </span>
+                  <p className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                    {plan.successorName}
+                  </p>
+                  <div className="text-[10px] text-slate-400">Substitui: {plan.currentIncumbent}</div>
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
                     <div className="bg-blue-500 h-full rounded-full" style={{ width: `${plan.readinessScore}%` }} />
                   </div>
                 </div>
@@ -495,23 +669,41 @@ export function SuccessionMatrixPanel({
           </div>
 
           {/* Coluna 3: Médio Prazo (3-12 meses) */}
-          <div className="bg-amber-50/40 rounded-xl p-3 border border-amber-200">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-amber-200">
-              <span className="text-xs font-black text-amber-800 flex items-center gap-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-amber-600" />
+          <div className={`rounded-xl p-3 border ${
+            tintedGlass
+              ? 'bg-amber-500/10 border-amber-500/25'
+              : 'bg-amber-50/40 border-amber-200'
+          }`}>
+            <div className={`flex items-center justify-between mb-3 pb-2 border-b ${
+              tintedGlass ? 'border-amber-500/25' : 'border-amber-200'
+            }`}>
+              <span className={`text-xs font-black flex items-center gap-1.5 ${
+                tintedGlass ? 'text-amber-300' : 'text-amber-800'
+              }`}>
+                <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
                 Médio Prazo (3-12m)
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-xs font-bold">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                tintedGlass ? 'bg-amber-500/25 text-amber-200' : 'bg-amber-200 text-amber-900'
+              }`}>
                 {sectorPlans.filter(p => p.readiness === 'ready_medium').length}
               </span>
             </div>
             <div className="space-y-2.5">
               {sectorPlans.filter(p => p.readiness === 'ready_medium').map(plan => (
-                <div key={plan.id} className="bg-white p-3 rounded-lg border border-amber-200 shadow-2xs space-y-1.5">
-                  <span className="text-[10px] font-bold text-amber-700 uppercase block">{plan.keyPosition}</span>
-                  <p className="text-xs font-bold text-slate-900">{plan.successorName}</p>
-                  <div className="text-[10px] text-slate-500">Substitui: {plan.currentIncumbent}</div>
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div key={plan.id} className={`p-3 rounded-lg border shadow-2xs space-y-1.5 ${
+                  tintedGlass
+                    ? 'bg-slate-900/70 border-amber-500/30 text-white'
+                    : 'bg-white border-amber-200 text-slate-900'
+                }`}>
+                  <span className={`text-[10px] font-bold uppercase block ${tintedGlass ? 'text-amber-400' : 'text-amber-700'}`}>
+                    {plan.keyPosition}
+                  </span>
+                  <p className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                    {plan.successorName}
+                  </p>
+                  <div className="text-[10px] text-slate-400">Substitui: {plan.currentIncumbent}</div>
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
                     <div className="bg-amber-500 h-full rounded-full" style={{ width: `${plan.readinessScore}%` }} />
                   </div>
                 </div>
@@ -520,23 +712,41 @@ export function SuccessionMatrixPanel({
           </div>
 
           {/* Coluna 4: Pronto Imediato (0-3 meses) */}
-          <div className="bg-emerald-50/40 rounded-xl p-3 border border-emerald-200">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-emerald-200">
-              <span className="text-xs font-black text-emerald-800 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <div className={`rounded-xl p-3 border ${
+            tintedGlass
+              ? 'bg-emerald-500/10 border-emerald-500/25'
+              : 'bg-emerald-50/40 border-emerald-200'
+          }`}>
+            <div className={`flex items-center justify-between mb-3 pb-2 border-b ${
+              tintedGlass ? 'border-emerald-500/25' : 'border-emerald-200'
+            }`}>
+              <span className={`text-xs font-black flex items-center gap-1.5 ${
+                tintedGlass ? 'text-emerald-300' : 'text-emerald-800'
+              }`}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                 Pronto Imediato (0-3m)
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-xs font-bold">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                tintedGlass ? 'bg-emerald-500/25 text-emerald-200' : 'bg-emerald-200 text-emerald-900'
+              }`}>
                 {sectorPlans.filter(p => p.readiness === 'ready_now').length}
               </span>
             </div>
             <div className="space-y-2.5">
               {sectorPlans.filter(p => p.readiness === 'ready_now').map(plan => (
-                <div key={plan.id} className="bg-white p-3 rounded-lg border border-emerald-200 shadow-2xs space-y-1.5">
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase block">{plan.keyPosition}</span>
-                  <p className="text-xs font-bold text-slate-900">{plan.successorName}</p>
-                  <div className="text-[10px] text-slate-500">Substitui: {plan.currentIncumbent}</div>
-                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                <div key={plan.id} className={`p-3 rounded-lg border shadow-2xs space-y-1.5 ${
+                  tintedGlass
+                    ? 'bg-slate-900/70 border-emerald-500/30 text-white'
+                    : 'bg-white border-emerald-200 text-slate-900'
+                }`}>
+                  <span className={`text-[10px] font-bold uppercase block ${tintedGlass ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                    {plan.keyPosition}
+                  </span>
+                  <p className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                    {plan.successorName}
+                  </p>
+                  <div className="text-[10px] text-slate-400">Substitui: {plan.currentIncumbent}</div>
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
                     <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${plan.readinessScore}%` }} />
                   </div>
                 </div>

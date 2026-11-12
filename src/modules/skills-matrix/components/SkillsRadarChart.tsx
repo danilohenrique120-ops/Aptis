@@ -8,9 +8,10 @@ import { Target, Users, Award, Sparkles, HelpCircle, CheckCircle2, TrendingUp } 
 interface SkillsRadarChartProps {
   stations: SkillStation[];
   employees: EmployeeSkillRecord[];
+  tintedGlass?: boolean;
 }
 
-export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps) {
+export function SkillsRadarChart({ stations, employees, tintedGlass = false }: SkillsRadarChartProps) {
   // Operador selecionado como primário
   const [selectedEmpId, setSelectedEmpId] = useState<string>(
     employees[0]?.employeeId || ''
@@ -121,28 +122,46 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
 
   if (employees.length === 0 || stations.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
-        <Target className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-        <p className="text-slate-600 font-bold text-xs">Dados insuficientes para gerar o Radar de Competências.</p>
+      <div className={`rounded-2xl border p-8 text-center ${
+        tintedGlass
+          ? 'aptis-glass-dark text-white'
+          : 'bg-white border-slate-200 text-slate-900'
+      }`}>
+        <Target className={`w-10 h-10 mx-auto mb-2 ${tintedGlass ? 'text-slate-600' : 'text-slate-300'}`} />
+        <p className={`font-bold text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+          Dados insuficientes para gerar o Radar de Competências.
+        </p>
         <span className="text-[11px] text-slate-400">Cadastre postos e operadores ou carregue a demonstração.</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+    <div className={`rounded-2xl border p-5 space-y-4 transition-all ${
+      tintedGlass
+        ? 'aptis-glass-dark text-white'
+        : 'bg-white border-slate-200 shadow-xs text-slate-900'
+    }`}>
       {/* Cabeçalho do Radar & Seletores */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+      <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b pb-4 ${
+        tintedGlass ? 'border-white/10' : 'border-slate-100'
+      }`}>
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-cyan-50 text-cyan-600 border border-cyan-200">
+            <div className={`p-1.5 rounded-lg border ${
+              tintedGlass
+                ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                : 'bg-cyan-50 text-cyan-600 border-cyan-200'
+            }`}>
               <Target className="w-4 h-4" />
             </div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+            <h4 className={`text-xs font-bold uppercase tracking-wider ${
+              tintedGlass ? 'text-white' : 'text-slate-900'
+            }`}>
               Radar Chart Dinâmico de Competências Lean (Spider Plot)
             </h4>
           </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+          <p className={`text-[11px] mt-0.5 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
             Visualize o perfil de polivalência individual, compare com a linha de base N3 ou faça benchmarking entre operadores.
           </p>
         </div>
@@ -151,11 +170,15 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {/* Operador Principal */}
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-medium">Colaborador:</span>
+            <span className={`font-medium ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Colaborador:</span>
             <select
               value={selectedEmpId}
               onChange={e => setSelectedEmpId(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-cyan-500/40 rounded-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer"
+              className={`px-2.5 py-1.5 rounded-lg font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white border-cyan-500/40 [&>option]:bg-slate-900'
+                  : 'bg-slate-50 border border-cyan-500/40 text-slate-900'
+              }`}
             >
               {employees.map(emp => (
                 <option key={emp.employeeId} value={emp.employeeId}>
@@ -167,11 +190,15 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
 
           {/* Comparador */}
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-medium">Comparar com:</span>
+            <span className={`font-medium ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Comparar com:</span>
             <select
               value={compareMode}
               onChange={e => setCompareMode(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold focus:outline-none cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-input text-slate-200 [&>option]:bg-slate-900 [&>optgroup]:bg-slate-900'
+                  : 'bg-slate-50 border border-slate-200 text-slate-700'
+              }`}
             >
               <option value="target_n3">🎯 Benchmark Padrão (Nível 3 Autônomo)</option>
               <option value="none">Sem Comparação</option>
@@ -200,7 +227,7 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
             {/* Definições de Gradientes */}
             <defs>
               <radialGradient id="radarBackdrop" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#0891b2" stopOpacity="0.05" />
+                <stop offset="0%" stopColor="#0891b2" stopOpacity={tintedGlass ? '0.14' : '0.05'} />
                 <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
               </radialGradient>
               <linearGradient id="primaryFill" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -222,7 +249,7 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
                 key={ring.level}
                 points={ring.points}
                 fill="none"
-                stroke={ring.level === 3 ? '#10b981' : '#e2e8f0'}
+                stroke={ring.level === 3 ? '#10b981' : tintedGlass ? 'rgba(255,255,255,0.14)' : '#e2e8f0'}
                 strokeWidth={ring.level === 3 ? '1.5' : '1'}
                 strokeDasharray={ring.level === 3 ? '3 3' : 'none'}
               />
@@ -239,7 +266,7 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
                   y1={cy}
                   x2={x}
                   y2={y}
-                  stroke="#cbd5e1"
+                  stroke={tintedGlass ? 'rgba(255,255,255,0.16)' : '#cbd5e1'}
                   strokeWidth="1"
                 />
               );
@@ -251,7 +278,7 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
                 key={lvl}
                 x={cx + 4}
                 y={cy - (lvl / 4) * maxRadius + 3}
-                fill={lvl === 3 ? '#059669' : '#94a3b8'}
+                fill={lvl === 3 ? '#10b981' : '#94a3b8'}
                 fontSize="8"
                 fontWeight="bold"
               >
@@ -345,7 +372,7 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
                     x={lx}
                     y={ly - 4}
                     textAnchor={textAnchor}
-                    fill="#1e293b"
+                    fill={tintedGlass ? '#f1f5f9' : '#1e293b'}
                     fontSize="9.5"
                     fontWeight="bold"
                   >
@@ -355,7 +382,7 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
                     x={lx}
                     y={ly + 8}
                     textAnchor={textAnchor}
-                    fill="#0891b2"
+                    fill={tintedGlass ? '#38bdf8' : '#0891b2'}
                     fontSize="8.5"
                     fontWeight="600"
                   >
@@ -368,20 +395,20 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
 
           {/* Legenda do Gráfico */}
           <div className="flex flex-wrap items-center justify-center gap-3 mt-3 text-[11px]">
-            <div className="flex items-center gap-1.5 font-bold text-cyan-700">
+            <div className={`flex items-center gap-1.5 font-bold ${tintedGlass ? 'text-cyan-400' : 'text-cyan-700'}`}>
               <span className="w-3 h-3 rounded-full bg-cyan-500 border border-white shadow-xs" />
               <span>{primaryOperator?.employeeName}</span>
             </div>
 
             {compareMode === 'target_n3' && (
-              <div className="flex items-center gap-1.5 font-semibold text-emerald-700">
+              <div className={`flex items-center gap-1.5 font-semibold ${tintedGlass ? 'text-emerald-400' : 'text-emerald-700'}`}>
                 <span className="w-3 h-0.5 bg-emerald-500 border-b border-dashed border-emerald-500" />
                 <span>Benchmark Desejado (N3)</span>
               </div>
             )}
 
             {compareOperator && (
-              <div className="flex items-center gap-1.5 font-bold text-amber-700">
+              <div className={`flex items-center gap-1.5 font-bold ${tintedGlass ? 'text-amber-400' : 'text-amber-700'}`}>
                 <span className="w-3 h-3 rounded-full bg-amber-500 border border-white shadow-xs" />
                 <span>{compareOperator.employeeName}</span>
               </div>
@@ -390,38 +417,58 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
         </div>
 
         {/* Lado Direito: Diagnóstico & Indicadores do Colaborador */}
-        <div className="lg:col-span-5 space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
-          <div className="flex items-start justify-between border-b border-slate-200 pb-2.5">
+        <div className={`lg:col-span-5 space-y-3 p-4 rounded-xl border ${
+          tintedGlass
+            ? 'aptis-glass-subcard border-white/10'
+            : 'bg-slate-50/80 border-slate-200'
+        }`}>
+          <div className={`flex items-start justify-between border-b pb-2.5 ${
+            tintedGlass ? 'border-white/10' : 'border-slate-200'
+          }`}>
             <div>
               <span className="text-[10px] font-bold uppercase text-slate-400 block">Diagnóstico de Polivalência</span>
-              <h5 className="text-sm font-black text-slate-900">{primaryOperator?.employeeName}</h5>
-              <span className="text-xs text-slate-500">{primaryOperator?.role} • {primaryOperator?.shift}</span>
+              <h5 className={`text-sm font-black ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                {primaryOperator?.employeeName}
+              </h5>
+              <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                {primaryOperator?.role} • {primaryOperator?.shift}
+              </span>
             </div>
             <div className="text-right">
-              <span className="text-lg font-black text-cyan-700">{primaryStats.coveragePct}%</span>
+              <span className={`text-lg font-black ${tintedGlass ? 'text-cyan-400' : 'text-cyan-700'}`}>
+                {primaryStats.coveragePct}%
+              </span>
               <span className="text-[10px] text-slate-400 block">Área Coberta</span>
             </div>
           </div>
 
           {/* KPIs Resumo do Operador */}
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
+            <div className={`p-2 rounded-lg border shadow-2xs ${
+              tintedGlass ? 'bg-slate-900/60 border-white/10' : 'bg-white border-slate-200'
+            }`}>
               <span className="text-[10px] text-slate-400 block">Nível Médio</span>
-              <p className="font-bold text-slate-900 mt-0.5">{primaryStats.avg} / 4.0</p>
+              <p className={`font-bold mt-0.5 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>{primaryStats.avg} / 4.0</p>
             </div>
-            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
-              <span className="text-[10px] text-emerald-600 block">Autônomos</span>
-              <p className="font-bold text-emerald-700 mt-0.5">{primaryStats.autonomous} postos</p>
+            <div className={`p-2 rounded-lg border shadow-2xs ${
+              tintedGlass ? 'bg-slate-900/60 border-white/10' : 'bg-white border-slate-200'
+            }`}>
+              <span className={`text-[10px] block ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>Autônomos</span>
+              <p className={`font-bold mt-0.5 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-700'}`}>{primaryStats.autonomous} postos</p>
             </div>
-            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
-              <span className="text-[10px] text-rose-500 block">Gaps (Abaixo N3)</span>
-              <p className="font-bold text-rose-600 mt-0.5">{primaryStats.gaps} postos</p>
+            <div className={`p-2 rounded-lg border shadow-2xs ${
+              tintedGlass ? 'bg-slate-900/60 border-white/10' : 'bg-white border-slate-200'
+            }`}>
+              <span className={`text-[10px] block ${tintedGlass ? 'text-rose-400' : 'text-rose-500'}`}>Gaps (Abaixo N3)</span>
+              <p className={`font-bold mt-0.5 ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`}>{primaryStats.gaps} postos</p>
             </div>
           </div>
 
           {/* Lista detalhada das habilidades no radar */}
           <div className="space-y-1.5 pt-1 text-xs">
-            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+            <span className={`text-[10px] font-bold uppercase tracking-wider block ${
+              tintedGlass ? 'text-slate-400' : 'text-slate-600'
+            }`}>
               Detalhamento por Posto de Trabalho:
             </span>
             <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
@@ -432,13 +479,19 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
                 return (
                   <div 
                     key={st.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 shadow-2xs text-[11px]"
+                    className={`flex items-center justify-between p-2 rounded-lg border shadow-2xs text-[11px] ${
+                      tintedGlass
+                        ? 'bg-slate-900/60 border-white/10'
+                        : 'bg-white border-slate-200'
+                    }`}
                   >
-                    <span className="font-medium text-slate-800">{st.name}</span>
+                    <span className={`font-medium ${tintedGlass ? 'text-slate-200' : 'text-slate-800'}`}>{st.name}</span>
                     <div className="flex items-center gap-1.5">
                       <IluoCircle level={lvl} size={16} />
                       <span className={`font-bold px-1.5 py-0.2 rounded text-[10px] ${
-                        isAut ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                        isAut
+                          ? tintedGlass ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+                          : tintedGlass ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-50 text-amber-700'
                       }`}>
                         N{lvl} {isAut ? '✓ Autônomo' : '• Treinar'}
                       </span>
@@ -450,11 +503,17 @@ export function SkillsRadarChart({ stations, employees }: SkillsRadarChartProps)
           </div>
 
           {/* Recomendação Lean do Gestor */}
-          <div className="bg-cyan-50/60 p-2.5 rounded-lg border border-cyan-200 text-[11px] text-cyan-950 flex items-start gap-2">
-            <Sparkles className="w-4 h-4 text-cyan-600 shrink-0 mt-0.5" />
+          <div className={`p-2.5 rounded-lg border text-[11px] flex items-start gap-2 ${
+            tintedGlass
+              ? 'bg-cyan-500/10 border-cyan-500/25 text-cyan-200'
+              : 'bg-cyan-50/60 border-cyan-200 text-cyan-950'
+          }`}>
+            <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${tintedGlass ? 'text-cyan-400' : 'text-cyan-600'}`} />
             <div>
-              <strong className="block text-cyan-900 font-bold">Direcionamento do Gestor:</strong>
-              <p className="text-slate-700 leading-tight">
+              <strong className={`block font-bold ${tintedGlass ? 'text-cyan-300' : 'text-cyan-900'}`}>
+                Direcionamento do Gestor:
+              </strong>
+              <p className={`leading-tight ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 {primaryStats.gaps === 0 
                   ? 'Colaborador 100% polivalente na célula. Candidato prioritário para formação como Multiplicador (N4) ou Sucessor de Liderança.'
                   : `Focar o plano de capacitação nos ${primaryStats.gaps} postos em gap para elevar o colaborador ao status multifuncional pleno.`}
