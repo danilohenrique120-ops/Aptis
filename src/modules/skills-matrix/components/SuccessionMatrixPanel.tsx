@@ -170,18 +170,34 @@ export function SuccessionMatrixPanel({
   return (
     <div className="space-y-6">
       {/* Banner de Liderança Industrial & Sucessão */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 p-6 text-white shadow-lg">
-        <div className="absolute right-0 top-0 -mt-10 -mr-10 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+      <div
+        className={`relative overflow-hidden rounded-3xl p-6 transition-all duration-500 border ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white border-white/10'
+            : 'aptis-glass-light text-slate-900 border-slate-200 shadow-sm'
+        }`}
+      >
+        <div
+          className="absolute -top-16 -right-12 w-72 h-72 rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(99, 102, 241, 0.65) 0%, rgba(139, 92, 246, 0.25) 60%, transparent 75%)'
+          }}
+        />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-2">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-2 border ${
+              tintedGlass
+                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+            }`}>
               <UserCheck className="w-3.5 h-3.5" />
               Governança de Sucessão & Continuidade Operacional
             </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+            <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
               Matriz de Sucessão: {sector.name}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
+            <p className={`text-xs sm:text-sm mt-1 max-w-2xl ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
               &quot;Todo gestor de excelência mapeia e desenvolve o seu sucessor&quot;. Garanta que nenhuma ausência, promoção ou transição gere paradas na linha de produção.
             </p>
           </div>

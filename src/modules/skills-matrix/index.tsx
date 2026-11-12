@@ -432,13 +432,12 @@ export default function SkillsMatrixModule() {
     return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
   }, []);
 
-  const isDark = tintedGlass || activeTab === 'gestao_a_vista';
-
   // Modals
   const [isSectorModalOpen, setIsSectorModalOpen] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
   const [isStationModalOpen, setIsStationModalOpen] = useState(false);
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+  const [isSuccessionModalOpen, setIsSuccessionModalOpen] = useState(false);
 
   // Importação de Excel Inteligente
   const handleImportSkillsExcel = (rows: Record<string, any>[]) => {
@@ -520,30 +519,7 @@ export default function SkillsMatrixModule() {
     };
   };
 
-  // Simulador de Perfil para Teste de Restrição de Área
-  const [simulatedAccessRole, setSimulatedAccessRole] = useState<string>('all_access');
-
   const activeSector: Sector = sectors.find(s => s.id === selectedSectorId) || sectors[0] || defaultFallbackSector;
-
-  // ==========================================
-  // VALIDAÇÃO DE ACESSO POR ÁREA (RESTRIÇÃO)
-  // ==========================================
-  const isUserAuthorizedForSector = (sector: Sector): boolean => {
-    if (!sector) return true;
-    // 1. Caso o simulador esteja em 'all_access' ou usuário seja superadmin / tenant_admin
-    if (simulatedAccessRole === 'all_access') return true;
-    if (currentUser?.role === 'superadmin' || currentUser?.role === 'tenant_admin') {
-      if (simulatedAccessRole !== 'all_access') {
-        // Respeita o simulador para o usuário poder testar o bloqueio!
-        return simulatedAccessRole === sector.id;
-      }
-      return true;
-    }
-    // 2. Se for membro ou simulador específico, checa o papel da área
-    return simulatedAccessRole === sector.id;
-  };
-
-  const hasAccess = isUserAuthorizedForSector(activeSector);
 
   // Postos e colaboradores isolados do setor ativo (com fallback de array)
   const safeStations = Array.isArray(stations) ? stations : [];
@@ -580,8 +556,6 @@ export default function SkillsMatrixModule() {
     }));
   };
 
-  const [isSuccessionModalOpen, setIsSuccessionModalOpen] = useState(false);
-
   // Handlers da Matriz de Sucessão
   const handleAddSuccession = (newPlan: SuccessionPlan) => {
     setSuccessionPlans(prev => [newPlan, ...prev]);
@@ -596,11 +570,6 @@ export default function SkillsMatrixModule() {
   };
 
   // Criação Dinâmica
-  const handleAddSector = (newSector: Sector) => {
-    addSector(newSector);
-    setSelectedSectorId(newSector.id);
-  };
-
   const handleAddOperator = (newOperator: EmployeeSkillRecord) => {
     setEmployees(prev => [newOperator, ...prev]);
   };
@@ -664,8 +633,58 @@ export default function SkillsMatrixModule() {
     (new URLSearchParams(window.location.search).get('demo') === 'true' || 
      new URLSearchParams(window.location.search).get('demo') === '1'));
 
+  // Configuração da Barra de Abas Meniscus Liquid Bead (Padrão Aptis Routine / Cimel Vídeo 2)
+  const skillsTabs: Array<{
+    id: ViewTab;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    glowColor: string;
+    beadGradient: string;
+    badgeAlert?: boolean;
+  }> = [
+    {
+      id: 'dashboard',
+      label: 'Dashboard Executivo',
+      icon: LayoutDashboard,
+      glowColor: 'rgba(59, 130, 246, 0.58)',
+      beadGradient: 'linear-gradient(135deg, #38bdf8 0%, #2563eb 100%)'
+    },
+    {
+      id: 'matrix',
+      label: 'Matriz Operacional ILUO',
+      icon: Layers,
+      glowColor: 'rgba(6, 182, 212, 0.58)',
+      beadGradient: 'linear-gradient(135deg, #22d3ee 0%, #0891b2 100%)'
+    },
+    {
+      id: 'succession',
+      label: 'Matriz de Sucessão',
+      icon: UserCheck,
+      glowColor: 'rgba(139, 92, 246, 0.58)',
+      beadGradient: 'linear-gradient(135deg, #a78bfa 0%, #6d28d9 100%)',
+      badgeAlert: successionPlans.filter(p => p.sectorId === activeSector.id && p.readiness === 'none').length > 0
+    },
+    {
+      id: 'gap_analysis',
+      label: 'Diagnóstico de Gaps',
+      icon: Sparkles,
+      glowColor: 'rgba(245, 158, 11, 0.58)',
+      beadGradient: 'linear-gradient(135deg, #fbbf24 0%, #ea580c 100%)',
+      badgeAlert: criticalStationsCount > 0
+    },
+    {
+      id: 'gestao_a_vista',
+      label: 'Modo TV Chão de Fábrica',
+      icon: Maximize2,
+      glowColor: 'rgba(16, 185, 129, 0.58)',
+      beadGradient: 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
+    }
+  ];
+
+  const activeMeniscusTab = skillsTabs.find(t => t.id === activeTab) || skillsTabs[0];
+
   return (
-    <div className={`space-y-6 ${activeTab === 'gestao_a_vista' ? 'bg-slate-900 text-white p-6 rounded-2xl' : ''}`}>
+    <div className="space-y-6 w-full">
       {/* Banner Informativo de Demonstração (Ativo apenas no Localhost via ?demo=true) */}
       {isDemoActive && (
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-3.5 rounded-2xl border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
@@ -705,397 +724,479 @@ export default function SkillsMatrixModule() {
         </div>
       )}
 
-      {/* 1. SELETOR DE SETOR FABRIL & SIMULADOR DE ACESSO */}
-      <div className={`rounded-2xl p-4 border transition-all ${
-        isDark ? 'aptis-glass-dark text-white' : 'bg-white border-slate-200 shadow-xs text-slate-900'
-      }`}>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          {/* Tabs de Setores */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Building2 className={`w-4 h-4 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
-              <span className={`text-xs font-bold uppercase tracking-wider ${
-                isDark ? 'text-slate-300' : 'text-slate-500'
-              }`}>
-                Selecione a Célula / Setor Operacional:
+      {/* =====================================================================
+          1. HEADER EXECUTIVO EM VIDRO ESPECULAR (Estilo Aptis Routine / Cimel Vídeo 1)
+         ===================================================================== */}
+      <div
+        className={`rounded-3xl p-6 relative overflow-hidden transition-all duration-500 ${
+          tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+        }`}
+      >
+        <div
+          className="absolute -top-16 -right-12 w-72 h-72 rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(59, 130, 246, 0.65) 0%, rgba(6, 182, 212, 0.25) 60%, transparent 75%)'
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span
+                className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                  tintedGlass
+                    ? 'bg-blue-500/20 text-blue-200 border-blue-400/35'
+                    : 'text-blue-700 bg-blue-50 border-blue-200'
+                }`}
+              >
+                Módulo Operacional de Liderança
+              </span>
+              <span
+                className={`text-xs ${
+                  tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                }`}
+              >
+                Unidade: {currentTenant.name} • Setor: {activeSector.name} ({activeSector.code})
               </span>
             </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-0.5">
-              {sectors.map(sec => {
-                const isSelected = sec.id === activeSector.id;
-                const secStations = stations.filter(s => s.sectorId === sec.id).length;
-                const secEmps = employees.filter(e => e.sectorId === sec.id).length;
-
-                return (
-                  <button
-                    key={sec.id}
-                    onClick={() => setSelectedSectorId(sec.id)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer border ${
-                      isSelected
-                        ? isDark
-                          ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/30 text-white border-cyan-400/50 shadow-sm'
-                          : 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                        : isDark
-                          ? 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                      isSelected
-                        ? 'bg-cyan-500/30 text-cyan-200'
-                        : isDark
-                          ? 'bg-blue-500/20 text-blue-300'
-                          : 'bg-blue-500/15 text-blue-600'
-                    }`}>
-                      {sec.code}
-                    </span>
-                    <span>{sec.name}</span>
-                    <span className="text-[10px] opacity-70">
-                      ({secEmps} op. | {secStations} postos)
-                    </span>
-                  </button>
-                );
-              })}
-
-              <button
-                onClick={() => setIsSectorModalOpen(true)}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                  isDark
-                    ? 'text-cyan-300 hover:text-cyan-200 bg-cyan-500/15 hover:bg-cyan-500/25 border-cyan-500/30'
-                    : 'text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200'
-                }`}
-                title="Central de Áreas: cadastrar, editar ou excluir setores da planta"
-              >
-                <PlusCircle className="w-4 h-4" />
-                Gerenciar Setores
-              </button>
-            </div>
+            <h1
+              className={`text-2xl sm:text-3xl font-black tracking-tight ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              Aptis Skills • Matriz de Habilidades & Sucessão
+            </h1>
+            <p
+              className={`text-xs sm:text-sm mt-1 ${
+                tintedGlass ? 'text-slate-300' : 'text-slate-600'
+              }`}
+            >
+              Governança de polivalência técnica (ILUO), diagnóstico preditivo de gaps de linha, benchmarking por radar e matriz de sucessão de liderança.
+            </p>
           </div>
 
-          {/* Simulador de Permissão de Acesso por Área */}
-          <div className={`flex items-center gap-2 p-2 rounded-xl border text-xs shrink-0 self-start lg:self-auto ${
-            isDark
-              ? 'aptis-glass-subcard border-white/10 text-slate-300'
-              : 'bg-slate-50 border-slate-200 text-slate-600'
-          }`}>
-            <Lock className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
-            <span className={`text-[11px] font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Simulador de Permissão:
-            </span>
-            <select
-              value={simulatedAccessRole}
-              onChange={e => setSimulatedAccessRole(e.target.value)}
-              className={`border rounded-lg px-2 py-1 text-xs font-bold focus:outline-none cursor-pointer ${
-                isDark
-                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
-                  : 'bg-white border-slate-200 text-slate-800'
+          <div className="flex flex-wrap items-center gap-2.5">
+            {employees.length === 0 && stations.length === 0 ? (
+              <button
+                onClick={() => {
+                  setStations(INITIAL_STATIONS);
+                  setEmployees(INITIAL_EMPLOYEES);
+                  setTrainingActions(INITIAL_ACTIONS);
+                  setSuccessionPlans(INITIAL_SUCCESSION_PLANS);
+                }}
+                title="Carregar dados de demonstração para teste"
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                Carregar Exemplos
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      'Tem certeza que deseja zerar a matriz de habilidades, operadores e plano de sucessão?'
+                    )
+                  ) {
+                    setStations([]);
+                    setEmployees([]);
+                    setTrainingActions([]);
+                    setSuccessionPlans([]);
+                  }
+                }}
+                title="Limpar matriz de competências e sucessão"
+                className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs transition-colors cursor-pointer rounded-xl ${
+                  tintedGlass
+                    ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
+                    : 'text-slate-400 hover:text-rose-600'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Limpar Matriz
+              </button>
+            )}
+
+            <button
+              onClick={() => setIsExcelImporterOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
               }`}
-              title="Alterne o perfil para testar a restrição de acesso entre setores"
+              title="Importar operadores e notas ILUO a partir do Excel"
             >
-              <option value="all_access">👑 Gestor Geral (Acesso a Todos os Setores)</option>
-              <option value="sec-usinagem">👔 Supervisor: Usinagem CNC (Restrito)</option>
-              <option value="sec-estampagem">👔 Supervisora: Estamparia (Restrito)</option>
-              <option value="sec-montagem">👔 Coordenador: Montagem (Restrito)</option>
-            </select>
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              Importar Excel
+            </button>
+
+            <button
+              onClick={() => setIsSuccessionModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-subcard text-indigo-300 hover:text-white hover:border-indigo-400/40'
+                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+              }`}
+              title="Mapear plano de sucessão de liderança"
+            >
+              <UserCheck className="w-4 h-4 text-indigo-400" />
+              Mapear Sucessor
+            </button>
+
+            <button
+              onClick={() => setIsOperatorModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              style={{
+                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                border: '1px solid rgba(110, 231, 183, 0.45)',
+                boxShadow:
+                  'inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 20px -4px rgba(5, 150, 105, 0.5)'
+              }}
+            >
+              <UserPlus className="w-4 h-4" />
+              Novo Operador
+            </button>
+
+            <button
+              onClick={() => setIsStationModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                border: '1px solid rgba(165, 243, 252, 0.45)',
+                boxShadow:
+                  'inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 20px -4px rgba(37, 99, 235, 0.5)'
+              }}
+            >
+              <PlusCircle className="w-4 h-4" />
+              Novo Posto
+            </button>
+
+            <button
+              onClick={handleExportCSV}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer border ${
+                tintedGlass
+                  ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300 shadow-xs'
+              }`}
+              title="Exportar dados da matriz em CSV / Excel"
+            >
+              <Download className="w-4 h-4 text-cyan-400" />
+              CSV
+            </button>
+          </div>
+        </div>
+
+        {/* KPI Cards Rápidos em Sub-cápsulas de Vidro */}
+        <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-6 pt-5 border-t border-white/[0.08]">
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              <span>Total Operadores</span>
+              <Users className="w-4 h-4 text-slate-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              {totalSectorEmployees}
+            </p>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-cyan-300' : 'text-blue-600'
+              }`}
+            >
+              <span>Postos Mapeados</span>
+              <Layers className="w-4 h-4 text-cyan-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-cyan-300' : 'text-blue-600'
+              }`}
+            >
+              {sectorStations.length}
+            </p>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-rose-300' : 'text-rose-600'
+              }`}
+            >
+              <span>Postos em Gargalo</span>
+              <ShieldAlert className="w-4 h-4 text-rose-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-rose-400' : 'text-rose-600'
+              }`}
+            >
+              {criticalStationsCount}
+            </p>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-emerald-300' : 'text-emerald-600'
+              }`}
+            >
+              <span>Polivalência Ativa</span>
+              <Award className="w-4 h-4 text-emerald-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-emerald-300' : 'text-emerald-600'
+              }`}
+            >
+              {polyvalentRate}%
+              <span className={`text-xs ml-2 font-normal font-sans ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                ({polyvalentCount} op.)
+              </span>
+            </p>
           </div>
         </div>
       </div>
 
-      {/* CASO O USUÁRIO NÃO TENHA PERMISSÃO PARA O SETOR ATIVO */}
-      {!hasAccess ? (
-        <div className={`rounded-2xl p-10 border text-center max-w-xl mx-auto my-8 shadow-sm ${
-          isDark
-            ? 'aptis-glass-dark border-rose-500/30 text-white'
-            : 'bg-white border-rose-200 text-slate-900'
-        }`}>
-          <div className={`w-16 h-16 rounded-full border flex items-center justify-center mx-auto mb-4 ${
-            isDark
-              ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
-              : 'bg-rose-50 border-rose-200 text-rose-600'
-          }`}>
-            <Lock className="w-8 h-8" />
-          </div>
-          <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
-            isDark
-              ? 'text-rose-300 bg-rose-500/15 border-rose-500/30'
-              : 'text-rose-600 bg-rose-50 border-rose-200'
-          }`}>
-            Acesso Restrito por Área
-          </span>
-          <h2 className={`text-xl font-bold mt-3 mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Permissão Insuficiente para {activeSector.name}
-          </h2>
-          <p className={`text-xs leading-relaxed mb-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Seu perfil atual de supervisor está autorizado apenas para a sua respectiva célula de trabalho. Você não possui credencial para visualizar nem alterar as notas dos operadores deste setor.
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => {
-                // Return to authorized sector
-                if (simulatedAccessRole !== 'all_access') {
-                  setSelectedSectorId(simulatedAccessRole);
-                }
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-500 transition-colors cursor-pointer"
-            >
-              Voltar ao Meu Setor Autorizado
-            </button>
-            <button
-              onClick={() => setSimulatedAccessRole('all_access')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                isDark
-                  ? 'bg-white/10 text-slate-200 hover:bg-white/20'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              Liberar Modo Gestor Geral (Teste)
-            </button>
+      {/* =====================================================================
+          2. BARRA DE ABAS MENISCUS LIQUID BEAD + FILTRO SETORIAL (Vídeo 2 - Meniscus)
+         ===================================================================== */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="relative inline-flex self-start">
+          {/* Halo Cromático Meniscus projetado sob a cápsula */}
+          <div
+            className="absolute -inset-2 rounded-full blur-2xl opacity-45 pointer-events-none transition-all duration-500"
+            style={{
+              background: `radial-gradient(circle, ${activeMeniscusTab.glowColor} 0%, transparent 70%)`
+            }}
+          />
+
+          <div className="aptis-meniscus-track rounded-full p-1.5 flex flex-wrap items-center gap-1 relative z-10">
+            {skillsTabs.map(tab => {
+              const Icon = tab.icon;
+              const isSelected = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all duration-500 cursor-pointer ${
+                    isSelected
+                      ? 'text-white scale-[1.03]'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  style={
+                    isSelected
+                      ? {
+                          background: tab.beadGradient,
+                          boxShadow: `0 0 22px ${tab.glowColor}, inset 0 1.5px 1px rgba(255,255,255,0.65)`
+                        }
+                      : undefined
+                  }
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                  {tab.badgeAlert && (
+                    <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse shadow-[0_0_8px_#fb7185]" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        {/* Filtro Setorial em Cápsula de Vidro */}
+        <div
+          className={`flex items-center gap-2.5 px-3.5 py-2 rounded-2xl ${
+            tintedGlass
+              ? 'aptis-glass-subcard text-white'
+              : 'bg-white border border-slate-200 shadow-2xs text-slate-800'
+          }`}
+        >
+          <label
+            htmlFor="sector-select"
+            className={`text-xs font-bold uppercase tracking-wider whitespace-nowrap flex items-center gap-1.5 ${
+              tintedGlass ? 'text-slate-300' : 'text-slate-600'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Área / Setor:</span>
+          </label>
+          <select
+            id="sector-select"
+            value={selectedSectorId}
+            onChange={e => setSelectedSectorId(e.target.value)}
+            className={`text-xs font-bold bg-transparent outline-none cursor-pointer min-w-[180px] ${
+              tintedGlass ? 'text-cyan-300 [&>option]:bg-slate-900' : 'text-slate-900'
+            }`}
+          >
+            {sectors.map(sec => (
+              <option key={sec.id} value={sec.id} className="bg-slate-900 text-white py-1">
+                {sec.name} ({sec.code})
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => setIsSectorModalOpen(true)}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              tintedGlass ? 'hover:bg-white/10 text-cyan-400' : 'hover:bg-slate-100 text-blue-600'
+            }`}
+            title="Gerenciar Setores da Planta"
+          >
+            <PlusCircle className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* =====================================================================
+          3. CONTEÚDO DINÂMICO CONFORME A ABA ATIVA
+         ===================================================================== */}
+      {activeTab === 'dashboard' ? (
+        <SkillsDashboardPanel
+          sectors={sectors}
+          activeSector={activeSector}
+          stations={stations}
+          employees={employees}
+          successionPlans={successionPlans}
+          trainingActions={trainingActions}
+          onSelectSector={(sectorId) => setSelectedSectorId(sectorId)}
+          onNavigateTab={(tab) => setActiveTab(tab)}
+          tintedGlass={tintedGlass}
+        />
+      ) : activeTab === 'succession' ? (
+        <SuccessionMatrixPanel
+          sector={activeSector}
+          employees={sectorEmployees}
+          successionPlans={successionPlans}
+          onAddSuccessionClick={() => setIsSuccessionModalOpen(true)}
+          onUpdateSuccession={handleUpdateSuccession}
+          onDeleteSuccession={handleDeleteSuccession}
+          tintedGlass={tintedGlass}
+        />
+      ) : activeTab === 'gap_analysis' ? (
+        <GapAnalysisPanel
+          sector={activeSector}
+          stations={sectorStations}
+          employees={sectorEmployees}
+          trainingActions={trainingActions}
+          onAddTrainingAction={handleAddTrainingAction}
+          onUpdateActionStatus={handleUpdateActionStatus}
+          onDeleteTrainingAction={handleDeleteTrainingAction}
+          onCycleLevel={handleCycleLevel}
+          tintedGlass={tintedGlass}
+        />
       ) : (
-        <>
-          {/* HEADER DO SETOR ATIVO & AÇÕES */}
-          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4 ${
-            isDark ? 'border-white/10' : 'border-slate-200'
-          }`}>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded border ${
-                  isDark
-                    ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30'
-                    : 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                }`}>
-                  Setor Ativo: {activeSector.code}
-                </span>
-                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Líder: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{activeSector.managerName}</strong> ({activeSector.managerRole})
-                </span>
+        /* Matriz Operacional ILUO / Gestão à Vista */
+        <div className="space-y-4">
+          {/* Barra de Busca, Filtro de Turno e Controles Visuais */}
+          <div
+            className={`p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 ${
+              tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+            }`}
+          >
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder={`Buscar operadores em ${activeSector.name}...`}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className={`w-full pl-10 pr-4 py-2 text-xs rounded-xl focus:outline-none ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-400'
+                    : 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400'
+                }`}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+              {/* Filtro de Turno */}
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${
+                  tintedGlass ? 'aptis-glass-subcard text-white' : 'bg-white border border-slate-200 text-slate-800'
+                }`}
+              >
+                <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>Turno:</span>
+                <select
+                  value={selectedShift}
+                  onChange={e => setSelectedShift(e.target.value)}
+                  className={`bg-transparent outline-none cursor-pointer font-bold ${
+                    tintedGlass ? 'text-cyan-300 [&>option]:bg-slate-900' : 'text-slate-900'
+                  }`}
+                >
+                  <option value="all">Todos os Turnos</option>
+                  <option value="Turno A">Turno A</option>
+                  <option value="Turno B">Turno B</option>
+                  <option value="Turno C">Turno C</option>
+                </select>
               </div>
-              <h1 className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Matriz de Habilidades: {activeSector.name}
-              </h1>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                {activeSector.description}
-              </p>
-            </div>
 
-            {/* Ações do Módulo */}
-            <div className="flex flex-wrap items-center gap-2">
-              {employees.length === 0 && stations.length === 0 ? (
-                <button
-                  onClick={() => {
-                    setStations(INITIAL_STATIONS);
-                    setEmployees(INITIAL_EMPLOYEES);
-                    setTrainingActions(INITIAL_ACTIONS);
-                    setSuccessionPlans(INITIAL_SUCCESSION_PLANS);
-                  }}
-                  title="Carregar dados de demonstração para teste"
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
-                    isDark
-                      ? 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/15'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                  }`}
-                >
-                  <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-cyan-400' : 'text-blue-600'}`} />
-                  Carregar Exemplos
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    if (window.confirm('Tem certeza que deseja zerar a matriz de habilidades, operadores e plano de sucessão?')) {
-                      setStations([]);
-                      setEmployees([]);
-                      setTrainingActions([]);
-                      setSuccessionPlans([]);
-                    }
-                  }}
-                  title="Limpar matriz de competências e sucessão"
-                  className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs transition-colors cursor-pointer ${
-                    isDark ? 'text-slate-400 hover:text-rose-400' : 'text-slate-400 hover:text-rose-600'
-                  }`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Limpar Matriz
-                </button>
-              )}
-              <button
-                onClick={() => setIsSuccessionModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
-                title="Mapear plano de sucessão de liderança"
-              >
-                <UserCheck className="w-4 h-4" />
-                Mapear Sucessor
-              </button>
-
-              <button
-                onClick={() => setIsOperatorModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
-              >
-                <UserPlus className="w-4 h-4" />
-                Adicionar Operador
-              </button>
-
-              <button
-                onClick={() => setIsStationModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
-              >
-                <PlusCircle className="w-4 h-4" />
-                Adicionar Posto
-              </button>
-
-              <button
-                onClick={() => setIsExcelImporterOpen(true)}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer border ${
-                  isDark
-                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/30'
-                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
-                }`}
-                title="Importar operadores e notas ILUO a partir do Excel"
-              >
-                <FileSpreadsheet className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                Importar Excel
-              </button>
-
-              <button
-                onClick={handleExportCSV}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer border ${
-                  isDark
-                    ? 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/15'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                }`}
-                title="Exportar dados da matriz em CSV / Excel"
-              >
-                <Download className="w-4 h-4" />
-                CSV
-              </button>
-            </div>
-          </div>
-
-
-          {/* NAVEGAÇÃO DE ABAS & CONTROLES VISUAIS */}
-          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 rounded-2xl border transition-all ${
-            isDark
-              ? 'aptis-glass-dark text-white'
-              : 'bg-white border-slate-200 shadow-xs text-slate-900'
-          }`}>
-            {/* Abas Principais */}
-            <div className="flex flex-wrap items-center gap-1">
-              <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'dashboard'
-                    ? isDark
-                      ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/30 text-white border border-cyan-400/40 shadow-xs'
-                      : 'bg-slate-900 text-white shadow-xs'
-                    : isDark
-                      ? 'text-slate-300 hover:bg-white/10'
-                      : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-                Dashboard Executivo
-              </button>
-
-              <button
-                onClick={() => setActiveTab('matrix')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                  activeTab === 'matrix'
-                    ? isDark
-                      ? 'bg-gradient-to-r from-cyan-500/25 to-blue-600/30 text-white border border-cyan-400/40 shadow-xs'
-                      : 'bg-slate-900 text-white shadow-xs'
-                    : isDark
-                      ? 'text-slate-300 hover:bg-white/10'
-                      : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                Matriz Operacional ILUO
-              </button>
-
-              <button
-                onClick={() => setActiveTab('succession')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'succession'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : isDark
-                      ? 'text-slate-300 hover:bg-white/10'
-                      : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <UserCheck className={`w-3.5 h-3.5 ${activeTab === 'succession' ? 'text-indigo-200' : 'text-indigo-400'}`} />
-                Matriz de Sucessão
-                {successionPlans.filter(p => p.sectorId === activeSector.id && p.readiness === 'none').length > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center font-black" title="Posições sem sucessor">
-                    !
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('gap_analysis')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'gap_analysis'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : isDark
-                      ? 'text-slate-300 hover:bg-white/10'
-                      : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                Diagnóstico de Gaps
-                {criticalStationsCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center font-black">
-                    {criticalStationsCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('gestao_a_vista')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'gestao_a_vista'
-                    ? 'bg-cyan-500 text-slate-950 shadow-xs'
-                    : isDark
-                      ? 'text-slate-300 hover:bg-white/10'
-                      : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-                Modo TV Chão de Fábrica
-              </button>
-            </div>
-
-            {/* Alternadores Visuais (ILUO vs Badges & Gaps) */}
-            <div className={`flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 ${
-              isDark ? 'border-white/10' : 'border-slate-100'
-            }`}>
               {/* Formato de Exibição */}
-              <div className={`flex items-center gap-1 p-1 rounded-xl text-xs ${
-                isDark ? 'aptis-meniscus-track' : 'bg-slate-100'
-              }`}>
+              <div
+                className={`flex items-center gap-1 p-1 rounded-xl text-xs ${
+                  tintedGlass ? 'aptis-meniscus-track' : 'bg-slate-100 border border-slate-200'
+                }`}
+              >
                 <button
+                  type="button"
                   onClick={() => setDisplayFormat('iluo_circles')}
-                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                     displayFormat === 'iluo_circles'
-                      ? isDark
+                      ? tintedGlass
                         ? 'bg-blue-600 text-white shadow-xs'
                         : 'bg-white text-blue-700 shadow-xs'
-                      : isDark
+                      : tintedGlass
                         ? 'text-slate-300 hover:text-white'
                         : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <IluoCircle level={3} size={16} />
+                  <IluoCircle level={3} size={15} />
                   Círculos ILUO
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDisplayFormat('badges')}
                   className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
                     displayFormat === 'badges'
-                      ? isDark
+                      ? tintedGlass
                         ? 'bg-blue-600 text-white shadow-xs'
                         : 'bg-white text-blue-700 shadow-xs'
-                      : isDark
+                      : tintedGlass
                         ? 'text-slate-300 hover:text-white'
                         : 'text-slate-600 hover:text-slate-900'
                   }`}
@@ -1104,347 +1205,313 @@ export default function SkillsMatrixModule() {
                 </button>
               </div>
 
-              {/* Destacar Gaps */}
+              {/* Destacar Gaps Toggle */}
               <button
+                type="button"
                 onClick={() => setHighlightGaps(!highlightGaps)}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
                   highlightGaps
-                    ? isDark
+                    ? tintedGlass
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                       : 'bg-amber-100 text-amber-900 border-amber-300'
-                    : isDark
-                      ? 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+                    : tintedGlass
+                      ? 'aptis-glass-subcard text-slate-300 hover:text-white'
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
                 title="Destacar células onde a nota está abaixo do nível desejado (N3)"
               >
-                {highlightGaps ? '✓ Gaps Destacados' : 'Destacar Gaps'}
+                <AlertTriangle className={`w-3.5 h-3.5 ${highlightGaps ? 'text-amber-400' : 'text-slate-400'}`} />
+                {highlightGaps ? 'Gaps Destacados' : 'Destacar Gaps'}
               </button>
             </div>
           </div>
 
-          {/* CONTEÚDO DA ABA 1: MATRIZ OPERACIONAL / GESTÃO À VISTA */}
-          {(activeTab === 'matrix' || activeTab === 'gestao_a_vista') && (
-            <div className="space-y-4">
-              {/* Legenda dos Níveis ILUO */}
-              <div className={`p-3.5 rounded-2xl border transition-all ${
-                isDark
-                  ? 'aptis-glass-dark text-white'
-                  : 'bg-slate-50 border-slate-200 text-slate-900'
-              }`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <h3 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
-                    isDark ? 'text-slate-200' : 'text-slate-700'
-                  }`}>
-                    <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
-                    Escala de Competência Lean (ILUO) • Clique na nota para avançar (1 a 4)
-                  </h3>
-                  <span className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Nível desejado de autonomia: <strong className={isDark ? 'text-cyan-300' : 'text-slate-900'}>N3 (3/4)</strong>
-                  </span>
-                </div>
+          {/* Legenda dos Níveis ILUO */}
+          <div
+            className={`p-4 rounded-3xl relative overflow-hidden transition-all ${
+              tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <h3
+                className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
+                  tintedGlass ? 'text-slate-200' : 'text-slate-700'
+                }`}
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
+                Escala de Competência Lean (ILUO) • Clique em qualquer nota na tabela para avançar o nível (1 a 4)
+              </h3>
+              <span className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                Nível de autonomia pleno: <strong className={tintedGlass ? 'text-cyan-300' : 'text-blue-700'}>N3 (3/4)</strong>
+              </span>
+            </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
-                  {Object.values(SKILL_LEVEL_DEFINITIONS).map(info => (
-                    <div key={info.level} className={`p-2.5 rounded-xl border flex items-center gap-2.5 shadow-2xs ${
-                      isDark
-                        ? 'aptis-glass-subcard border-white/10'
-                        : 'bg-white border-slate-200'
-                    }`}>
-                      <IluoCircle level={info.level} size={28} />
-                      <div>
-                        <span className={`font-bold flex items-center gap-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {info.code} - {info.name.split(' ')[0]}
-                        </span>
-                        <span className={`text-[10px] block leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {info.iluoLabel}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filtros da Matriz */}
-              <div className={`flex flex-col sm:flex-row gap-3 p-3 rounded-2xl border transition-all ${
-                isDark
-                  ? 'aptis-glass-dark text-white'
-                  : 'bg-white border-slate-200 text-slate-900'
-              }`}>
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder={`Buscar operadores em ${activeSector.name}...`}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className={`w-full pl-9 pr-3 py-1.5 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      isDark
-                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
-                        : 'bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white'
-                    }`}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Turno:</span>
-                  <select
-                    value={selectedShift}
-                    onChange={(e) => setSelectedShift(e.target.value)}
-                    className={`text-xs border rounded-xl py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
-                      isDark
-                        ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
-                        : 'border-slate-200 bg-slate-50 text-slate-800'
-                    }`}
-                  >
-                    <option value="all">Todos os Turnos</option>
-                    <option value="Turno A">Turno A</option>
-                    <option value="Turno B">Turno B</option>
-                    <option value="Turno C">Turno C</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* TABELA DA MATRIZ */}
-              {sectorStations.length === 0 ? (
-                <div className={`rounded-2xl border p-12 text-center space-y-3 ${
-                  isDark ? 'aptis-glass-dark text-white' : 'bg-white border-slate-200 text-slate-900'
-                }`}>
-                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Nenhum posto de trabalho cadastrado para {activeSector.name}.
-                  </p>
-                  <button
-                    onClick={() => setIsStationModalOpen(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer"
-                  >
-                    Cadastrar Primeiro Posto
-                  </button>
-                </div>
-              ) : (
-                <div className={`rounded-2xl border overflow-hidden transition-all ${
-                  isDark
-                    ? 'aptis-glass-dark text-white'
-                    : 'bg-white border-slate-200 shadow-xs text-slate-900'
-                }`}>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-slate-900 text-white">
-                          <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wider sticky left-0 bg-slate-900 z-10 min-w-[220px]">
-                            Colaborador / Função
-                          </th>
-                          <th className="py-3 px-3 font-semibold text-xs uppercase tracking-wider text-center w-24">
-                            Turno
-                          </th>
-                          {sectorStations.map(st => (
-                            <th key={st.id} className="py-3 px-3 font-semibold text-xs text-center border-l border-slate-800 min-w-[150px]">
-                              <div className="font-bold text-slate-100">{st.name}</div>
-                              <div className="text-[10px] text-slate-400 font-normal">
-                                Mín. req: <strong>{st.minOperatorsRequired}</strong> autônomos
-                              </div>
-                            </th>
-                          ))}
-                          <th className="py-3 px-3 font-semibold text-xs uppercase tracking-wider text-center border-l border-slate-800 w-28">
-                            Polivalência
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className={`divide-y ${isDark ? 'divide-white/10' : 'divide-slate-200'}`}>
-                        {filteredEmployees.length === 0 ? (
-                          <tr>
-                            <td colSpan={sectorStations.length + 3} className="py-12 text-center text-slate-400 text-xs">
-                              <p className="mb-2">Nenhum operador cadastrado para este setor.</p>
-                              <button
-                                onClick={() => setIsOperatorModalOpen(true)}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer"
-                              >
-                                <UserPlus className="w-3.5 h-3.5" />
-                                Cadastrar Primeiro Operador
-                              </button>
-                            </td>
-                          </tr>
-                        ) : (
-                          filteredEmployees.map(emp => {
-                            const autonomousCount = Object.values(emp.skills).filter(l => l >= 3).length;
-                            return (
-                              <tr key={emp.employeeId} className={`transition-colors group ${
-                                isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
-                              }`}>
-                                <td className={`py-3 px-4 font-medium sticky left-0 z-10 border-r ${
-                                  isDark
-                                    ? 'bg-slate-900/95 group-hover:bg-slate-800/95 border-white/10 text-white'
-                                    : 'bg-white group-hover:bg-slate-50 border-slate-100 text-slate-900'
-                                }`}>
-                                  <div className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                    {emp.employeeName}
-                                  </div>
-                                  <div className="text-xs text-slate-400">{emp.role}</div>
-                                </td>
-                                <td className="py-3 px-3 text-center text-xs">
-                                  <span className={`px-2 py-0.5 rounded border ${
-                                    isDark
-                                      ? 'bg-white/10 border-white/15 text-slate-300'
-                                      : 'bg-slate-100 border-slate-200 text-slate-600'
-                                  }`}>
-                                    {emp.shift}
-                                  </span>
-                                </td>
-
-                                {sectorStations.map(st => {
-                                  const lvl = emp.skills[st.id] || 1;
-                                  const info = SKILL_LEVEL_DEFINITIONS[lvl];
-                                  const isGap = highlightGaps && lvl < (st.targetLevel || 3);
-
-                                  return (
-                                    <td 
-                                      key={st.id} 
-                                      className={`py-2.5 px-3 text-center border-l transition-colors ${
-                                        isDark ? 'border-white/10' : 'border-slate-100'
-                                      } ${
-                                        isGap
-                                          ? isDark
-                                            ? 'bg-rose-500/15 ring-1 ring-rose-500/40 inset-0'
-                                            : 'bg-rose-50/70 ring-1 ring-rose-300 inset-0'
-                                          : ''
-                                      }`}
-                                    >
-                                      <button
-                                        onClick={() => handleCycleLevel(emp.employeeId, st.id)}
-                                        className={`p-1.5 rounded-lg font-bold text-xs transition-all transform active:scale-90 border cursor-pointer inline-flex items-center justify-center gap-1.5 min-w-[50px] ${
-                                          displayFormat === 'badges'
-                                            ? info.color
-                                            : isDark
-                                              ? 'bg-slate-900/70 hover:bg-slate-800 border-white/15 text-white'
-                                              : 'bg-white hover:bg-slate-50 border-slate-200'
-                                        }`}
-                                        title={`${emp.employeeName} em ${st.name}: ${info.name}. Clique para alternar.`}
-                                      >
-                                        {displayFormat === 'iluo_circles' ? (
-                                          <>
-                                            <IluoCircle level={lvl} size={24} />
-                                            <span className={`text-[11px] font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                                              {info.code}
-                                            </span>
-                                          </>
-                                        ) : (
-                                          <span>{info.code}</span>
-                                        )}
-                                      </button>
-                                    </td>
-                                  );
-                                })}
-
-                                <td className={`py-3 px-3 text-center border-l ${isDark ? 'border-white/10' : 'border-slate-100'}`}>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                                    autonomousCount >= 3 
-                                      ? isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-100 text-emerald-800'
-                                      : autonomousCount >= 2 
-                                      ? isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-800'
-                                      : isDark ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-700'
-                                  }`}>
-                                    {autonomousCount} / {sectorStations.length}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-
-                      {/* Linha de Cobertura Crítica */}
-                      <tfoot>
-                        <tr className={`border-t-2 font-semibold text-xs ${
-                          isDark
-                            ? 'bg-slate-900/80 border-white/15 text-slate-200'
-                            : 'bg-slate-50 border-slate-300 text-slate-800'
-                        }`}>
-                          <td className={`py-3 px-4 sticky left-0 z-10 ${
-                            isDark ? 'bg-slate-900' : 'bg-slate-50'
-                          }`}>
-                            Operadores Autônomos (N3 ou N4)
-                          </td>
-                          <td className="py-3 px-3 text-center">-</td>
-                          {sectorStations.map(st => {
-                            const count = sectorEmployees.filter(emp => (emp.skills[st.id] || 0) >= 3).length;
-                            const isUnder = count < st.minOperatorsRequired;
-                            return (
-                              <td 
-                                key={st.id} 
-                                className={`py-3 px-3 text-center border-l ${
-                                  isDark ? 'border-white/10' : 'border-slate-200'
-                                } ${
-                                  isUnder
-                                    ? isDark
-                                      ? 'bg-rose-500/15 text-rose-300 font-bold'
-                                      : 'bg-rose-50 text-rose-700 font-bold'
-                                    : isDark
-                                      ? 'text-white'
-                                      : 'text-slate-900'
-                                }`}
-                              >
-                                {count} / {st.minOperatorsRequired} req.
-                                {isUnder && (
-                                  <span className={`block text-[10px] uppercase font-bold ${
-                                    isDark ? 'text-rose-400' : 'text-rose-600'
-                                  }`}>
-                                    Abaixo do mín.
-                                  </span>
-                                )}
-                              </td>
-                            );
-                          })}
-                          <td className={`py-3 px-3 text-center border-l ${isDark ? 'border-white/10' : 'border-slate-200'}`}>-</td>
-                        </tr>
-                      </tfoot>
-                    </table>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              {Object.values(SKILL_LEVEL_DEFINITIONS).map(info => (
+                <div
+                  key={info.level}
+                  className={`p-3 rounded-2xl flex items-center gap-3 ${
+                    tintedGlass
+                      ? 'aptis-glass-subcard'
+                      : 'bg-white/90 border border-slate-200 shadow-2xs'
+                  }`}
+                >
+                  <IluoCircle level={info.level} size={28} />
+                  <div>
+                    <span className={`font-bold flex items-center gap-1 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                      {info.code} - {info.name.split(' ')[0]}
+                    </span>
+                    <span className={`text-[10px] block leading-tight ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {info.iluoLabel}
+                    </span>
                   </div>
                 </div>
-              )}
+              ))}
+            </div>
+          </div>
+
+          {/* Tabela da Matriz */}
+          {sectorStations.length === 0 ? (
+            <div
+              className={`rounded-3xl border p-12 text-center space-y-3 ${
+                tintedGlass ? 'aptis-glass-dark text-white border-white/10' : 'bg-white border-slate-200 text-slate-900 shadow-xs'
+              }`}
+            >
+              <p className={`text-sm ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                Nenhum posto de trabalho cadastrado para {activeSector.name}.
+              </p>
+              <button
+                onClick={() => setIsStationModalOpen(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer"
+              >
+                Cadastrar Primeiro Posto
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`rounded-3xl border overflow-hidden transition-all duration-500 ${
+                tintedGlass
+                  ? 'aptis-glass-dark border-white/10 text-white'
+                  : 'bg-white border-slate-200 shadow-xs text-slate-900'
+              }`}
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className={tintedGlass ? 'bg-slate-950/80 backdrop-blur-md text-white' : 'bg-slate-900 text-white'}>
+                      <th
+                        className={`py-3.5 px-4 font-semibold text-xs uppercase tracking-wider sticky left-0 z-20 min-w-[220px] ${
+                          tintedGlass
+                            ? 'bg-slate-950/95 backdrop-blur-md border-r border-white/10 text-white'
+                            : 'bg-slate-900 border-r border-slate-800 text-white'
+                        }`}
+                      >
+                        Colaborador / Função
+                      </th>
+                      <th className="py-3.5 px-3 font-semibold text-xs uppercase tracking-wider text-center w-24">
+                        Turno
+                      </th>
+                      {sectorStations.map(st => (
+                        <th
+                          key={st.id}
+                          className={`py-3.5 px-3 font-semibold text-xs text-center border-l min-w-[150px] ${
+                            tintedGlass ? 'border-white/10' : 'border-slate-800'
+                          }`}
+                        >
+                          <div className="font-bold text-slate-100">{st.name}</div>
+                          <div className="text-[10px] text-cyan-300 font-normal mt-0.5">
+                            Mín. req: <strong>{st.minOperatorsRequired}</strong> autônomos
+                          </div>
+                        </th>
+                      ))}
+                      <th
+                        className={`py-3.5 px-3 font-semibold text-xs uppercase tracking-wider text-center border-l w-28 ${
+                          tintedGlass ? 'border-white/10' : 'border-slate-800'
+                        }`}
+                      >
+                        Polivalência
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${tintedGlass ? 'divide-white/10' : 'divide-slate-200'}`}>
+                    {filteredEmployees.length === 0 ? (
+                      <tr>
+                        <td colSpan={sectorStations.length + 3} className="py-12 text-center text-slate-400 text-xs">
+                          <p className="mb-2">Nenhum operador cadastrado para este setor.</p>
+                          <button
+                            onClick={() => setIsOperatorModalOpen(true)}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            Cadastrar Primeiro Operador
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredEmployees.map(emp => {
+                        const autonomousCount = Object.values(emp.skills).filter(l => l >= 3).length;
+                        return (
+                          <tr
+                            key={emp.employeeId}
+                            className={`transition-colors group ${
+                              tintedGlass ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                            }`}
+                          >
+                            <td
+                              className={`py-3.5 px-4 font-medium sticky left-0 z-10 border-r ${
+                                tintedGlass
+                                  ? 'bg-slate-900/95 group-hover:bg-slate-800/95 border-white/10 text-white'
+                                  : 'bg-white group-hover:bg-slate-50 border-slate-100 text-slate-900'
+                              }`}
+                            >
+                              <div className={`font-semibold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                                {emp.employeeName}
+                              </div>
+                              <div className="text-xs text-slate-400">{emp.role}</div>
+                            </td>
+                            <td className="py-3.5 px-3 text-center text-xs">
+                              <span
+                                className={`px-2 py-0.5 rounded-full border ${
+                                  tintedGlass
+                                    ? 'bg-white/10 border-white/15 text-slate-300'
+                                    : 'bg-slate-100 border-slate-200 text-slate-600'
+                                }`}
+                              >
+                                {emp.shift}
+                              </span>
+                            </td>
+
+                            {sectorStations.map(st => {
+                              const lvl = emp.skills[st.id] || 1;
+                              const info = SKILL_LEVEL_DEFINITIONS[lvl];
+                              const isGap = highlightGaps && lvl < (st.targetLevel || 3);
+
+                              return (
+                                <td
+                                  key={st.id}
+                                  className={`py-2.5 px-3 text-center border-l transition-colors ${
+                                    tintedGlass ? 'border-white/10' : 'border-slate-100'
+                                  } ${
+                                    isGap
+                                      ? tintedGlass
+                                        ? 'bg-rose-500/15 ring-1 ring-rose-500/40 inset-0'
+                                        : 'bg-rose-50/70 ring-1 ring-rose-300 inset-0'
+                                      : ''
+                                  }`}
+                                >
+                                  <button
+                                    onClick={() => handleCycleLevel(emp.employeeId, st.id)}
+                                    className={`p-1.5 rounded-xl font-bold text-xs transition-all transform active:scale-95 cursor-pointer inline-flex items-center justify-center gap-1.5 min-w-[52px] ${
+                                      displayFormat === 'badges'
+                                        ? info.color
+                                        : tintedGlass
+                                          ? 'aptis-glass-subcard aptis-glass-subcard-interactive text-white'
+                                          : 'bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs'
+                                    }`}
+                                    title={`${emp.employeeName} em ${st.name}: ${info.name}. Clique para alternar nota.`}
+                                  >
+                                    {displayFormat === 'iluo_circles' ? (
+                                      <>
+                                        <IluoCircle level={lvl} size={22} />
+                                        <span className={`text-[11px] font-bold ${tintedGlass ? 'text-slate-200' : 'text-slate-700'}`}>
+                                          {info.code}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span>{info.code}</span>
+                                    )}
+                                  </button>
+                                </td>
+                              );
+                            })}
+
+                            <td className={`py-3.5 px-3 text-center border-l ${tintedGlass ? 'border-white/10' : 'border-slate-100'}`}>
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                  autonomousCount >= 3
+                                    ? tintedGlass
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                      : 'bg-emerald-100 text-emerald-800'
+                                    : autonomousCount >= 2
+                                    ? tintedGlass
+                                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                      : 'bg-blue-100 text-blue-800'
+                                    : tintedGlass
+                                    ? 'bg-white/10 text-slate-300 border border-white/15'
+                                    : 'bg-slate-100 text-slate-700'
+                                }`}
+                              >
+                                {autonomousCount} / {sectorStations.length}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+
+                  {/* Linha de Cobertura Crítica */}
+                  <tfoot>
+                    <tr
+                      className={`border-t font-semibold text-xs ${
+                        tintedGlass
+                          ? 'bg-slate-950/60 border-white/10 text-slate-200'
+                          : 'bg-slate-50 border-slate-200 text-slate-800'
+                      }`}
+                    >
+                      <td
+                        className={`py-3.5 px-4 sticky left-0 z-10 border-r ${
+                          tintedGlass ? 'bg-slate-950/90 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                        }`}
+                      >
+                        Operadores Autônomos (N3 ou N4)
+                      </td>
+                      <td className="py-3.5 px-3 text-center">-</td>
+                      {sectorStations.map(st => {
+                        const count = sectorEmployees.filter(emp => (emp.skills[st.id] || 0) >= 3).length;
+                        const isUnder = count < st.minOperatorsRequired;
+                        return (
+                          <td
+                            key={st.id}
+                            className={`py-3.5 px-3 text-center border-l ${
+                              tintedGlass ? 'border-white/10' : 'border-slate-200'
+                            } ${
+                              isUnder
+                                ? tintedGlass
+                                  ? 'bg-rose-500/15 text-rose-300 font-bold'
+                                  : 'bg-rose-50 text-rose-700 font-bold'
+                                : tintedGlass
+                                  ? 'text-white'
+                                  : 'text-slate-900'
+                            }`}
+                          >
+                            <div className="font-bold">
+                              {count} / {st.minOperatorsRequired} req.
+                            </div>
+                            {isUnder && (
+                              <span
+                                className={`inline-block text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full mt-0.5 border ${
+                                  tintedGlass
+                                    ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
+                                    : 'bg-rose-100 text-rose-700 border-rose-200'
+                                }`}
+                              >
+                                Gargalo
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className={`py-3.5 px-3 text-center border-l ${tintedGlass ? 'border-white/10' : 'border-slate-200'}`}>
+                        -
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
           )}
-
-          {/* CONTEÚDO DA ABA 0: DASHBOARD EXECUTIVO DINÂMICO */}
-          {activeTab === 'dashboard' && (
-            <SkillsDashboardPanel
-              sectors={sectors}
-              activeSector={activeSector}
-              stations={stations}
-              employees={employees}
-              successionPlans={successionPlans}
-              trainingActions={trainingActions}
-              onSelectSector={(sectorId) => setSelectedSectorId(sectorId)}
-              onNavigateTab={(tab) => setActiveTab(tab)}
-              tintedGlass={isDark}
-            />
-          )}
-
-          {/* CONTEÚDO DA ABA: MATRIZ DE SUCESSÃO */}
-          {activeTab === 'succession' && (
-            <SuccessionMatrixPanel
-              sector={activeSector}
-              employees={sectorEmployees}
-              successionPlans={successionPlans}
-              onAddSuccessionClick={() => setIsSuccessionModalOpen(true)}
-              onUpdateSuccession={handleUpdateSuccession}
-              onDeleteSuccession={handleDeleteSuccession}
-              tintedGlass={isDark}
-            />
-          )}
-
-          {/* CONTEÚDO DA ABA 2: DIAGNÓSTICO DE GAPS & PLANO DE AÇÃO */}
-          {activeTab === 'gap_analysis' && (
-            <GapAnalysisPanel
-              sector={activeSector}
-              stations={sectorStations}
-              employees={sectorEmployees}
-              trainingActions={trainingActions}
-              onAddTrainingAction={handleAddTrainingAction}
-              onUpdateActionStatus={handleUpdateActionStatus}
-              onDeleteTrainingAction={handleDeleteTrainingAction}
-              onCycleLevel={handleCycleLevel}
-              tintedGlass={isDark}
-            />
-          )}
-        </>
+        </div>
       )}
 
       {/* MODAIS DO MÓDULO */}

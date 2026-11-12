@@ -200,33 +200,52 @@ export function GapAnalysisPanel({
   return (
     <div className="space-y-8">
       {/* Header do Diagnóstico */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-2xl p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md border border-slate-800">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded">
-              Diagnóstico Automático
-            </span>
-            <span className="text-xs text-slate-400">Setor: {sector.name}</span>
-          </div>
-          <h2 className="text-xl font-bold text-white">
-            Análise de Gaps & Motor de Recomendações de Treinamento
-          </h2>
-          <p className="text-xs text-slate-300 max-w-2xl mt-1">
-            Cards otimizados e compactos. Agende a capacitação recomendada diretamente com 1 clique ou clique em <strong>Ajustar</strong> para alterar o tutor ou o prazo previsto.
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            if (stations.length > 0) {
-              handleOpenConfigModal(stations[0], employees[0]);
-            }
+      <div
+        className={`relative overflow-hidden rounded-3xl p-6 transition-all duration-500 border ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white border-white/10'
+            : 'aptis-glass-light text-slate-900 border-slate-200 shadow-sm'
+        }`}
+      >
+        <div
+          className="absolute -top-16 -right-12 w-72 h-72 rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(245, 158, 11, 0.65) 0%, rgba(234, 88, 12, 0.25) 60%, transparent 75%)'
           }}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Agendar Ação Manual
-        </button>
+        />
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                tintedGlass
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
+              }`}>
+                Diagnóstico Automático
+              </span>
+              <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>Setor: {sector.name}</span>
+            </div>
+            <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              Análise de Gaps & Motor de Recomendações de Treinamento
+            </h2>
+            <p className={`text-xs sm:text-sm mt-1 max-w-2xl ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+              Cards otimizados e compactos. Agende a capacitação recomendada diretamente com 1 clique ou clique em <strong>Ajustar</strong> para alterar o tutor ou o prazo previsto.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              if (stations.length > 0) {
+                handleOpenConfigModal(stations[0], employees[0]);
+              }
+            }}
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Agendar Ação Manual
+          </button>
+        </div>
       </div>
 
       {/* Alerta de Feedback */}
