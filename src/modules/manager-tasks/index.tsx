@@ -32,7 +32,11 @@ import {
   Sparkles,
   Eye,
   Building2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  List,
+  ArrowUpDown,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { EisenhowerMatrix } from './components/EisenhowerMatrix';
@@ -222,6 +226,20 @@ const COLUMNS: {
   { id: 'done', label: 'Concluído', dot: 'bg-emerald-400', glow: 'shadow-[0_0_10px_#34d399]' }
 ];
 
+const PRIORITY_ORDER: Record<TaskPriority, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3
+};
+
+const STATUS_ORDER: Record<TaskStatus, number> = {
+  todo: 0,
+  in_progress: 1,
+  review: 2,
+  done: 3
+};
+
 export default function ManagerTasksModule() {
   const { currentTenant } = useTenant();
   const { sectors: plantSectors } = usePlantSectors();
@@ -237,6 +255,11 @@ export default function ManagerTasksModule() {
     INITIAL_FOLLOW_UPS
   );
   const [activeTab, setActiveTab] = useState<TaskViewTab>('kanban');
+  const [tasksViewMode, setTasksViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [listStatusFilter, setListStatusFilter] = useState<'all' | TaskStatus>('all');
+  const [listSortBy, setListSortBy] = useState<'dueDate' | 'priority' | 'status' | 'title'>('dueDate');
+  const [listSortDir, setListSortDir] = useState<'asc' | 'desc'>('asc');
+  const [expandedListSubtasks, setExpandedListSubtasks] = useState<Record<string, boolean>>({});
   const [selectedSector, setSelectedSector] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -666,7 +689,7 @@ export default function ManagerTasksModule() {
   }> = [
     {
       id: 'kanban',
-      label: 'Fluxo Kanban',
+      label: 'Kanban & Lista',
       icon: Kanban,
       glowColor: 'rgba(59, 130, 246, 0.58)',
       beadGradient: 'linear-gradient(135deg, #38bdf8 0%, #2563eb 100%)'
@@ -698,6 +721,39 @@ export default function ManagerTasksModule() {
 
   const activeMeniscusTab =
     routineTabs.find(t => t.id === activeTab) || routineTabs[0];
+
+  const handleToggleListSort = (field: 'dueDate' | 'priority' | 'status' | 'title') => {
+    if (listSortBy === field) {
+      setListSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setListSortBy(field);
+      setListSortDir('asc');
+    }
+  };
+
+  const toggleExpandSubtasks = (taskId: string) => {
+    setExpandedListSubtasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
+  };
+
+  const listTasks = filteredTasks
+    .filter(t => listStatusFilter === 'all' || t.status === listStatusFilter)
+    .slice()
+    .sort((a, b) => {
+      let cmp = 0;
+      if (listSortBy === 'dueDate') {
+        cmp = a.dueDate.localeCompare(b.dueDate);
+      } else if (listSortBy === 'priority') {
+        cmp = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+      } else if (listSortBy === 'status') {
+        cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      } else if (listSortBy === 'title') {
+        cmp = a.title.localeCompare(b.title);
+      }
+      return listSortDir === 'asc' ? cmp : -cmp;
+    });
 
   return (
     <div className="space-y-6 w-full">
@@ -1058,12 +1114,12 @@ export default function ManagerTasksModule() {
         </div>
       ) : (
         /* ===================================================================
-           QUADRO KANBAN EM DUPLA CAMADA DE VIDRO (Idêntico ao "Packing board" do Vídeo 1 - Cimel)
+           QUADRO KANBAN / MODO LISTA EM DUPLA CAMADA DE VIDRO
            =================================================================== */
         <div className="space-y-4">
-          {/* Barra de Busca e Filtro de Prioridade em Vidro */}
+          {/* Barra de Busca, Filtro de Prioridade e Seletor Kanban vs Lista */}
           <div
-            className={`flex flex-col sm:flex-row gap-3 p-3.5 rounded-2xl items-stretch sm:items-center ${
+            className={`flex flex-col lg:flex-row gap-3 p-3.5 rounded-2xl items-stretch lg:items-center ${
               tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
             }`}
           >
@@ -1082,49 +1138,95 @@ export default function ManagerTasksModule() {
               />
             </div>
 
-            <div
-              className={`hidden md:flex items-center gap-1.5 text-[11px] px-3 py-2 rounded-xl ${
-                tintedGlass
-                  ? 'aptis-glass-subcard text-slate-300'
-                  : 'text-slate-500 bg-slate-50 border border-slate-200'
-              }`}
-            >
-              <GripVertical className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Arraste os cartões entre as colunas para atualizar o status</span>
-            </div>
-
-            <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${
-                tintedGlass
-                  ? 'aptis-glass-subcard text-slate-200'
-                  : 'bg-slate-50 border border-slate-200 text-slate-700'
-              }`}
-            >
-              <Filter className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-xs font-medium">Prioridade:</span>
-              <select
-                value={priorityFilter}
-                onChange={e => setPriorityFilter(e.target.value)}
-                className={`text-xs font-bold bg-transparent focus:outline-none cursor-pointer ${
-                  tintedGlass ? 'text-cyan-300' : 'text-slate-900'
+            {tasksViewMode === 'kanban' && (
+              <div
+                className={`hidden xl:flex items-center gap-1.5 text-[11px] px-3 py-2 rounded-xl ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard text-slate-300'
+                    : 'text-slate-500 bg-slate-50 border border-slate-200'
                 }`}
               >
-                <option value="all" className="bg-slate-900 text-white">
-                  Todas as Prioridades
-                </option>
-                <option value="critical" className="bg-slate-900 text-white">
-                  Crítica
-                </option>
-                <option value="high" className="bg-slate-900 text-white">
-                  Alta
-                </option>
-                <option value="medium" className="bg-slate-900 text-white">
-                  Média
-                </option>
-                <option value="low" className="bg-slate-900 text-white">
-                  Baixa
-                </option>
-              </select>
+                <GripVertical className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Arraste os cartões entre as colunas para atualizar o status</span>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2.5 justify-between sm:justify-end">
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard text-slate-200'
+                    : 'bg-slate-50 border border-slate-200 text-slate-700'
+                }`}
+              >
+                <Filter className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-xs font-medium">Prioridade:</span>
+                <select
+                  value={priorityFilter}
+                  onChange={e => setPriorityFilter(e.target.value)}
+                  className={`text-xs font-bold bg-transparent focus:outline-none cursor-pointer ${
+                    tintedGlass ? 'text-cyan-300' : 'text-slate-900'
+                  }`}
+                >
+                  <option value="all" className="bg-slate-900 text-white">
+                    Todas as Prioridades
+                  </option>
+                  <option value="critical" className="bg-slate-900 text-white">
+                    Crítica
+                  </option>
+                  <option value="high" className="bg-slate-900 text-white">
+                    Alta
+                  </option>
+                  <option value="medium" className="bg-slate-900 text-white">
+                    Média
+                  </option>
+                  <option value="low" className="bg-slate-900 text-white">
+                    Baixa
+                  </option>
+                </select>
+              </div>
+
+              {/* Alternador Visão Kanban vs Modo Lista */}
+              <div
+                className={`flex items-center gap-1 p-1 rounded-xl text-xs shrink-0 ${
+                  tintedGlass ? 'aptis-meniscus-track' : 'bg-slate-100 border border-slate-200'
+                }`}
+                role="group"
+                aria-label="Modo de visualização das tarefas"
+              >
+                <button
+                  type="button"
+                  onClick={() => setTasksViewMode('kanban')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    tasksViewMode === 'kanban'
+                      ? tintedGlass
+                        ? 'bg-gradient-to-r from-sky-400 to-blue-600 text-white shadow-[0_0_14px_rgba(59,130,246,0.45)]'
+                        : 'bg-white text-blue-700 shadow-xs'
+                      : tintedGlass
+                      ? 'text-slate-300 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Kanban className="w-3.5 h-3.5" />
+                  Kanban
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTasksViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    tasksViewMode === 'list'
+                      ? tintedGlass
+                        ? 'bg-gradient-to-r from-sky-400 to-blue-600 text-white shadow-[0_0_14px_rgba(59,130,246,0.45)]'
+                        : 'bg-white text-blue-700 shadow-xs'
+                      : tintedGlass
+                      ? 'text-slate-300 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  Modo Lista
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1150,7 +1252,8 @@ export default function ManagerTasksModule() {
             </div>
           )}
 
-          {/* COLUNAS DO PACKING BOARD KANBAN EM DUPLA CAMADA DE VIDRO (Vídeo 1 Cimel) */}
+          {tasksViewMode === 'kanban' ? (
+          /* COLUNAS DO PACKING BOARD KANBAN EM DUPLA CAMADA DE VIDRO (Vídeo 1 Cimel) */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
             {COLUMNS.map(col => {
               const colTasks = filteredTasks.filter(t => t.status === col.id);
@@ -1421,6 +1524,469 @@ export default function ManagerTasksModule() {
               );
             })}
           </div>
+          ) : (
+            /* ===================================================================
+               MODO LISTA OPERACIONAL EM VIDRO ESPECULAR
+               =================================================================== */
+            <div className="space-y-4">
+              {/* Filtros Rápidos por Etapa & Ordenação */}
+              <div
+                className={`flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 rounded-2xl ${
+                  tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+                }`}
+              >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setListStatusFilter('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                      listStatusFilter === 'all'
+                        ? tintedGlass
+                          ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400/40'
+                          : 'bg-slate-900 text-white border-slate-900'
+                        : tintedGlass
+                        ? 'aptis-glass-subcard text-slate-300 hover:text-white'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Todas</span>
+                    <span className="font-mono text-[10px] opacity-80">({filteredTasks.length})</span>
+                  </button>
+
+                  {COLUMNS.map(col => {
+                    const count = filteredTasks.filter(t => t.status === col.id).length;
+                    const isActive = listStatusFilter === col.id;
+                    return (
+                      <button
+                        key={col.id}
+                        type="button"
+                        onClick={() => setListStatusFilter(col.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                          isActive
+                            ? tintedGlass
+                              ? 'bg-cyan-500/20 text-white border-cyan-400/45'
+                              : 'bg-blue-600 text-white border-blue-600'
+                            : tintedGlass
+                            ? 'aptis-glass-subcard text-slate-300 hover:text-white'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${col.dot} ${col.glow}`} />
+                        <span>{col.label.split(' ')[0] === 'Em' ? col.label.split(' /')[0] : col.label}</span>
+                        <span className="font-mono text-[10px] opacity-80">({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-2 self-start md:self-auto">
+                  <div
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard text-slate-200'
+                        : 'bg-slate-50 border border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="font-medium">Ordenar:</span>
+                    <select
+                      value={listSortBy}
+                      onChange={e =>
+                        setListSortBy(e.target.value as 'dueDate' | 'priority' | 'status' | 'title')
+                      }
+                      className={`font-bold bg-transparent focus:outline-none cursor-pointer ${
+                        tintedGlass ? 'text-cyan-300' : 'text-slate-900'
+                      }`}
+                    >
+                      <option value="dueDate" className="bg-slate-900 text-white">
+                        Prazo (SLA)
+                      </option>
+                      <option value="priority" className="bg-slate-900 text-white">
+                        Prioridade
+                      </option>
+                      <option value="status" className="bg-slate-900 text-white">
+                        Status
+                      </option>
+                      <option value="title" className="bg-slate-900 text-white">
+                        Título (A-Z)
+                      </option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setListSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard text-cyan-300 hover:text-white'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                    title={listSortDir === 'asc' ? 'Ordem Crescente' : 'Ordem Decrescente'}
+                  >
+                    {listSortDir === 'asc' ? '↑ Cresc.' : '↓ Decresc.'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Tabela da Lista de Tarefas */}
+              <div
+                className={`rounded-3xl border overflow-hidden transition-all duration-300 ${
+                  tintedGlass
+                    ? 'aptis-glass-dark border-white/10 text-white'
+                    : 'bg-white border-slate-200 shadow-xs text-slate-900'
+                }`}
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr
+                        className={
+                          tintedGlass
+                            ? 'bg-slate-950/80 backdrop-blur-md text-slate-200 border-b border-white/[0.08]'
+                            : 'bg-slate-900 text-white'
+                        }
+                      >
+                        <th className="py-3.5 px-4 font-semibold text-xs uppercase tracking-wider w-48">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleListSort('status')}
+                            className="inline-flex items-center gap-1.5 hover:text-cyan-300 transition-colors cursor-pointer"
+                          >
+                            <span>Status</span>
+                            <ArrowUpDown className="w-3 h-3 opacity-70" />
+                          </button>
+                        </th>
+                        <th className="py-3.5 px-4 font-semibold text-xs uppercase tracking-wider min-w-[260px]">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleListSort('title')}
+                            className="inline-flex items-center gap-1.5 hover:text-cyan-300 transition-colors cursor-pointer"
+                          >
+                            <span>Tarefa / Setor</span>
+                            <ArrowUpDown className="w-3 h-3 opacity-70" />
+                          </button>
+                        </th>
+                        <th className="py-3.5 px-3 font-semibold text-xs uppercase tracking-wider text-center w-28">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleListSort('priority')}
+                            className="inline-flex items-center gap-1.5 hover:text-cyan-300 transition-colors cursor-pointer"
+                          >
+                            <span>Prioridade</span>
+                            <ArrowUpDown className="w-3 h-3 opacity-70" />
+                          </button>
+                        </th>
+                        <th className="py-3.5 px-3 font-semibold text-xs uppercase tracking-wider w-40">
+                          Checklist
+                        </th>
+                        <th className="py-3.5 px-3 font-semibold text-xs uppercase tracking-wider min-w-[150px]">
+                          Responsável
+                        </th>
+                        <th className="py-3.5 px-3 font-semibold text-xs uppercase tracking-wider min-w-[175px]">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleListSort('dueDate')}
+                            className="inline-flex items-center gap-1.5 hover:text-cyan-300 transition-colors cursor-pointer"
+                          >
+                            <span>Prazo & SLA</span>
+                            <ArrowUpDown className="w-3 h-3 opacity-70" />
+                          </button>
+                        </th>
+                        <th className="py-3.5 px-4 font-semibold text-xs uppercase tracking-wider text-right w-24">
+                          Ações
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody className={`divide-y ${tintedGlass ? 'divide-white/[0.06]' : 'divide-slate-100'}`}>
+                      {listTasks.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-xs text-slate-400">
+                            <p className="mb-3">
+                              Nenhuma tarefa encontrada com os filtros atuais.
+                            </p>
+                            <div className="flex items-center justify-center gap-2">
+                              {(listStatusFilter !== 'all' || priorityFilter !== 'all' || search) && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setListStatusFilter('all');
+                                    setPriorityFilter('all');
+                                    setSearch('');
+                                  }}
+                                  className={`px-3 py-1.5 rounded-xl font-semibold border cursor-pointer ${
+                                    tintedGlass
+                                      ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  Limpar Filtros
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={openNewTaskModal}
+                                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                Nova Tarefa
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        listTasks.map(task => {
+                          const colMeta = COLUMNS.find(c => c.id === task.status) || COLUMNS[0];
+                          const completedSubtasks =
+                            task.subtasks?.filter(s => s.completed).length || 0;
+                          const totalSubtasks = task.subtasks?.length || 0;
+                          const subProgress =
+                            totalSubtasks > 0
+                              ? Math.round((completedSubtasks / totalSubtasks) * 100)
+                              : 0;
+                          const isExpanded = Boolean(expandedListSubtasks[task.id]);
+
+                          return (
+                            <React.Fragment key={task.id}>
+                              <tr
+                                className={`transition-colors group ${
+                                  task.status === 'done' ? 'opacity-75' : ''
+                                } ${tintedGlass ? 'hover:bg-white/[0.04]' : 'hover:bg-slate-50/90'}`}
+                              >
+                                {/* Status Interativo */}
+                                <td className="py-3.5 px-4 align-middle">
+                                  <div
+                                    className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-bold ${
+                                      tintedGlass
+                                        ? 'aptis-glass-subcard text-white border-white/15'
+                                        : 'bg-slate-50 text-slate-800 border-slate-200'
+                                    }`}
+                                  >
+                                    <span className={`w-2 h-2 rounded-full shrink-0 ${colMeta.dot} ${colMeta.glow}`} />
+                                    <select
+                                      value={task.status}
+                                      onChange={e =>
+                                        handleMoveStatus(task.id, e.target.value as TaskStatus)
+                                      }
+                                      aria-label={`Alterar status da tarefa ${task.title}`}
+                                      className={`bg-transparent outline-none cursor-pointer text-[11px] font-bold pr-1 ${
+                                        tintedGlass
+                                          ? 'text-white [&>option]:bg-slate-900'
+                                          : 'text-slate-800'
+                                      }`}
+                                    >
+                                      {COLUMNS.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                          {c.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </td>
+
+                                {/* Título, Setor, Descrição & Quadrante */}
+                                <td className="py-3.5 px-4 align-middle">
+                                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                                    <span
+                                      className={`text-[10px] font-bold uppercase tracking-wider font-mono ${
+                                        tintedGlass ? 'text-cyan-300/85' : 'text-blue-700'
+                                      }`}
+                                    >
+                                      {task.sector}
+                                    </span>
+                                    {getQuadrantBadge(task.quadrant)}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditTaskModal(task)}
+                                    className={`text-left text-xs sm:text-[13px] font-bold leading-snug transition-colors cursor-pointer block ${
+                                      task.status === 'done' ? 'line-through decoration-slate-400/70' : ''
+                                    } ${
+                                      tintedGlass
+                                        ? 'text-white hover:text-cyan-300'
+                                        : 'text-slate-900 hover:text-blue-600'
+                                    }`}
+                                    title="Clique para editar detalhes"
+                                  >
+                                    {task.title}
+                                  </button>
+                                  {task.description && (
+                                    <p
+                                      className={`text-[11px] line-clamp-1 mt-0.5 max-w-md ${
+                                        tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                                      }`}
+                                    >
+                                      {task.description}
+                                    </p>
+                                  )}
+                                </td>
+
+                                {/* Prioridade */}
+                                <td className="py-3.5 px-3 text-center align-middle">
+                                  {getPriorityBadge(task.priority)}
+                                </td>
+
+                                {/* Checklist Interativo */}
+                                <td className="py-3.5 px-3 align-middle">
+                                  {totalSubtasks > 0 ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleExpandSubtasks(task.id)}
+                                      className={`w-full text-left p-2 rounded-xl border transition-all cursor-pointer ${
+                                        tintedGlass
+                                          ? 'bg-black/25 hover:bg-white/[0.06] border-white/[0.08]'
+                                          : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
+                                      }`}
+                                      title="Clique para expandir e marcar subtarefas"
+                                    >
+                                      <div className="flex items-center justify-between text-[10px] font-semibold mb-1">
+                                        <span className="inline-flex items-center gap-1">
+                                          {isExpanded ? (
+                                            <ChevronDown className="w-3 h-3 text-cyan-400" />
+                                          ) : (
+                                            <ChevronRight className="w-3 h-3 text-slate-400" />
+                                          )}
+                                          {completedSubtasks}/{totalSubtasks}
+                                        </span>
+                                        <span
+                                          className={`font-mono font-bold ${
+                                            tintedGlass ? 'text-cyan-300' : 'text-blue-700'
+                                          }`}
+                                        >
+                                          {subProgress}%
+                                        </span>
+                                      </div>
+                                      <div
+                                        className={`w-full h-1.5 rounded-full overflow-hidden ${
+                                          tintedGlass ? 'bg-white/[0.1]' : 'bg-slate-200'
+                                        }`}
+                                      >
+                                        <div
+                                          className="h-full rounded-full transition-all duration-300"
+                                          style={{
+                                            width: `${subProgress}%`,
+                                            background:
+                                              'linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)'
+                                          }}
+                                        />
+                                      </div>
+                                    </button>
+                                  ) : (
+                                    <span className="text-xs text-slate-400 px-2">-</span>
+                                  )}
+                                </td>
+
+                                {/* Responsável */}
+                                <td className="py-3.5 px-3 align-middle">
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
+                                      tintedGlass ? 'text-slate-200' : 'text-slate-700'
+                                    }`}
+                                  >
+                                    <User className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                                    {task.assignee}
+                                  </span>
+                                </td>
+
+                                {/* Prazo & SLA */}
+                                <td className="py-3.5 px-3 align-middle">
+                                  <div className="flex flex-col items-start gap-1">
+                                    <span
+                                      className={`inline-flex items-center gap-1 font-mono text-[11px] font-semibold ${
+                                        tintedGlass ? 'text-slate-200' : 'text-slate-700'
+                                      }`}
+                                    >
+                                      <Calendar className="w-3 h-3 text-slate-400" />
+                                      {formatDate(task.dueDate)}
+                                    </span>
+                                    {getSlaBadge(task.dueDate, task.status === 'done')}
+                                  </div>
+                                </td>
+
+                                {/* Ações */}
+                                <td className="py-3.5 px-4 text-right align-middle">
+                                  <div className="inline-flex items-center justify-end gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditTaskModal(task)}
+                                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                        tintedGlass
+                                          ? 'text-slate-400 hover:text-cyan-300 hover:bg-white/[0.08]'
+                                          : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'
+                                      }`}
+                                      title="Editar tarefa"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteTask(task.id)}
+                                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                        tintedGlass
+                                          ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
+                                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                      }`}
+                                      title="Excluir tarefa"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+
+                              {/* Gaveta Expandida de Subtarefas no Modo Lista */}
+                              {isExpanded && task.subtasks && task.subtasks.length > 0 && (
+                                <tr
+                                  className={
+                                    tintedGlass ? 'bg-black/25' : 'bg-slate-50/70'
+                                  }
+                                >
+                                  <td colSpan={7} className="px-6 py-3">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span
+                                        className={`text-[10px] font-bold uppercase tracking-wider mr-1 ${
+                                          tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                                        }`}
+                                      >
+                                        Subtarefas:
+                                      </span>
+                                      {task.subtasks.map(sub => (
+                                        <button
+                                          key={sub.id}
+                                          type="button"
+                                          onClick={() => handleToggleSubtask(task.id, sub.id)}
+                                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border transition-all cursor-pointer ${
+                                            sub.completed
+                                              ? tintedGlass
+                                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30 line-through opacity-80'
+                                                : 'bg-emerald-50 text-emerald-700 border-emerald-200 line-through opacity-80'
+                                              : tintedGlass
+                                              ? 'aptis-glass-subcard text-slate-200 hover:border-cyan-400/40'
+                                              : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                                          }`}
+                                        >
+                                          <CheckCircle2
+                                            className={`w-3.5 h-3.5 shrink-0 ${
+                                              sub.completed ? 'text-emerald-400' : 'text-slate-400'
+                                            }`}
+                                          />
+                                          <span>{sub.title}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
