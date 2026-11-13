@@ -434,12 +434,15 @@ export function GapAnalysisPanel({
           <div className={`rounded-xl border overflow-hidden transition-all ${
             tintedGlass
               ? 'aptis-glass-dark text-white'
-              : 'bg-white border-slate-200 shadow-xs text-slate-900'
+              : 'aptis-glass-light text-slate-900'
           }`}>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 text-white">
+                  <tr className={tintedGlass
+                    ? 'bg-slate-950/80 text-slate-300 border-b border-white/10'
+                    : 'bg-slate-100/90 text-slate-700 border-b border-slate-200'
+                  }>
                     <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wider">Posto de Trabalho</th>
                     <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wider">Operador em Treinamento</th>
                     <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wider">Tutor / Instrutor</th>

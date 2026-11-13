@@ -227,10 +227,10 @@ export function SkillsDashboardPanel({
       <div className={`rounded-2xl p-4 border space-y-3 transition-all ${
         tintedGlass
           ? 'aptis-glass-dark text-white'
-          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+          : 'aptis-glass-light text-slate-900'
       }`}>
         <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3 ${
-          tintedGlass ? 'border-white/10' : 'border-slate-100'
+          tintedGlass ? 'border-white/10' : 'border-slate-200/80'
         }`}>
           <div className="flex items-center gap-2">
             <div className={`p-1.5 rounded-lg border ${
@@ -379,32 +379,49 @@ export function SkillsDashboardPanel({
       {/* 2. PLACAR CENTRAL DO COCKPIT (APTIS SKILLS SCORE & METRICAS DE IMPACTO) */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Score Principal de Aptidão Técnica */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 rounded-2xl p-5 text-white border border-slate-800 shadow-lg relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-36 h-36 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className={`rounded-2xl p-5 border relative overflow-hidden flex flex-col justify-between transition-all ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'aptis-glass-light text-slate-900'
+        }`}>
+          <div className="absolute top-0 right-0 -mt-6 -mr-6 w-36 h-36 bg-cyan-500/15 rounded-full blur-2xl pointer-events-none" />
           
-          <div>
+          <div className="relative z-10">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                tintedGlass
+                  ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20'
+                  : 'text-cyan-700 bg-cyan-50 border-cyan-200'
+              }`}>
                 Aptis Skills Score
               </span>
-              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <Sparkles className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-cyan-600'}`} />
             </div>
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+              <span className={`text-4xl sm:text-5xl font-black tracking-tight ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}>
                 {aptisSkillsScore}%
               </span>
-              <span className="text-xs text-cyan-300 font-semibold">Índice Geral</span>
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-cyan-300' : 'text-cyan-700'}`}>
+                Índice Geral
+              </span>
             </div>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+            <p className={`text-xs mt-2 leading-relaxed ${tintedGlass ? 'text-slate-400' : 'text-slate-600'}`}>
               Prontidão técnica ponderada por cobertura de postos, índice de polivalência e pipeline de sucessão.
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] flex items-center justify-between text-slate-300">
+          <div className={`relative z-10 mt-4 pt-3 border-t text-[11px] flex items-center justify-between ${
+            tintedGlass ? 'border-white/10 text-slate-300' : 'border-slate-200/80 text-slate-600'
+          }`}>
             <span>Classificação:</span>
             <span className={`font-bold ${
-              aptisSkillsScore >= 85 ? 'text-emerald-400' :
-              aptisSkillsScore >= 70 ? 'text-amber-400' : 'text-rose-400'
+              aptisSkillsScore >= 85
+                ? tintedGlass ? 'text-emerald-400' : 'text-emerald-600'
+                : aptisSkillsScore >= 70
+                ? tintedGlass ? 'text-amber-400' : 'text-amber-600'
+                : tintedGlass ? 'text-rose-400' : 'text-rose-600'
             }`}>
               {aptisSkillsScore >= 85 ? '🟢 Fábrica Apta (Excelente)' :
                aptisSkillsScore >= 70 ? '🟡 Operação em Alerta' : '🔴 Risco de Parada'}
@@ -416,11 +433,11 @@ export function SkillsDashboardPanel({
         <div className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
           tintedGlass
             ? 'aptis-glass-dark text-white'
-            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+            : 'aptis-glass-light text-slate-900'
         }`}>
           <div>
             <div className={`flex items-center justify-between text-xs font-semibold ${
-              tintedGlass ? 'text-slate-300' : 'text-slate-500'
+              tintedGlass ? 'text-slate-300' : 'text-slate-600'
             }`}>
               <span>Cobertura de Postos Críticos</span>
               <ShieldCheck className="w-4 h-4 text-blue-500" />
@@ -431,7 +448,7 @@ export function SkillsDashboardPanel({
               </span>
               <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>dos postos atendidos</span>
             </div>
-            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
+            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-200/70'}`}>
               <div
                 className={`h-full rounded-full transition-all ${
                   stationsCoverageRate >= 90 ? 'bg-emerald-500' :
@@ -442,7 +459,7 @@ export function SkillsDashboardPanel({
             </div>
           </div>
           <div className={`mt-3 pt-2 border-t flex items-center justify-between text-xs ${
-            tintedGlass ? 'border-white/10' : 'border-slate-100'
+            tintedGlass ? 'border-white/10' : 'border-slate-200/80'
           }`}>
             <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>Postos em Gargalo:</span>
             <span className={`font-bold ${
@@ -459,7 +476,7 @@ export function SkillsDashboardPanel({
         <div className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
           tintedGlass
             ? 'aptis-glass-dark text-white'
-            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+            : 'aptis-glass-light text-slate-900'
         }`}>
           <div>
             <div className={`flex items-center justify-between text-xs font-semibold ${
@@ -474,7 +491,7 @@ export function SkillsDashboardPanel({
               </span>
               <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>do quadro ativo</span>
             </div>
-            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
+            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-200/70'}`}>
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all"
                 style={{ width: `${polyvalenceRate}%` }}
@@ -482,7 +499,7 @@ export function SkillsDashboardPanel({
             </div>
           </div>
           <div className={`mt-3 pt-2 border-t flex items-center justify-between text-xs ${
-            tintedGlass ? 'border-white/10 text-slate-400' : 'border-slate-100 text-slate-600'
+            tintedGlass ? 'border-white/10 text-slate-400' : 'border-slate-200/80 text-slate-600'
           }`}>
             <span>Operadores Multifuncionais:</span>
             <span className={`font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
@@ -495,7 +512,7 @@ export function SkillsDashboardPanel({
         <div className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
           tintedGlass
             ? 'aptis-glass-dark text-white'
-            : 'bg-white border-slate-200 shadow-xs text-slate-900'
+            : 'aptis-glass-light text-slate-900'
         }`}>
           <div>
             <div className={`flex items-center justify-between text-xs font-semibold ${
@@ -510,7 +527,7 @@ export function SkillsDashboardPanel({
               </span>
               <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>de cobertura</span>
             </div>
-            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
+            <div className={`w-full h-2 rounded-full mt-3 overflow-hidden ${tintedGlass ? 'bg-white/10' : 'bg-slate-200/70'}`}>
               <div
                 className="h-full bg-indigo-500 rounded-full transition-all"
                 style={{ width: `${successionMetrics.coverage}%` }}
@@ -518,7 +535,7 @@ export function SkillsDashboardPanel({
             </div>
           </div>
           <div className={`mt-3 pt-2 border-t flex items-center justify-between text-xs ${
-            tintedGlass ? 'border-white/10' : 'border-slate-100'
+            tintedGlass ? 'border-white/10' : 'border-slate-200/80'
           }`}>
             <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>Prontos Imediatos:</span>
             <span className={`font-bold ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>
@@ -547,10 +564,10 @@ export function SkillsDashboardPanel({
       <div className={`rounded-2xl p-5 border space-y-3 transition-all ${
         tintedGlass
           ? 'aptis-glass-dark text-white'
-          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+          : 'aptis-glass-light text-slate-900'
       }`}>
         <div className={`flex items-center justify-between border-b pb-3 ${
-          tintedGlass ? 'border-white/10' : 'border-slate-100'
+          tintedGlass ? 'border-white/10' : 'border-slate-200/80'
         }`}>
           <div className="flex items-center gap-2">
             <div className={`p-1.5 rounded-lg border ${
@@ -638,10 +655,10 @@ export function SkillsDashboardPanel({
       <div className={`rounded-2xl border overflow-hidden transition-all ${
         tintedGlass
           ? 'aptis-glass-dark text-white'
-          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+          : 'aptis-glass-light text-slate-900'
       }`}>
         <div className={`p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
-          tintedGlass ? 'border-white/10' : 'border-slate-100'
+          tintedGlass ? 'border-white/10' : 'border-slate-200/80'
         }`}>
           <div>
             <h4 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${

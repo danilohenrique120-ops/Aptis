@@ -891,7 +891,9 @@ export default function SkillsMatrixModule() {
         </div>
 
         {/* KPI Cards Rápidos em Sub-cápsulas de Vidro */}
-        <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-6 pt-5 border-t border-white/[0.08]">
+        <div className={`relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-6 pt-5 border-t ${
+          tintedGlass ? 'border-white/[0.08]' : 'border-slate-200/80'
+        }`}>
           <div
             className={`p-4 rounded-2xl ${
               tintedGlass
@@ -1062,11 +1064,13 @@ export default function SkillsMatrixModule() {
             value={selectedSectorId}
             onChange={e => setSelectedSectorId(e.target.value)}
             className={`text-xs font-bold bg-transparent outline-none cursor-pointer min-w-[180px] ${
-              tintedGlass ? 'text-cyan-300 [&>option]:bg-slate-900' : 'text-slate-900'
+              tintedGlass
+                ? 'text-cyan-300 [&>option]:bg-slate-900 [&>option]:text-white'
+                : 'text-slate-900 [&>option]:bg-white [&>option]:text-slate-900'
             }`}
           >
             {sectors.map(sec => (
-              <option key={sec.id} value={sec.id} className="bg-slate-900 text-white py-1">
+              <option key={sec.id} value={sec.id} className="py-1">
                 {sec.name} ({sec.code})
               </option>
             ))}
@@ -1274,7 +1278,7 @@ export default function SkillsMatrixModule() {
           {sectorStations.length === 0 ? (
             <div
               className={`rounded-3xl border p-12 text-center space-y-3 ${
-                tintedGlass ? 'aptis-glass-dark text-white border-white/10' : 'bg-white border-slate-200 text-slate-900 shadow-xs'
+                tintedGlass ? 'aptis-glass-dark text-white border-white/10' : 'aptis-glass-light text-slate-900'
               }`}
             >
               <p className={`text-sm ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -1292,18 +1296,22 @@ export default function SkillsMatrixModule() {
               className={`rounded-3xl border overflow-hidden transition-all duration-500 ${
                 tintedGlass
                   ? 'aptis-glass-dark border-white/10 text-white'
-                  : 'bg-white border-slate-200 shadow-xs text-slate-900'
+                  : 'aptis-glass-light text-slate-900'
               }`}
             >
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
-                    <tr className={tintedGlass ? 'bg-slate-950/80 backdrop-blur-md text-white' : 'bg-slate-900 text-white'}>
+                    <tr className={
+                      tintedGlass
+                        ? 'bg-slate-950/80 backdrop-blur-md text-white'
+                        : 'bg-slate-100/90 text-slate-800 border-b border-slate-200'
+                    }>
                       <th
                         className={`py-3.5 px-4 font-semibold text-xs uppercase tracking-wider sticky left-0 z-20 min-w-[220px] ${
                           tintedGlass
                             ? 'bg-slate-950/95 backdrop-blur-md border-r border-white/10 text-white'
-                            : 'bg-slate-900 border-r border-slate-800 text-white'
+                            : 'bg-slate-100/95 border-r border-slate-200 text-slate-900'
                         }`}
                       >
                         Colaborador / Função
@@ -1315,18 +1323,22 @@ export default function SkillsMatrixModule() {
                         <th
                           key={st.id}
                           className={`py-3.5 px-3 font-semibold text-xs text-center border-l min-w-[150px] ${
-                            tintedGlass ? 'border-white/10' : 'border-slate-800'
+                            tintedGlass ? 'border-white/10' : 'border-slate-200'
                           }`}
                         >
-                          <div className="font-bold text-slate-100">{st.name}</div>
-                          <div className="text-[10px] text-cyan-300 font-normal mt-0.5">
+                          <div className={`font-bold ${tintedGlass ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {st.name}
+                          </div>
+                          <div className={`text-[10px] font-normal mt-0.5 ${
+                            tintedGlass ? 'text-cyan-300' : 'text-blue-600'
+                          }`}>
                             Mín. req: <strong>{st.minOperatorsRequired}</strong> autônomos
                           </div>
                         </th>
                       ))}
                       <th
                         className={`py-3.5 px-3 font-semibold text-xs uppercase tracking-wider text-center border-l w-28 ${
-                          tintedGlass ? 'border-white/10' : 'border-slate-800'
+                          tintedGlass ? 'border-white/10' : 'border-slate-200'
                         }`}
                       >
                         Polivalência

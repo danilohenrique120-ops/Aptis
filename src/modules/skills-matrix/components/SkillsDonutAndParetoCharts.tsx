@@ -121,11 +121,11 @@ export function SkillsDonutAndParetoCharts({
       <div className={`lg:col-span-5 rounded-2xl border p-5 flex flex-col justify-between transition-all ${
         tintedGlass
           ? 'aptis-glass-dark text-white'
-          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+          : 'aptis-glass-light text-slate-900'
       }`}>
         <div>
           <div className={`flex items-center justify-between border-b pb-3 ${
-            tintedGlass ? 'border-white/10' : 'border-slate-100'
+            tintedGlass ? 'border-white/10' : 'border-slate-200/80'
           }`}>
             <div className="flex items-center gap-2">
               <div className={`p-1.5 rounded-lg border ${
@@ -211,11 +211,11 @@ export function SkillsDonutAndParetoCharts({
       <div className={`lg:col-span-7 rounded-2xl border p-5 flex flex-col justify-between transition-all ${
         tintedGlass
           ? 'aptis-glass-dark text-white'
-          : 'bg-white border-slate-200 shadow-xs text-slate-900'
+          : 'aptis-glass-light text-slate-900'
       }`}>
         <div>
           <div className={`flex items-center justify-between border-b pb-3 ${
-            tintedGlass ? 'border-white/10' : 'border-slate-100'
+            tintedGlass ? 'border-white/10' : 'border-slate-200/80'
           }`}>
             <div className="flex items-center gap-2">
               <div className={`p-1.5 rounded-lg border ${

@@ -125,7 +125,7 @@ export function SkillsRadarChart({ stations, employees, tintedGlass = false }: S
       <div className={`rounded-2xl border p-8 text-center ${
         tintedGlass
           ? 'aptis-glass-dark text-white'
-          : 'bg-white border-slate-200 text-slate-900'
+          : 'aptis-glass-light text-slate-900'
       }`}>
         <Target className={`w-10 h-10 mx-auto mb-2 ${tintedGlass ? 'text-slate-600' : 'text-slate-300'}`} />
         <p className={`font-bold text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -140,11 +140,11 @@ export function SkillsRadarChart({ stations, employees, tintedGlass = false }: S
     <div className={`rounded-2xl border p-5 space-y-4 transition-all ${
       tintedGlass
         ? 'aptis-glass-dark text-white'
-        : 'bg-white border-slate-200 shadow-xs text-slate-900'
+        : 'aptis-glass-light text-slate-900'
     }`}>
       {/* Cabeçalho do Radar & Seletores */}
       <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b pb-4 ${
-        tintedGlass ? 'border-white/10' : 'border-slate-100'
+        tintedGlass ? 'border-white/10' : 'border-slate-200/80'
       }`}>
         <div>
           <div className="flex items-center gap-2">

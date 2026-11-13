@@ -31,6 +31,7 @@ export default function DashboardLayout({
   // Rotas já equipadas com o motor óptico Tinted Glass
   const isGlassEnabledRoute =
     pathname === '/dashboard' ||
+    pathname.startsWith('/dashboard/tools/skills-matrix') ||
     pathname.startsWith('/dashboard/tools/manager-tasks') ||
     pathname.startsWith('/dashboard/tools/one-on-one') ||
     pathname.startsWith('/dashboard/tools/pdi-manager') ||
