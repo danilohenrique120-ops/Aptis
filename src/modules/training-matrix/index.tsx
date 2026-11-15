@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenant } from '@/context/tenant-context';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { 
@@ -28,7 +28,8 @@ import {
   List,
   FolderOpen,
   Trash2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Building2
 } from 'lucide-react';
 import { formatDate, getDaysUntil } from '@/lib/utils';
 import { DocumentManagerModal } from './components/DocumentManagerModal';
@@ -290,6 +291,21 @@ export default function TrainingMatrixModule() {
   const [dossierEmployee, setDossierEmployee] = useState<string | null>(null);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+  const [tintedGlass, setTintedGlass] = useState<boolean>(true);
+
+  useEffect(() => {
+    const syncGlassMode = () => {
+      try {
+        const saved = localStorage.getItem('aptis_tinted_glass_mode');
+        setTintedGlass(saved === null ? true : saved === 'true');
+      } catch {
+        setTintedGlass(true);
+      }
+    };
+    syncGlassMode();
+    window.addEventListener('aptis-glass-mode-change', syncGlassMode);
+    return () => window.removeEventListener('aptis-glass-mode-change', syncGlassMode);
+  }, []);
 
   const handleImportTrainingExcel = (rows: Record<string, any>[]) => {
     const newRecords: TrainingRecord[] = rows.map((row, idx) => {
@@ -436,22 +452,34 @@ export default function TrainingMatrixModule() {
     switch (status) {
       case 'valid':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+            tintedGlass
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+              : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+          }`}>
             <CheckCircle2 className="w-3.5 h-3.5" />
             Válido ({days}d)
           </span>
         );
       case 'expiring':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-            <Clock className="w-3.5 h-3.5 text-amber-600" />
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+            tintedGlass
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+              : 'bg-amber-100 text-amber-800 border-amber-200'
+          }`}>
+            <Clock className={`w-3.5 h-3.5 ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`} />
             A Vencer ({days}d)
           </span>
         );
       case 'expired':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
-            <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border animate-pulse ${
+            tintedGlass
+              ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+              : 'bg-rose-100 text-rose-800 border-rose-200'
+          }`}>
+            <AlertOctagon className={`w-3.5 h-3.5 ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`} />
             Vencido ({Math.abs(days)}d)
           </span>
         );
@@ -461,284 +489,513 @@ export default function TrainingMatrixModule() {
   };
 
   return (
-    <div className="space-y-6 w-full">
-      {/* Header do Módulo */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2.5 py-1 rounded">
-              Conformidade Legal & Qualidade (SST / EHS & POPs)
-            </span>
-            <span className="text-xs text-slate-500">Tenant: {currentTenant.name}</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">
-            Matriz de Treinamentos de NRs & POPs
-          </h1>
-          <p className="text-sm text-slate-600">
-            Governança de Normas Regulamentadoras do MTE, Procedimentos Operacionais Padrão e acervo documental com busca inteligente profunda.
-          </p>
-        </div>
+    <div className="space-y-6 w-full pb-10">
+      {/* =====================================================================
+          1. CABEÇALHO EXECUTIVO COM SUB-CÁPSULAS DE KPIS (PADRÃO APTIS ROUTINE)
+         ===================================================================== */}
+      <div
+        className={`rounded-3xl p-6 relative overflow-hidden transition-all duration-500 ${
+          tintedGlass ? 'aptis-glass-dark text-white' : 'aptis-glass-light text-slate-900'
+        }`}
+      >
+        <div
+          className="absolute -top-16 -right-12 w-72 h-72 rounded-full opacity-30 blur-3xl pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(59, 130, 246, 0.65) 0%, rgba(6, 182, 212, 0.25) 60%, transparent 75%)'
+          }}
+        />
 
-        {/* Barra de Ações Principais */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {trainings.length === 0 && documents.length === 0 ? (
-            <button
-              onClick={() => {
-                setTrainings(INITIAL_TRAININGS);
-                setDocuments(INITIAL_DOCUMENTS);
-              }}
-              title="Carregar registros e documentos de exemplo para teste"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 transition-colors cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              Carregar Exemplos
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                if (window.confirm('Tem certeza que deseja zerar todos os treinamentos e documentos?')) {
-                  setTrainings([]);
-                  setDocuments([]);
-                }
-              }}
-              title="Limpar todos os registros de conformidade"
-              className="inline-flex items-center gap-1 px-2.5 py-2 text-slate-400 hover:text-rose-600 text-xs transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Limpar Registros
-            </button>
-          )}
-          <button
-            onClick={() => setIsDeepSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
-          >
-            <Sparkles className="w-4 h-4" />
-            Busca Inteligente nos Documentos
-          </button>
-
-          <button
-            onClick={() => setIsDocManagerOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 shadow-xs transition-colors cursor-pointer"
-          >
-            <FolderOpen className="w-4 h-4 text-amber-600" />
-            Acervo de Arquivos ({documents.length})
-          </button>
-
-          <button
-            onClick={() => setIsBatchModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 shadow-xs transition-colors cursor-pointer"
-          >
-            <Users className="w-4 h-4 text-blue-600" />
-            Montar Turma
-          </button>
-
-          <button
-            onClick={() => setIsExcelImporterOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-300 shadow-xs transition-colors cursor-pointer"
-            title="Importar registros de treinamentos de NRs e POPs do Excel"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Importar Excel
-          </button>
-
-          <button
-            onClick={() => setIsNewModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Nova Capacitação
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards de Conformidade Industrial */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Total Homologadas</span>
-            <GraduationCap className="w-4 h-4 text-slate-400" />
-          </div>
-          <p className="text-2xl font-bold text-slate-900 mt-2">{totalRecords}</p>
-          <p className="text-[11px] text-slate-400 mt-1">NRs Obrigatórias e POPs</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-rose-600 text-xs font-medium">
-            <span>Bloqueados / Vencidos</span>
-            <AlertOctagon className="w-4 h-4 text-rose-500" />
-          </div>
-          <p className="text-2xl font-bold text-rose-600 mt-2">{expiredRecords}</p>
-          <p className="text-[11px] text-rose-500 mt-1">Interdição preventiva necessária</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-amber-700 text-xs font-medium">
-            <span>Reciclagem &lt; 60 dias</span>
-            <Clock className="w-4 h-4 text-amber-500" />
-          </div>
-          <p className="text-2xl font-bold text-amber-700 mt-2">{expiringRecords}</p>
-          <p className="text-[11px] text-amber-600 mt-1">Agendamento de turma recomendado</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-emerald-600 text-xs font-medium">
-            <span>Aptidão Geral da Fábrica</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          </div>
-          <p className="text-2xl font-bold text-emerald-600 mt-2">{complianceRate}%</p>
-          <p className="text-[11px] text-emerald-600 mt-1">Em conformidade com MTE/ISO</p>
-        </div>
-      </div>
-
-      {/* Abas Principais de Visualização */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-2">
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
-          <button
-            onClick={() => setActiveTab('list')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-              activeTab === 'list'
-                ? 'bg-white text-amber-900 shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <List className="w-3.5 h-3.5" />
-            Lista de Registros
-          </button>
-
-          <button
-            onClick={() => setActiveTab('matrix')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-              activeTab === 'matrix'
-                ? 'bg-white text-amber-900 shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Grid className="w-3.5 h-3.5" />
-            Matriz de Aptidão Legal (Pilar 2)
-          </button>
-
-          <button
-            onClick={() => setIsDocManagerOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Acervo Documental ({documents.length})
-          </button>
-        </div>
-
-        {/* Filtros de Setor e Tipo */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Tipo: NRs vs POPs */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
-            <button
-              onClick={() => setTypeFilter('all')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
-                typeFilter === 'all' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600'
-              }`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setTypeFilter('NR')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
-                typeFilter === 'NR' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600'
-              }`}
-            >
-              NRs (Segurança)
-            </button>
-            <button
-              onClick={() => setTypeFilter('POP')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
-                typeFilter === 'POP' ? 'bg-amber-600 text-white shadow-2xs' : 'text-slate-600'
-              }`}
-            >
-              POPs (Operação)
-            </button>
-          </div>
-
-          {/* Setor */}
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {sectorsList.map(sec => (
-              <button
-                key={sec.id}
-                onClick={() => setSelectedSector(sec.id)}
-                className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                  selectedSector === sec.id
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span
+                className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                  tintedGlass
+                    ? 'bg-blue-500/20 text-blue-200 border-blue-400/35'
+                    : 'text-blue-700 bg-blue-50 border-blue-200'
                 }`}
               >
-                {sec.label}
+                Conformidade Legal & Qualidade (SST / EHS & POPs)
+              </span>
+              <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                Unidade: {currentTenant.name}
+              </span>
+            </div>
+            <h1
+              className={`text-2xl sm:text-3xl font-black tracking-tight ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              Aptis Compliance • Matriz de Treinamentos & POPs
+            </h1>
+            <p className={`text-xs sm:text-sm mt-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+              Governança de Normas Regulamentadoras do MTE, Procedimentos Operacionais Padrão e acervo documental com busca inteligente profunda.
+            </p>
+          </div>
+
+          {/* Barra de Ações Principais */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {trainings.length === 0 && documents.length === 0 ? (
+              <button
+                onClick={() => {
+                  setTrainings(INITIAL_TRAININGS);
+                  setDocuments(INITIAL_DOCUMENTS);
+                }}
+                title="Carregar registros e documentos de exemplo para teste"
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                Carregar Exemplos
               </button>
-            ))}
+            ) : (
+              <button
+                onClick={() => {
+                  if (window.confirm('Tem certeza que deseja zerar todos os treinamentos e documentos?')) {
+                    setTrainings([]);
+                    setDocuments([]);
+                  }
+                }}
+                title="Limpar todos os registros de conformidade"
+                className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs transition-colors cursor-pointer rounded-xl ${
+                  tintedGlass
+                    ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
+                    : 'text-slate-400 hover:text-rose-600'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Limpar Registros
+              </button>
+            )}
+
+            <button
+              onClick={() => setIsExcelImporterOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+              }`}
+              title="Importar registros de treinamentos de NRs e POPs do Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              Importar Excel
+            </button>
+
+            <button
+              onClick={() => setIsDeepSearchOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border-amber-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'
+                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              Busca Inteligente
+            </button>
+
+            <button
+              onClick={() => setIsDocManagerOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-300 shadow-xs'
+              }`}
+            >
+              <FolderOpen className="w-4 h-4 text-amber-400" />
+              Acervo ({documents.length})
+            </button>
+
+            <button
+              onClick={() => setIsBatchModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-300 shadow-xs'
+              }`}
+            >
+              <Users className="w-4 h-4 text-cyan-400" />
+              Montar Turma
+            </button>
+
+            <button
+              onClick={() => setIsNewModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+                border: '1px solid rgba(165, 243, 252, 0.45)',
+                boxShadow:
+                  'inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 20px -4px rgba(37, 99, 235, 0.5)'
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Nova Capacitação
+            </button>
+          </div>
+        </div>
+
+        {/* KPI Cards Rápidos em Sub-cápsulas de Vidro */}
+        <div
+          className={`relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3.5 mt-6 pt-5 border-t ${
+            tintedGlass ? 'border-white/[0.08]' : 'border-slate-200/80'
+          }`}
+        >
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              <span>Total Homologadas</span>
+              <GraduationCap className="w-4 h-4 text-slate-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-white' : 'text-slate-900'
+              }`}
+            >
+              {totalRecords}
+            </p>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-rose-300' : 'text-rose-600'
+              }`}
+            >
+              <span>Bloqueados / Vencidos</span>
+              <AlertOctagon className="w-4 h-4 text-rose-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-rose-400' : 'text-rose-600'
+              }`}
+            >
+              {expiredRecords}
+            </p>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-amber-300' : 'text-amber-700'
+              }`}
+            >
+              <span>Reciclagem &lt; 60 dias</span>
+              <Clock className="w-4 h-4 text-amber-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-amber-400' : 'text-amber-600'
+              }`}
+            >
+              {expiringRecords}
+            </p>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200 shadow-2xs'
+            }`}
+          >
+            <div
+              className={`flex items-center justify-between text-xs font-semibold ${
+                tintedGlass ? 'text-emerald-300' : 'text-emerald-600'
+              }`}
+            >
+              <span>Aptidão Geral da Fábrica</span>
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            </div>
+            <p
+              className={`text-2xl font-black font-mono mt-1.5 ${
+                tintedGlass ? 'text-emerald-400' : 'text-emerald-600'
+              }`}
+            >
+              {complianceRate}%
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Conteúdo Dinâmico Conforme a Aba */}
+      {/* =====================================================================
+          2. TRILHO DE MENISCO & CÁPSULA SETORIAL (PADRÃO APTIS ROUTINE)
+         ===================================================================== */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="overflow-x-auto pb-1 lg:pb-0">
+          <div className="aptis-meniscus-track inline-flex items-center gap-1 p-1.5">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'list'
+                  ? 'text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              style={
+                activeTab === 'list'
+                  ? {
+                      background:
+                        'linear-gradient(135deg, #2563eb 0%, #3b82f6 55%, #06b6d4 100%)',
+                      border: '1px solid rgba(147, 197, 253, 0.5)',
+                      boxShadow:
+                        'inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 16px -3px rgba(37, 99, 235, 0.55)'
+                    }
+                  : undefined
+              }
+            >
+              <List className="w-3.5 h-3.5" />
+              Lista de Registros
+            </button>
+
+            <button
+              onClick={() => setActiveTab('matrix')}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'matrix'
+                  ? 'text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+              style={
+                activeTab === 'matrix'
+                  ? {
+                      background:
+                        'linear-gradient(135deg, #2563eb 0%, #3b82f6 55%, #06b6d4 100%)',
+                      border: '1px solid rgba(147, 197, 253, 0.5)',
+                      boxShadow:
+                        'inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 16px -3px rgba(37, 99, 235, 0.55)'
+                    }
+                  : undefined
+              }
+            >
+              <Grid className="w-3.5 h-3.5" />
+              Matriz de Aptidão Legal (Pilar 2)
+            </button>
+
+            <button
+              onClick={() => setIsDocManagerOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-full text-slate-400 hover:text-white transition-all whitespace-nowrap cursor-pointer"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              Acervo Documental ({documents.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Cápsula Setorial à Direita */}
+        <div
+          className={`flex items-center gap-2.5 px-3.5 py-2 rounded-2xl ${
+            tintedGlass
+              ? 'aptis-glass-subcard text-white'
+              : 'bg-white border border-slate-200 shadow-2xs text-slate-800'
+          }`}
+        >
+          <label
+            htmlFor="compliance-sector-select"
+            className={`text-xs font-bold uppercase tracking-wider whitespace-nowrap flex items-center gap-1.5 ${
+              tintedGlass ? 'text-slate-300' : 'text-slate-600'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Área / Setor:</span>
+          </label>
+          <select
+            id="compliance-sector-select"
+            value={selectedSector}
+            onChange={e => setSelectedSector(e.target.value)}
+            className={`text-xs font-bold bg-transparent outline-none cursor-pointer min-w-[180px] ${
+              tintedGlass
+                ? 'text-cyan-300 [&>option]:bg-slate-900 [&>option]:text-white'
+                : 'text-slate-900 [&>option]:bg-white [&>option]:text-slate-900'
+            }`}
+          >
+            {sectorsList.map(sec => (
+              <option key={sec.id} value={sec.id} className="py-1">
+                {sec.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* =====================================================================
+          3. CONTEÚDO DINÂMICO CONFORME A ABA
+         ===================================================================== */}
       {activeTab === 'matrix' ? (
         <ComplianceMatrixView
           trainings={trainings}
           selectedSector={selectedSector}
           onOpenDossier={(empName) => setDossierEmployee(empName)}
           onRenewRecord={handleRenew}
+          tintedGlass={tintedGlass}
         />
       ) : (
         /* Visualização em Lista Padrão com Filtros Avançados */
         <div className="space-y-4">
-          {/* Barra de Busca e Filtro de Status */}
-          <div className="flex flex-col sm:flex-row gap-3 bg-white p-3 rounded-lg border border-slate-200">
+          {/* Barra de Busca, Filtro de Tipo e Status */}
+          <div
+            className={`flex flex-col lg:flex-row lg:items-center gap-3 p-3.5 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-dark text-white'
+                : 'aptis-glass-light text-slate-900'
+            }`}
+          >
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 placeholder="Buscar por colaborador, norma, código de certificado ou setor..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-400'
+                    : 'bg-slate-50 border border-slate-200 text-slate-900'
+                }`}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-slate-400" />
-              <span className="text-xs text-slate-500 font-medium">Status de Validade:</span>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="text-xs border border-slate-200 bg-slate-50 rounded-md py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Filtro Tipo: NRs vs POPs */}
+              <div
+                className={`flex items-center p-1 rounded-xl border text-xs ${
+                  tintedGlass
+                    ? 'bg-slate-950/60 border-white/10'
+                    : 'bg-slate-100 border-slate-200'
+                }`}
               >
-                <option value="all">Todos os Status</option>
-                <option value="valid">🟢 Apenas Válidos</option>
-                <option value="expiring">🟡 A Vencer (&lt; 60 dias)</option>
-                <option value="expired">🔴 Vencidos</option>
-              </select>
+                <button
+                  onClick={() => setTypeFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
+                    typeFilter === 'all'
+                      ? tintedGlass
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-white text-slate-900 shadow-2xs'
+                      : tintedGlass
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => setTypeFilter('NR')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
+                    typeFilter === 'NR'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : tintedGlass
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  NRs (Segurança)
+                </button>
+                <button
+                  onClick={() => setTypeFilter('POP')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-colors cursor-pointer ${
+                    typeFilter === 'POP'
+                      ? 'bg-amber-600 text-white shadow-2xs'
+                      : tintedGlass
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  POPs (Operação)
+                </button>
+              </div>
+
+              {/* Status de Validade */}
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard text-white'
+                    : 'bg-white border border-slate-200 text-slate-800'
+                }`}
+              >
+                <Filter className="w-3.5 h-3.5 text-cyan-400" />
+                <span className={`text-xs font-medium ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+                  Status:
+                </span>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className={`text-xs font-bold bg-transparent focus:outline-none cursor-pointer ${
+                    tintedGlass
+                      ? 'text-cyan-300 [&>option]:bg-slate-900 [&>option]:text-white'
+                      : 'text-slate-900 [&>option]:bg-white [&>option]:text-slate-900'
+                  }`}
+                >
+                  <option value="all">Todos os Status</option>
+                  <option value="valid">🟢 Apenas Válidos</option>
+                  <option value="expiring">🟡 A Vencer (&lt; 60 dias)</option>
+                  <option value="expired">🔴 Vencidos</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Tabela de Registros */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div
+            className={`rounded-3xl border overflow-hidden transition-all duration-500 ${
+              tintedGlass
+                ? 'aptis-glass-dark border-white/10 text-white'
+                : 'aptis-glass-light text-slate-900'
+            }`}
+          >
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-700">
-                    <th className="py-3 px-4 font-bold">Colaborador / Função</th>
-                    <th className="py-3 px-4 font-bold">Tipo & Código</th>
-                    <th className="py-3 px-4 font-bold">Norma / Procedimento Operacional</th>
-                    <th className="py-3 px-3 font-bold text-center">Conclusão</th>
-                    <th className="py-3 px-3 font-bold text-center">Validade (SLA)</th>
-                    <th className="py-3 px-3 font-bold text-center">Status</th>
-                    <th className="py-3 px-3 font-bold text-center">Evidências</th>
-                    <th className="py-3 px-4 font-bold text-right">Ações</th>
+                  <tr
+                    className={
+                      tintedGlass
+                        ? 'bg-slate-950/70 border-b border-white/10 text-slate-300'
+                        : 'bg-slate-100/80 border-b border-slate-200 text-slate-700'
+                    }
+                  >
+                    <th className="py-3.5 px-4 font-bold uppercase tracking-wider">Colaborador / Função</th>
+                    <th className="py-3.5 px-4 font-bold uppercase tracking-wider">Tipo & Código</th>
+                    <th className="py-3.5 px-4 font-bold uppercase tracking-wider">Norma / Procedimento Operacional</th>
+                    <th className="py-3.5 px-3 font-bold uppercase tracking-wider text-center">Conclusão</th>
+                    <th className="py-3.5 px-3 font-bold uppercase tracking-wider text-center">Validade (SLA)</th>
+                    <th className="py-3.5 px-3 font-bold uppercase tracking-wider text-center">Status</th>
+                    <th className="py-3.5 px-3 font-bold uppercase tracking-wider text-center">Evidências</th>
+                    <th className="py-3.5 px-4 font-bold uppercase tracking-wider text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className={`divide-y ${tintedGlass ? 'divide-white/[0.06]' : 'divide-slate-200'}`}>
                   {filteredTrainings.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-14 text-center text-slate-500">
-                        <p className="text-sm font-semibold mb-1">Nenhum treinamento ou POP cadastrado ainda</p>
-                        <p className="text-xs text-slate-400 mb-3">Cadastre certificados de NRs, reciclagens ou procedimentos da sua fábrica.</p>
+                      <td colSpan={8} className="py-14 text-center text-slate-400">
+                        <p className={`text-sm font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+                          Nenhum treinamento ou POP cadastrado ainda
+                        </p>
+                        <p className="text-xs text-slate-400 mb-3">
+                          Cadastre certificados de NRs, reciclagens ou procedimentos da sua fábrica.
+                        </p>
                         <button
                           onClick={() => setIsNewModalOpen(true)}
-                          className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           Cadastrar Primeiro Treinamento
@@ -751,35 +1008,50 @@ export default function TrainingMatrixModule() {
                       const status = getRecordStatus(item.expiryDate);
 
                       return (
-                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <tr
+                          key={item.id}
+                          className={`transition-colors ${
+                            tintedGlass ? 'hover:bg-white/[0.04]' : 'hover:bg-slate-50/80'
+                          }`}
+                        >
                           {/* Colaborador */}
-                          <td className="py-3 px-4 font-medium">
+                          <td className="py-3.5 px-4 font-medium">
                             <div 
                               onClick={() => setDossierEmployee(item.employeeName)}
-                              className="font-bold text-slate-900 hover:text-blue-600 cursor-pointer"
+                              className={`font-bold cursor-pointer transition-colors ${
+                                tintedGlass
+                                  ? 'text-white hover:text-cyan-400'
+                                  : 'text-slate-900 hover:text-blue-600'
+                              }`}
                               title="Ver Dossiê Completo"
                             >
                               {item.employeeName}
                             </div>
-                            <div className="text-[11px] text-slate-500">
+                            <div className={`text-[11px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                               {item.employeeRole} • <span className="text-slate-400">{item.department}</span>
                             </div>
                           </td>
 
                           {/* Tipo & Código */}
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                          <td className="py-3.5 px-4">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
                               item.type === 'NR' 
-                                ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                                : 'bg-amber-100 text-amber-900 border border-amber-200'
+                                ? tintedGlass
+                                  ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                  : 'bg-blue-100 text-blue-800 border-blue-200' 
+                                : tintedGlass
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                : 'bg-amber-100 text-amber-900 border-amber-200'
                             }`}>
                               {item.code} {item.version ? `(${item.version})` : ''}
                             </span>
                           </td>
 
                           {/* Norma / POP */}
-                          <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-800">{item.courseName}</div>
+                          <td className="py-3.5 px-4">
+                            <div className={`font-semibold ${tintedGlass ? 'text-slate-100' : 'text-slate-800'}`}>
+                              {item.courseName}
+                            </div>
                             <div className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
                               <FileCheck className="w-3 h-3 text-slate-400" />
                               {item.certificateCode} • {item.instructorOrEntity || 'Entidade Oficial'}
@@ -787,26 +1059,30 @@ export default function TrainingMatrixModule() {
                           </td>
 
                           {/* Conclusão */}
-                          <td className="py-3 px-3 text-center text-slate-600">
+                          <td className={`py-3.5 px-3 text-center ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
                             {formatDate(item.completedDate)}
                           </td>
 
                           {/* Validade */}
-                          <td className="py-3 px-3 text-center font-semibold text-slate-800">
+                          <td className={`py-3.5 px-3 text-center font-semibold ${tintedGlass ? 'text-white' : 'text-slate-800'}`}>
                             {formatDate(item.expiryDate)}
                           </td>
 
                           {/* Status */}
-                          <td className="py-3 px-3 text-center">
+                          <td className="py-3.5 px-3 text-center">
                             {renderStatusBadge(status, days)}
                           </td>
 
                           {/* Anexos */}
-                          <td className="py-3 px-3 text-center">
+                          <td className="py-3.5 px-3 text-center">
                             {item.attachments && item.attachments.length > 0 ? (
                               <button
                                 onClick={() => setIsDocManagerOpen(true)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-pointer"
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border cursor-pointer transition-colors ${
+                                  tintedGlass
+                                    ? 'bg-blue-500/20 text-cyan-300 border-blue-500/30 hover:bg-blue-500/30'
+                                    : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                                }`}
                                 title="Ver arquivos anexados"
                               >
                                 <Paperclip className="w-3 h-3" />
@@ -818,18 +1094,26 @@ export default function TrainingMatrixModule() {
                           </td>
 
                           {/* Ações */}
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => setDossierEmployee(item.employeeName)}
-                                className="px-2 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded transition-colors cursor-pointer"
+                                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                                  tintedGlass
+                                    ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                                    : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+                                }`}
                                 title="Abrir Dossiê de Auditoria"
                               >
                                 Dossiê
                               </button>
                               <button
                                 onClick={() => handleRenew(item.id)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 rounded border border-amber-200 transition-colors cursor-pointer"
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+                                  tintedGlass
+                                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30'
+                                    : 'text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border-amber-200'
+                                }`}
                                 title="Registrar Renovação / Reciclagem"
                               >
                                 <RefreshCw className="w-3 h-3" />
@@ -853,6 +1137,7 @@ export default function TrainingMatrixModule() {
         isOpen={isDeepSearchOpen}
         onClose={() => setIsDeepSearchOpen(false)}
         documents={documents}
+        tintedGlass={tintedGlass}
       />
 
       {/* Modal 2: Repositório & Gestão de Documentos (PDF, Word, TXT) */}
@@ -862,6 +1147,7 @@ export default function TrainingMatrixModule() {
         documents={documents}
         onAddDocument={handleAddDocument}
         onDeleteDocument={handleDeleteDocument}
+        tintedGlass={tintedGlass}
       />
 
       {/* Modal 3: Montar Turma de Reciclagem */}
@@ -869,6 +1155,7 @@ export default function TrainingMatrixModule() {
         isOpen={isBatchModalOpen}
         onClose={() => setIsBatchModalOpen(false)}
         trainings={trainings}
+        tintedGlass={tintedGlass}
       />
 
       {/* Modal 4: Dossiê de Auditoria do Colaborador */}
@@ -878,25 +1165,40 @@ export default function TrainingMatrixModule() {
         employeeName={dossierEmployee}
         trainings={trainings}
         onRenewRecord={handleRenew}
+        tintedGlass={tintedGlass}
       />
 
       {/* Modal 5: Nova Capacitação / POP */}
       {isNewModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 my-8">
-            <h3 className="text-lg font-bold text-slate-900 mb-1">Cadastrar Capacitação / Procedimento</h3>
-            <p className="text-xs text-slate-500 mb-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div
+            className={`rounded-3xl shadow-2xl max-w-lg w-full p-6 border my-8 transition-all ${
+              tintedGlass
+                ? 'aptis-glass-modal text-white border-white/10'
+                : 'bg-white text-slate-900 border-slate-200'
+            }`}
+          >
+            <h3 className={`text-lg font-bold mb-1 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              Cadastrar Capacitação / Procedimento
+            </h3>
+            <p className={`text-xs mb-4 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
               Registre a homologação de NR de Segurança ou POP Operacional para {currentTenant.name}.
             </p>
 
             <form onSubmit={handleAddTraining} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Tipo de Registro</label>
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Tipo de Registro
+                  </label>
                   <select
                     value={newType}
                     onChange={e => setNewType(e.target.value as TrainingType)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500 font-bold"
+                    className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   >
                     <option value="NR">NR (Norma Regulamentadora SST)</option>
                     <option value="POP">POP (Procedimento Operacional)</option>
@@ -904,61 +1206,91 @@ export default function TrainingMatrixModule() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Código Identificador</label>
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Código Identificador
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="Ex: NR-10 ou POP-001"
                     value={newCode}
                     onChange={e => setNewCode(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500 font-mono"
+                    className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nome da Norma / POP *</label>
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Nome da Norma / POP *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: NR-10 Segurança em Instalações Elétricas"
                   value={newCourseName}
                   onChange={e => setNewCourseName(e.target.value)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900'
+                  }`}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nome do Colaborador *</label>
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Nome do Colaborador *
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="Ex: Roberto Gomes"
                     value={newEmployee}
                     onChange={e => setNewEmployee(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                    className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Cargo / Função</label>
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Cargo / Função
+                  </label>
                   <input
                     type="text"
                     placeholder="Ex: Eletricista de Manutenção"
                     value={newEmployeeRole}
                     onChange={e => setNewEmployeeRole(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                    className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Setor / Departamento</label>
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Setor / Departamento
+                  </label>
                   <select
                     value={newDepartment}
                     onChange={e => setNewDepartment(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                    className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   >
                     {plantSectors.map(s => (
                       <option key={s.id} value={s.name}>{s.name}</option>
@@ -967,7 +1299,7 @@ export default function TrainingMatrixModule() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                     {newType === 'POP' ? 'Versão do POP' : 'Validade (Meses)'}
                   </label>
                   {newType === 'POP' ? (
@@ -976,14 +1308,22 @@ export default function TrainingMatrixModule() {
                       placeholder="Ex: v2.0"
                       value={newVersion}
                       onChange={e => setNewVersion(e.target.value)}
-                      className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                      className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900'
+                      }`}
                     />
                   ) : (
                     <input
                       type="number"
                       value={newValidityMonths}
                       onChange={e => setNewValidityMonths(Number(e.target.value))}
-                      className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                      className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        tintedGlass
+                          ? 'aptis-glass-input text-white'
+                          : 'bg-slate-50 border border-slate-300 text-slate-900'
+                      }`}
                     />
                   )}
                 </div>
@@ -991,36 +1331,52 @@ export default function TrainingMatrixModule() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Data Conclusão / Treinamento</label>
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Data Conclusão / Treinamento
+                  </label>
                   <input
                     type="date"
                     value={newCompletedDate}
                     onChange={e => setNewCompletedDate(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                    className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Data Vencimento / Reciclagem</label>
+                  <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Data Vencimento / Reciclagem
+                  </label>
                   <input
                     type="date"
                     value={newExpiryDate}
                     onChange={e => setNewExpiryDate(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                    className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      tintedGlass
+                        ? 'aptis-glass-input text-white'
+                        : 'bg-slate-50 border border-slate-300 text-slate-900'
+                    }`}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className={`flex items-center justify-end gap-2 pt-3 border-t ${tintedGlass ? 'border-white/10' : 'border-slate-100'}`}>
                 <button
                   type="button"
                   onClick={() => setIsNewModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
+                    tintedGlass
+                      ? 'text-slate-300 hover:bg-white/10'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors cursor-pointer shadow-xs"
+                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors cursor-pointer shadow-xs"
                 >
                   Salvar Homologação
                 </button>

@@ -21,6 +21,7 @@ interface TrainingBatchModalProps {
   onClose: () => void;
   trainings: TrainingRecord[];
   onBatchScheduled?: (course: string, employeeNames: string[]) => void;
+  tintedGlass?: boolean;
 }
 
 const COURSES_AVAILABLE = [
@@ -38,7 +39,8 @@ export const TrainingBatchModal: React.FC<TrainingBatchModalProps> = ({
   isOpen,
   onClose,
   trainings,
-  onBatchScheduled
+  onBatchScheduled,
+  tintedGlass = false
 }) => {
   const [selectedCourseCode, setSelectedCourseCode] = useState('NR-35');
   const [batchDate, setBatchDate] = useState('2026-09-25');
@@ -110,24 +112,40 @@ ${list}
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 my-8">
+    <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div
+        className={`rounded-3xl shadow-2xl max-w-2xl w-full p-6 border my-8 transition-all ${
+          tintedGlass
+            ? 'aptis-glass-modal text-white border-white/10'
+            : 'bg-white text-slate-900 border-slate-200'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div className={`flex items-center justify-between pb-4 border-b ${tintedGlass ? 'border-white/10' : 'border-slate-200'}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold border ${
+              tintedGlass
+                ? 'bg-blue-500/20 text-cyan-300 border-blue-500/30'
+                : 'bg-blue-100 text-blue-700 border-blue-200'
+            }`}>
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Montar Turma de Treinamento / Reciclagem</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className={`text-lg font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                Montar Turma de Treinamento / Reciclagem
+              </h2>
+              <p className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                 Agrupamento automático de colaboradores e geração de convocação oficial em 1 clique.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              tintedGlass
+                ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -136,15 +154,23 @@ ${list}
         {/* Body */}
         <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-1">
           {/* Seleção de Curso */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Selecione a NR ou POP da Turma</label>
+          <div className={`p-3 rounded-xl border ${
+            tintedGlass ? 'aptis-glass-subcard border-white/10' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+              Selecione a NR ou POP da Turma
+            </label>
             <select
               value={selectedCourseCode}
               onChange={e => {
                 setSelectedCourseCode(e.target.value);
                 setSelectedEmployees([]);
               }}
-              className="w-full text-xs font-bold text-slate-800 bg-white border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500"
+              className={`w-full text-xs font-bold rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                  : 'text-slate-800 bg-white border border-slate-300'
+              }`}
             >
               {COURSES_AVAILABLE.map(c => (
                 <option key={c.code} value={c.code}>
@@ -157,65 +183,87 @@ ${list}
           {/* Dados do Agendamento */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              <label className={`block text-xs font-semibold mb-1 flex items-center gap-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                <Calendar className={`w-3.5 h-3.5 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 Data do Treinamento
               </label>
               <input
                 type="date"
                 value={batchDate}
                 onChange={e => setBatchDate(e.target.value)}
-                className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 font-medium"
+                className={`w-full text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'bg-slate-50 border border-slate-300 text-slate-900'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-blue-600" />
+              <label className={`block text-xs font-semibold mb-1 flex items-center gap-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                <Clock className={`w-3.5 h-3.5 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 Horário Previsto
               </label>
               <input
                 type="text"
                 value={batchTime}
                 onChange={e => setBatchTime(e.target.value)}
-                className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 font-medium"
+                className={`w-full text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'bg-slate-50 border border-slate-300 text-slate-900'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Instrutor / Entidade Habilitada</label>
+              <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                Instrutor / Entidade Habilitada
+              </label>
               <input
                 type="text"
                 value={instructor}
                 onChange={e => setInstructor(e.target.value)}
-                className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 font-medium"
+                className={`w-full text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'bg-slate-50 border border-slate-300 text-slate-900'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-blue-600" />
+              <label className={`block text-xs font-semibold mb-1 flex items-center gap-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                <MapPin className={`w-3.5 h-3.5 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
                 Local / Sala
               </label>
               <input
                 type="text"
                 value={location}
                 onChange={e => setLocation(e.target.value)}
-                className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 font-medium"
+                className={`w-full text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white'
+                    : 'bg-slate-50 border border-slate-300 text-slate-900'
+                }`}
               />
             </div>
           </div>
 
           {/* Seleção de Colaboradores */}
-          <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/60">
+          <div className={`border rounded-xl p-3.5 ${
+            tintedGlass ? 'aptis-glass-subcard border-white/10' : 'border-slate-200 bg-slate-50/60'
+          }`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-800">
+              <span className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-800'}`}>
                 Colaboradores Elegíveis / A Vencer ({pendingEmployees.length})
               </span>
               <button
                 type="button"
                 onClick={handleSelectAllPending}
-                className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 cursor-pointer"
+                className={`text-[11px] font-semibold cursor-pointer ${
+                  tintedGlass ? 'text-cyan-400 hover:text-cyan-300' : 'text-blue-600 hover:text-blue-800'
+                }`}
               >
                 Selecionar Todos a Vencer
               </button>
@@ -238,7 +286,11 @@ ${list}
                       key={r.id}
                       className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
                         isSelected 
-                          ? 'bg-blue-50/80 border-blue-300 font-medium text-blue-900' 
+                          ? tintedGlass
+                            ? 'bg-blue-500/20 border-cyan-400/50 font-medium text-white'
+                            : 'bg-blue-50/80 border-blue-300 font-medium text-blue-900' 
+                          : tintedGlass
+                          ? 'bg-slate-950/60 border-white/10 text-slate-300 hover:bg-white/5'
                           : 'bg-white border-slate-200 text-slate-700'
                       }`}
                     >
@@ -255,11 +307,17 @@ ${list}
 
                       <div className="text-[10px] font-bold">
                         {isExpired ? (
-                          <span className="text-rose-600 font-bold">🔴 Vencido ({Math.abs(days)}d)</span>
+                          <span className={tintedGlass ? 'text-rose-400 font-bold' : 'text-rose-600 font-bold'}>
+                            🔴 Vencido ({Math.abs(days)}d)
+                          </span>
                         ) : isExpiring ? (
-                          <span className="text-amber-700 font-bold">🟡 Vence em {days}d</span>
+                          <span className={tintedGlass ? 'text-amber-400 font-bold' : 'text-amber-700 font-bold'}>
+                            🟡 Vence em {days}d
+                          </span>
                         ) : (
-                          <span className="text-emerald-700">🟢 Válido</span>
+                          <span className={tintedGlass ? 'text-emerald-400' : 'text-emerald-700'}>
+                            🟢 Válido
+                          </span>
                         )}
                       </div>
                     </label>
@@ -271,20 +329,26 @@ ${list}
         </div>
 
         {/* Footer Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+        <div className={`flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t ${
+          tintedGlass ? 'border-white/10' : 'border-slate-200'
+        }`}>
           <button
             onClick={handleCopy}
             type="button"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg border border-slate-300 transition-colors cursor-pointer shadow-xs"
+            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer shadow-xs ${
+              tintedGlass
+                ? 'aptis-glass-subcard text-slate-200 hover:text-white border-white/15'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+            }`}
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span className="text-emerald-700">Convocação Copiada com Sucesso!</span>
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span className={tintedGlass ? 'text-emerald-400' : 'text-emerald-700'}>Convocação Copiada com Sucesso!</span>
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 text-slate-600" />
+                <Copy className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-slate-600'}`} />
                 <span>Copiar Convocação (WhatsApp / Teams)</span>
               </>
             )}
@@ -294,7 +358,9 @@ ${list}
             <button
               onClick={onClose}
               type="button"
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
+                tintedGlass ? 'text-slate-300 hover:bg-white/10' : 'text-slate-600 hover:bg-slate-100'
+              }`}
             >
               Cancelar
             </button>
@@ -302,7 +368,7 @@ ${list}
               onClick={handleConfirm}
               disabled={confirmed || selectedEmployees.length === 0}
               type="button"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl transition-colors cursor-pointer shadow-xs"
             >
               {confirmed ? (
                 <>

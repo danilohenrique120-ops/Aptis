@@ -27,6 +27,7 @@ interface DocumentManagerModalProps {
   onAddDocument: (doc: DocumentAttachment) => void;
   onDeleteDocument: (docId: string) => void;
   initialSelectedCategory?: string;
+  tintedGlass?: boolean;
 }
 
 export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
@@ -35,7 +36,8 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
   documents,
   onAddDocument,
   onDeleteDocument,
-  initialSelectedCategory = 'all'
+  initialSelectedCategory = 'all',
+  tintedGlass = false
 }) => {
   const [activeTab, setActiveTab] = useState<'list' | 'upload'>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -144,36 +146,56 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-6 border border-slate-200 my-8">
+    <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div
+        className={`rounded-3xl shadow-2xl max-w-4xl w-full p-6 border my-8 transition-all ${
+          tintedGlass
+            ? 'aptis-glass-modal text-white border-white/10'
+            : 'bg-white text-slate-900 border-slate-200'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div className={`flex items-center justify-between pb-4 border-b ${tintedGlass ? 'border-white/10' : 'border-slate-200'}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold border ${
+              tintedGlass
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                : 'bg-amber-100 text-amber-800 border-amber-200'
+            }`}>
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Acervo & Gestão Documental</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className={`text-lg font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                Acervo & Gestão Documental
+              </h2>
+              <p className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                 Repositório central de evidências, certificados de NRs, listas de presença e POPs em PDF, Word e TXT.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              tintedGlass
+                ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 pt-4 pb-2 border-b border-slate-100">
+        <div className={`flex items-center gap-2 pt-4 pb-2 border-b ${tintedGlass ? 'border-white/10' : 'border-slate-100'}`}>
           <button
             onClick={() => setActiveTab('list')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
               activeTab === 'list'
-                ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                ? tintedGlass
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-amber-100 text-amber-900 border border-amber-200'
+                : tintedGlass
+                ? 'text-slate-400 hover:bg-white/10 hover:text-white'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -181,9 +203,13 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('upload')}
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'upload'
-                ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                ? tintedGlass
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-amber-100 text-amber-900 border border-amber-200'
+                : tintedGlass
+                ? 'text-slate-400 hover:bg-white/10 hover:text-white'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -204,13 +230,21 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
                   placeholder="Pesquisar por nome de arquivo, colaborador ou conteúdo..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                  className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white placeholder:text-slate-400'
+                      : 'bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white'
+                  }`}
                 />
               </div>
               <select
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="text-xs border border-slate-200 bg-slate-50 rounded-lg py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className={`text-xs rounded-xl py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                    : 'border border-slate-200 bg-slate-50 text-slate-900'
+                }`}
               >
                 <option value="all">Todas as Categorias</option>
                 <option value="certificate">Certificados de NRs</option>
@@ -224,30 +258,40 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
             {/* Document List */}
             <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-1">
               {filteredDocs.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <div className={`py-12 text-center text-xs text-slate-400 italic rounded-xl border border-dashed ${
+                  tintedGlass ? 'bg-white/5 border-white/15' : 'bg-slate-50 border-slate-200'
+                }`}>
                   Nenhum documento encontrado com os critérios de filtro.
                 </div>
               ) : (
                 filteredDocs.map(doc => (
                   <div
                     key={doc.id}
-                    className="p-3 bg-white hover:bg-slate-50/80 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
+                    className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                      tintedGlass
+                        ? 'aptis-glass-subcard border-white/10 hover:border-white/20'
+                        : 'bg-white hover:bg-slate-50/80 border-slate-200 shadow-2xs'
+                    }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className="p-2.5 bg-slate-100 rounded-xl shrink-0">
+                      <div className={`p-2.5 rounded-xl shrink-0 ${tintedGlass ? 'bg-white/10' : 'bg-slate-100'}`}>
                         {getFileIcon(doc.fileType)}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-xs font-bold text-slate-900 truncate">
+                          <h4 className={`text-xs font-bold truncate ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                             {doc.fileName}
                           </h4>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                            tintedGlass
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                              : 'bg-amber-50 text-amber-800 border-amber-200'
+                          }`}>
                             {getCategoryLabel(doc.category)}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                          Vinculado a: <strong className="text-slate-700">{doc.associatedName}</strong> • Tamanho: {doc.fileSize} • Upload em: {formatDate(doc.uploadDate)}
+                        <p className={`text-[11px] mt-0.5 truncate ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                          Vinculado a: <strong className={tintedGlass ? 'text-slate-200' : 'text-slate-700'}>{doc.associatedName}</strong> • Tamanho: {doc.fileSize} • Upload em: {formatDate(doc.uploadDate)}
                         </p>
                       </div>
                     </div>
@@ -255,7 +299,11 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
                     <div className="flex items-center gap-2 shrink-0 justify-end">
                       <button
                         onClick={() => setViewingDoc(doc)}
-                        className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                        className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 cursor-pointer ${
+                          tintedGlass
+                            ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 border border-cyan-500/30'
+                            : 'text-blue-700 bg-blue-50 hover:bg-blue-100'
+                        }`}
                         title="Visualizar conteúdo"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -263,7 +311,11 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
                       </button>
                       <button
                         onClick={() => alert(`Simulando download seguro de: ${doc.fileName}`)}
-                        className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          tintedGlass
+                            ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                        }`}
                         title="Baixar arquivo"
                       >
                         <Download className="w-4 h-4" />
@@ -274,7 +326,11 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
                             onDeleteDocument(doc.id);
                           }
                         }}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          tintedGlass
+                            ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
+                            : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                        }`}
                         title="Excluir documento"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -291,7 +347,11 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
             {/* Drag and Drop Zone */}
             <div 
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-amber-300 hover:border-amber-500 bg-amber-50/40 rounded-2xl p-6 text-center cursor-pointer transition-colors"
+              className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors ${
+                tintedGlass
+                  ? 'border-amber-500/40 hover:border-amber-400 bg-amber-500/10'
+                  : 'border-amber-300 hover:border-amber-500 bg-amber-50/40'
+              }`}
             >
               <input
                 ref={fileInputRef}
@@ -300,34 +360,46 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
                 onChange={handleFileSelected}
                 className="hidden"
               />
-              <Upload className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-              <p className="text-xs font-bold text-slate-800">
+              <Upload className={`w-8 h-8 mx-auto mb-2 ${tintedGlass ? 'text-amber-400' : 'text-amber-600'}`} />
+              <p className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-800'}`}>
                 {fileName ? `Arquivo Selecionado: ${fileName}` : 'Clique para selecionar arquivo do computador'}
               </p>
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className={`text-[11px] mt-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                 Formatos aceitos: PDF, Word (.docx, .doc), Texto (.txt) e Imagens/Certificados até 25MB
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nome do Documento *</label>
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Nome do Documento *
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: Certificado_NR10_Carlos_Silveira.pdf"
                   value={fileName}
                   onChange={e => setFileName(e.target.value)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Categoria do Documento</label>
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Categoria do Documento
+                </label>
                 <select
                   value={category}
                   onChange={e => setCategory(e.target.value as DocumentCategory)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900'
+                  }`}
                 >
                   <option value="certificate">Certificado de Conclusão</option>
                   <option value="procedure_pop">Procedimento Operacional Padrão (POP)</option>
@@ -340,22 +412,34 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Vinculado a (Colaborador / Curso / POP)</label>
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Vinculado a (Colaborador / Curso / POP)
+                </label>
                 <input
                   type="text"
                   placeholder="Ex: Carlos Silveira (NR-10) ou POP-001 Usinagem"
                   value={associatedName}
                   onChange={e => setAssociatedName(e.target.value)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Tipo de Arquivo</label>
+                <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Tipo de Arquivo
+                </label>
                 <select
                   value={fileType}
                   onChange={e => setFileType(e.target.value as DocumentFileType)}
-                  className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                  className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    tintedGlass
+                      ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                      : 'bg-slate-50 border border-slate-300 text-slate-900'
+                  }`}
                 >
                   <option value="pdf">Documento PDF (.pdf)</option>
                   <option value="docx">Word (.docx)</option>
@@ -366,7 +450,7 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
                 Texto / Metadados Indexados para Busca Profunda (Deep Search)
               </label>
               <textarea
@@ -374,24 +458,30 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
                 placeholder="Insira o resumo textual, tópicos abordados, números de portaria ou cláusulas do documento para indexar na pesquisa..."
                 value={textContent}
                 onChange={e => setTextContent(e.target.value)}
-                className="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-amber-500"
+                className={`w-full text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  tintedGlass
+                    ? 'aptis-glass-input text-white placeholder:text-slate-500'
+                    : 'bg-slate-50 border border-slate-300 text-slate-900'
+                }`}
               />
               <p className="text-[10px] text-slate-400 mt-1">
                 💡 Este texto será indexado no motor de busca inteligente para localizar palavras-chave dentro do documento.
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+            <div className={`flex items-center justify-end gap-2 pt-3 border-t ${tintedGlass ? 'border-white/10' : 'border-slate-200'}`}>
               <button
                 type="button"
                 onClick={() => setActiveTab('list')}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
+                  tintedGlass ? 'text-slate-300 hover:bg-white/10' : 'text-slate-600 hover:bg-slate-100'
+                }`}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 {uploadSuccess ? (
                   <>
@@ -411,53 +501,71 @@ export const DocumentManagerModal: React.FC<DocumentManagerModalProps> = ({
 
         {/* Modal Leitor / Visualizador de Documento */}
         {viewingDoc && (
-          <div className="fixed inset-0 z-60 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 flex flex-col max-h-[85vh]">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div className="fixed inset-0 z-60 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div
+              className={`rounded-3xl shadow-2xl max-w-2xl w-full p-6 border flex flex-col max-h-[85vh] ${
+                tintedGlass
+                  ? 'aptis-glass-modal text-white border-white/10'
+                  : 'bg-white text-slate-900 border-slate-200'
+              }`}
+            >
+              <div className={`flex items-center justify-between pb-3 border-b ${tintedGlass ? 'border-white/10' : 'border-slate-200'}`}>
                 <div className="flex items-center gap-2.5">
                   {getFileIcon(viewingDoc.fileType)}
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 leading-tight">{viewingDoc.fileName}</h3>
-                    <span className="text-[10px] text-slate-500">
+                    <h3 className={`text-sm font-bold leading-tight ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                      {viewingDoc.fileName}
+                    </h3>
+                    <span className={`text-[10px] ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                       {getCategoryLabel(viewingDoc.category)} • {viewingDoc.fileSize}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setViewingDoc(null)}
-                  className="p-1 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+                  className={`p-1 rounded-lg cursor-pointer ${tintedGlass ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="flex-1 overflow-y-auto py-4 space-y-3">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 grid grid-cols-2 gap-2">
-                  <div><strong>Vinculado a:</strong> {viewingDoc.associatedName}</div>
-                  <div><strong>Data de Upload:</strong> {formatDate(viewingDoc.uploadDate)}</div>
-                  <div><strong>Formato:</strong> {viewingDoc.fileType.toUpperCase()}</div>
-                  <div><strong>Status:</strong> Indexado no Deep Search ✅</div>
+                <div className={`p-3 rounded-xl border text-xs grid grid-cols-2 gap-2 ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard border-white/10 text-slate-300'
+                    : 'bg-slate-50 border-slate-200 text-slate-600'
+                }`}>
+                  <div><strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>Vinculado a:</strong> {viewingDoc.associatedName}</div>
+                  <div><strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>Data de Upload:</strong> {formatDate(viewingDoc.uploadDate)}</div>
+                  <div><strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>Formato:</strong> {viewingDoc.fileType.toUpperCase()}</div>
+                  <div><strong className={tintedGlass ? 'text-white' : 'text-slate-900'}>Status:</strong> Indexado no Deep Search ✅</div>
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-bold text-slate-800 mb-1.5">Conteúdo Textual do Arquivo</h4>
-                  <div className="p-3.5 bg-slate-900 text-slate-100 rounded-xl text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
+                  <h4 className={`text-xs font-bold mb-1.5 ${tintedGlass ? 'text-slate-200' : 'text-slate-800'}`}>
+                    Conteúdo Textual do Arquivo
+                  </h4>
+                  <div className="p-3.5 bg-slate-950/80 border border-white/10 text-slate-100 rounded-xl text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto">
                     {viewingDoc.content}
                   </div>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+              <div className={`pt-3 border-t flex items-center justify-between ${tintedGlass ? 'border-white/10' : 'border-slate-200'}`}>
                 <button
                   onClick={() => alert(`Baixando cópia oficial de ${viewingDoc.fileName}...`)}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer ${
+                    tintedGlass
+                      ? 'aptis-glass-subcard text-slate-200 hover:text-white'
+                      : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
+                  }`}
                 >
                   <Download className="w-3.5 h-3.5" />
                   Baixar Arquivo
                 </button>
                 <button
                   onClick={() => setViewingDoc(null)}
-                  className="px-4 py-1.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-lg cursor-pointer"
+                  className="px-4 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl cursor-pointer"
                 >
                   Fechar Visualizador
                 </button>
