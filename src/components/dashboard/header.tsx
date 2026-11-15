@@ -37,6 +37,7 @@ export function DashboardHeader() {
     pathname === '/dashboard' ||
     pathname.startsWith('/dashboard/tools/skills-matrix') ||
     pathname.startsWith('/dashboard/tools/training-matrix') ||
+    pathname.startsWith('/dashboard/tools/kaizen-manager') ||
     pathname.startsWith('/dashboard/tools/manager-tasks') ||
     pathname.startsWith('/dashboard/tools/one-on-one') ||
     pathname.startsWith('/dashboard/tools/pdi-manager') ||

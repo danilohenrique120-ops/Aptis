@@ -21,11 +21,13 @@ import {
 interface KaizenSectorMatrixProps {
   projects: KaizenProject[];
   onOpenA3: (project: KaizenProject) => void;
+  tintedGlass?: boolean;
 }
 
 export function KaizenSectorMatrix({
   projects,
-  onOpenA3
+  onOpenA3,
+  tintedGlass = false
 }: KaizenSectorMatrixProps) {
   const { sectors: plantSectors } = usePlantSectors();
   const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('all');
@@ -86,28 +88,34 @@ export function KaizenSectorMatrix({
   return (
     <div className="space-y-6 w-full">
       {/* HEADER EXPLICATIVO */}
-      <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-2xs space-y-3">
+      <div className={`p-5 rounded-2xl space-y-3 transition-all ${
+        tintedGlass ? 'aptis-glass-dark' : 'aptis-glass-light bg-white border border-slate-200 shadow-2xs'
+      }`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-purple-600" />
+            <h3 className={`text-base font-bold flex items-center gap-2 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              <Building2 className={`w-5 h-5 ${tintedGlass ? 'text-purple-400' : 'text-purple-600'}`} />
               Matriz de Kaizens por Setores & Áreas Fabris
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
               Controle quantitativo e qualitativo das melhorias contínuas distribuídas pelos postos de trabalho e níveis de maturidade.
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-500 font-semibold">Filtrar Setor:</span>
+            <span className={`font-semibold ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>Filtrar Setor:</span>
             <select
               value={selectedSectorFilter}
               onChange={(e) => setSelectedSectorFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl font-bold focus:outline-none focus:border-purple-500"
+              className={`px-3 py-1.5 rounded-xl font-bold focus:outline-none ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white'
+                  : 'bg-slate-50 border border-slate-200 text-slate-700 focus:border-purple-500'
+              }`}
             >
-              <option value="all">Visão Consolidada (Todos os Setores)</option>
+              <option value="all" className="bg-slate-900 text-white">Visão Consolidada (Todos os Setores)</option>
               {allSectors.map(s => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s} className="bg-slate-900 text-white">{s}</option>
               ))}
             </select>
           </div>
@@ -115,18 +123,28 @@ export function KaizenSectorMatrix({
       </div>
 
       {/* MATRIZ TABULAR: SETOR X NÍVEL DE KAIZEN */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-purple-600" />
+      <div className={`rounded-2xl overflow-hidden transition-all ${
+        tintedGlass ? 'aptis-glass-dark' : 'aptis-glass-light bg-white border border-slate-200 shadow-2xs'
+      }`}>
+        <div className={`p-4 border-b flex items-center justify-between ${
+          tintedGlass ? 'border-white/10' : 'border-slate-200'
+        }`}>
+          <span className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+            tintedGlass ? 'text-slate-200' : 'text-slate-700'
+          }`}>
+            <Layers className={`w-4 h-4 ${tintedGlass ? 'text-purple-400' : 'text-purple-600'}`} />
             Distribuição por Níveis de Kaizen (Setor × Nível)
           </span>
-          <span className="text-xs text-slate-400">Total de {projects.length} Kaizens ativos</span>
+          <span className={`text-xs ${tintedGlass ? 'text-slate-400' : 'text-slate-400'}`}>Total de {projects.length} Kaizens ativos</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+            <thead className={`border-b font-bold uppercase text-[10px] tracking-wider ${
+              tintedGlass
+                ? 'bg-slate-950/70 border-white/10 text-slate-300'
+                : 'bg-slate-50 border-slate-200 text-slate-500'
+            }`}>
               <tr>
                 <th className="py-3 px-4">Setor Fabril</th>
                 <th className="py-3 px-4 text-center">⚡ Quick (Rápido)</th>
@@ -138,22 +156,26 @@ export function KaizenSectorMatrix({
                 <th className="py-3 px-4 text-right">Economia Anual</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className={`divide-y ${tintedGlass ? 'divide-white/10' : 'divide-slate-100'}`}>
               {sectorStats.map((s) => (
                 <tr 
                   key={s.sector} 
-                  className={`hover:bg-slate-50/80 transition-colors ${
-                    selectedSectorFilter === s.sector ? 'bg-purple-50/40 font-semibold' : ''
+                  className={`transition-colors ${
+                    tintedGlass
+                      ? `hover:bg-white/[0.04] ${selectedSectorFilter === s.sector ? 'bg-purple-500/15 font-semibold' : ''}`
+                      : `hover:bg-slate-50/80 ${selectedSectorFilter === s.sector ? 'bg-purple-50/40 font-semibold' : ''}`
                   }`}
                 >
-                  <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-slate-400" />
+                  <td className={`py-3.5 px-4 font-bold flex items-center gap-2 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+                    <Building2 className={`w-4 h-4 ${tintedGlass ? 'text-slate-400' : 'text-slate-400'}`} />
                     <span>{s.sector}</span>
                   </td>
 
                   <td className="py-3.5 px-4 text-center">
                     <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-xs ${
-                      s.quickCount > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'text-slate-300'
+                      s.quickCount > 0
+                        ? (tintedGlass ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35' : 'bg-amber-50 text-amber-700 border border-amber-200')
+                        : (tintedGlass ? 'text-slate-600' : 'text-slate-300')
                     }`}>
                       {s.quickCount}
                     </span>
@@ -161,7 +183,9 @@ export function KaizenSectorMatrix({
 
                   <td className="py-3.5 px-4 text-center">
                     <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-xs ${
-                      s.standardCount > 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-300'
+                      s.standardCount > 0
+                        ? (tintedGlass ? 'bg-blue-500/20 text-blue-300 border border-blue-500/35' : 'bg-blue-50 text-blue-700 border border-blue-200')
+                        : (tintedGlass ? 'text-slate-600' : 'text-slate-300')
                     }`}>
                       {s.standardCount}
                     </span>
@@ -169,7 +193,9 @@ export function KaizenSectorMatrix({
 
                   <td className="py-3.5 px-4 text-center">
                     <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-xs ${
-                      s.majorCount > 0 ? 'bg-purple-50 text-purple-700 border border-purple-200' : 'text-slate-300'
+                      s.majorCount > 0
+                        ? (tintedGlass ? 'bg-purple-500/20 text-purple-300 border border-purple-500/35' : 'bg-purple-50 text-purple-700 border border-purple-200')
+                        : (tintedGlass ? 'text-slate-600' : 'text-slate-300')
                     }`}>
                       {s.majorCount}
                     </span>
@@ -177,31 +203,37 @@ export function KaizenSectorMatrix({
 
                   <td className="py-3.5 px-4 text-center">
                     <span className={`px-2.5 py-0.5 rounded-full font-mono font-bold text-xs ${
-                      s.advancedCount > 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'text-slate-300'
+                      s.advancedCount > 0
+                        ? (tintedGlass ? 'bg-rose-500/20 text-rose-300 border border-rose-500/35' : 'bg-rose-50 text-rose-700 border border-rose-200')
+                        : (tintedGlass ? 'text-slate-600' : 'text-slate-300')
                     }`}>
                       {s.advancedCount}
                     </span>
                   </td>
 
-                  <td className="py-3.5 px-4 text-center font-bold font-mono text-slate-900">
-                    <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-800 border border-slate-200">
+                  <td className="py-3.5 px-4 text-center font-bold font-mono">
+                    <span className={`px-2 py-0.5 rounded border ${
+                      tintedGlass
+                        ? 'bg-slate-800/80 text-white border-white/15'
+                        : 'bg-slate-100 text-slate-800 border-slate-200'
+                    }`}>
                       {s.total}
                     </span>
                   </td>
 
                   <td className="py-3.5 px-4 text-center">
                     <div className="flex items-center justify-center gap-1.5">
-                      <div className="w-14 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                      <div className={`w-14 h-1.5 rounded-full overflow-hidden ${tintedGlass ? 'bg-slate-800' : 'bg-slate-100'}`}>
                         <div 
                           className="bg-emerald-500 h-full rounded-full" 
                           style={{ width: `${s.completionRate}%` }}
                         />
                       </div>
-                      <span className="font-mono text-[11px] text-slate-600">{s.completionRate}%</span>
+                      <span className={`font-mono text-[11px] ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>{s.completionRate}%</span>
                     </div>
                   </td>
 
-                  <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700">
+                  <td className={`py-3.5 px-4 text-right font-mono font-bold ${tintedGlass ? 'text-emerald-400' : 'text-emerald-700'}`}>
                     {s.totalSavings > 0 ? `R$ ${s.totalSavings.toLocaleString('pt-BR')}` : '-'}
                   </td>
                 </tr>
@@ -213,20 +245,26 @@ export function KaizenSectorMatrix({
 
       {/* DETALHAMENTO DE PROJETOS POR SETOR SELECIONADO */}
       {activeSectorData && (
-        <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-2xs space-y-4 animate-in fade-in duration-150">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className={`p-5 rounded-2xl space-y-4 animate-in fade-in duration-150 ${
+          tintedGlass ? 'aptis-glass-dark' : 'aptis-glass-light bg-white border border-slate-200 shadow-2xs'
+        }`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${
+            tintedGlass ? 'border-white/10' : 'border-slate-100'
+          }`}>
             <div>
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h4 className={`text-sm font-bold flex items-center gap-2 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                 <span>Projetos Kaizen em: </span>
-                <span className="text-purple-700">{activeSectorData.sector}</span>
+                <span className={tintedGlass ? 'text-purple-400' : 'text-purple-700'}>{activeSectorData.sector}</span>
               </h4>
-              <p className="text-xs text-slate-500">
+              <p className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                 {activeSectorData.total} projetos registrados neste setor fabril.
               </p>
             </div>
             <button
               onClick={() => setSelectedSectorFilter('all')}
-              className="text-xs text-purple-600 font-bold hover:underline cursor-pointer"
+              className={`text-xs font-bold hover:underline cursor-pointer ${
+                tintedGlass ? 'text-purple-400' : 'text-purple-600'
+              }`}
             >
               Voltar para visão de todos os setores
             </button>
@@ -236,22 +274,34 @@ export function KaizenSectorMatrix({
             {activeSectorData.projects.map(p => (
               <div 
                 key={p.id}
-                className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 flex flex-col justify-between"
+                className={`p-4 rounded-xl space-y-2 flex flex-col justify-between ${
+                  tintedGlass
+                    ? 'aptis-glass-subcard border border-white/10'
+                    : 'bg-slate-50 border border-slate-200'
+                }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <KaizenLevelBadge level={p.level} />
-                    <span className="text-[10px] font-bold uppercase text-slate-500">{p.stage}</span>
+                    <KaizenLevelBadge level={p.level} tintedGlass={tintedGlass} />
+                    <span className={`text-[10px] font-bold uppercase ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>{p.stage}</span>
                   </div>
-                  <h5 className="font-bold text-slate-900 text-xs">{p.title}</h5>
-                  <p className="text-[11px] text-slate-600 mt-1 line-clamp-2">{p.a3.problemStatement}</p>
+                  <h5 className={`font-bold text-xs ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>{p.title}</h5>
+                  <p className={`text-[11px] mt-1 line-clamp-2 ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>{p.a3.problemStatement}</p>
                 </div>
 
-                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-500">Líder: <strong className="text-slate-700">{p.leaderName}</strong></span>
+                <div className={`pt-2 border-t flex items-center justify-between text-[11px] ${
+                  tintedGlass ? 'border-white/10' : 'border-slate-200'
+                }`}>
+                  <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
+                    Líder: <strong className={tintedGlass ? 'text-slate-200' : 'text-slate-700'}>{p.leaderName}</strong>
+                  </span>
                   <button
                     onClick={() => onOpenA3(p)}
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold hover:bg-purple-600 transition-colors text-[10px]"
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-colors text-[10px] cursor-pointer ${
+                      tintedGlass
+                        ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-xs shadow-purple-500/20'
+                        : 'bg-slate-900 text-white hover:bg-purple-600'
+                    }`}
                   >
                     Abrir Formulário A3
                   </button>

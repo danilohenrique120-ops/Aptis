@@ -25,13 +25,15 @@ interface KaizenA3ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (updatedProject: KaizenProject) => void;
+  tintedGlass?: boolean;
 }
 
 export function KaizenA3Modal({
   project,
   isOpen,
   onClose,
-  onSave
+  onSave,
+  tintedGlass = false
 }: KaizenA3ModalProps) {
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   const [activePdcaTab, setActivePdcaTab] = useState<'plan' | 'do' | 'check' | 'act'>('plan');
@@ -157,34 +159,54 @@ export function KaizenA3Modal({
     onClose();
   };
 
+  const inputClass = tintedGlass
+    ? 'w-full aptis-glass-input rounded-xl px-3 py-2 text-white placeholder-slate-400 focus:outline-none'
+    : 'w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500';
+
+  const labelClass = `block font-semibold mb-1 ${tintedGlass ? 'text-slate-200' : 'text-slate-700'}`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-5xl overflow-hidden my-4 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+      <div className={`rounded-3xl border shadow-2xl w-full max-w-5xl overflow-hidden my-4 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200 ${
+        tintedGlass
+          ? 'aptis-glass-modal border-white/10 text-white'
+          : 'bg-white border-slate-200 text-slate-900'
+      }`}>
         {/* HEADER DO A3 */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+        <div className={`p-4 sm:p-5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+          tintedGlass ? 'border-white/10 bg-white/[0.03]' : 'border-slate-200 bg-slate-50'
+        }`}>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded">
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                tintedGlass
+                  ? 'text-purple-300 bg-purple-500/20 border-purple-500/35'
+                  : 'text-purple-700 bg-purple-100 border-purple-200'
+              }`}>
                 Relatório A3 • Metodologia PDCA
               </span>
-              <KaizenLevelBadge level={level} />
+              <KaizenLevelBadge level={level} tintedGlass={tintedGlass} />
             </div>
-            <h2 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+            <h2 className={`text-base sm:text-lg font-black leading-snug ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
               {title}
             </h2>
-            <p className="text-xs text-slate-500">
-              Líder: <strong className="text-slate-700">{leaderName}</strong> • Setor: {sector} ({area})
+            <p className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+              Líder: <strong className={tintedGlass ? 'text-white' : 'text-slate-700'}>{leaderName}</strong> • Setor: {sector} ({area})
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Alternador de Modo: Edição vs. Preview Imprimível */}
-            <div className="inline-flex rounded-xl p-1 bg-slate-200 border border-slate-300 text-xs font-semibold">
+            <div className={`inline-flex rounded-xl p-1 border text-xs font-semibold ${
+              tintedGlass ? 'bg-slate-950/70 border-white/10' : 'bg-slate-200 border-slate-300'
+            }`}>
               <button
                 type="button"
                 onClick={() => setViewMode('edit')}
-                className={`px-3 py-1 rounded-lg transition-all ${
-                  viewMode === 'edit' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  viewMode === 'edit'
+                    ? (tintedGlass ? 'bg-purple-600 text-white shadow-xs' : 'bg-white text-slate-900 shadow-xs')
+                    : (tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600')
                 }`}
               >
                 Formulário PDCA
@@ -192,8 +214,10 @@ export function KaizenA3Modal({
               <button
                 type="button"
                 onClick={() => setViewMode('preview')}
-                className={`px-3 py-1 rounded-lg transition-all ${
-                  viewMode === 'preview' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  viewMode === 'preview'
+                    ? (tintedGlass ? 'bg-purple-600 text-white shadow-xs' : 'bg-white text-slate-900 shadow-xs')
+                    : (tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600')
                 }`}
               >
                 Layout A3 Clássico
@@ -203,14 +227,22 @@ export function KaizenA3Modal({
             <button
               onClick={() => window.print()}
               title="Imprimir relatório A3"
-              className="p-2 rounded-xl bg-white border border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                tintedGlass
+                  ? 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10'
+                  : 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
               <Printer className="w-4 h-4" />
             </button>
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                tintedGlass
+                  ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                  : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'
+              }`}
             >
               <X className="w-5 h-5" />
             </button>
@@ -221,16 +253,20 @@ export function KaizenA3Modal({
         {viewMode === 'edit' && (
           <div className="flex-1 flex flex-col min-h-0">
             {/* Abas do Ciclo PDCA */}
-            <div className="flex items-center gap-2 border-b border-slate-200 px-5 pt-3 bg-white overflow-x-auto text-xs font-bold">
+            <div className={`flex items-center gap-2 border-b px-5 pt-3 overflow-x-auto text-xs font-bold ${
+              tintedGlass ? 'border-white/10 bg-slate-950/40' : 'border-slate-200 bg-white'
+            }`}>
               <button
                 onClick={() => setActivePdcaTab('plan')}
                 className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                   activePdcaTab === 'plan'
-                    ? 'border-purple-600 text-purple-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? (tintedGlass ? 'border-purple-400 text-purple-300' : 'border-purple-600 text-purple-700')
+                    : (tintedGlass ? 'border-transparent text-slate-400 hover:text-white' : 'border-transparent text-slate-500 hover:text-slate-800')
                 }`}
               >
-                <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[10px]">P</span>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                  tintedGlass ? 'bg-purple-500/25 text-purple-300' : 'bg-purple-100 text-purple-700'
+                }`}>P</span>
                 1. Plan (Planejar & 5 Porquês)
               </button>
 
@@ -238,11 +274,13 @@ export function KaizenA3Modal({
                 onClick={() => setActivePdcaTab('do')}
                 className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                   activePdcaTab === 'do'
-                    ? 'border-blue-600 text-blue-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? (tintedGlass ? 'border-blue-400 text-blue-300' : 'border-blue-600 text-blue-700')
+                    : (tintedGlass ? 'border-transparent text-slate-400 hover:text-white' : 'border-transparent text-slate-500 hover:text-slate-800')
                 }`}
               >
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px]">D</span>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                  tintedGlass ? 'bg-blue-500/25 text-blue-300' : 'bg-blue-100 text-blue-700'
+                }`}>D</span>
                 2. Do (Executar & 5W2H)
               </button>
 
@@ -250,11 +288,13 @@ export function KaizenA3Modal({
                 onClick={() => setActivePdcaTab('check')}
                 className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                   activePdcaTab === 'check'
-                    ? 'border-emerald-600 text-emerald-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? (tintedGlass ? 'border-emerald-400 text-emerald-300' : 'border-emerald-600 text-emerald-700')
+                    : (tintedGlass ? 'border-transparent text-slate-400 hover:text-white' : 'border-transparent text-slate-500 hover:text-slate-800')
                 }`}
               >
-                <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]">C</span>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                  tintedGlass ? 'bg-emerald-500/25 text-emerald-300' : 'bg-emerald-100 text-emerald-700'
+                }`}>C</span>
                 3. Check (Verificar Resultados)
               </button>
 
@@ -262,11 +302,13 @@ export function KaizenA3Modal({
                 onClick={() => setActivePdcaTab('act')}
                 className={`pb-3 px-4 flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
                   activePdcaTab === 'act'
-                    ? 'border-amber-600 text-amber-700'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? (tintedGlass ? 'border-amber-400 text-amber-300' : 'border-amber-600 text-amber-700')
+                    : (tintedGlass ? 'border-transparent text-slate-400 hover:text-white' : 'border-transparent text-slate-500 hover:text-slate-800')
                 }`}
               >
-                <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[10px]">A</span>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                  tintedGlass ? 'bg-amber-500/25 text-amber-300' : 'bg-amber-100 text-amber-700'
+                }`}>A</span>
                 4. Act (Padronizar & Agir)
               </button>
             </div>
@@ -278,61 +320,61 @@ export function KaizenA3Modal({
                 <div className="space-y-4 animate-in fade-in duration-150">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="sm:col-span-2">
-                      <label className="block text-slate-700 font-semibold mb-1">Título do Projeto Kaizen *</label>
+                      <label className={labelClass}>Título do Projeto Kaizen *</label>
                       <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-medium focus:outline-none focus:border-purple-500"
+                        className={`${inputClass} font-medium`}
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Nível de Kaizen</label>
+                      <label className={labelClass}>Nível de Kaizen</label>
                       <select
                         value={level}
                         onChange={(e) => setLevel(e.target.value as KaizenLevel)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:outline-none focus:border-purple-500"
+                        className={`${inputClass} font-bold`}
                       >
-                        <option value="quick">⚡ Quick Kaizen (Rápido)</option>
-                        <option value="standard">🛠️ Standard Kaizen</option>
-                        <option value="major">🏭 Major Kaizen</option>
-                        <option value="advanced">🔬 Advanced Kaizen</option>
+                        <option value="quick" className="bg-slate-900 text-white">⚡ Quick Kaizen (Rápido)</option>
+                        <option value="standard" className="bg-slate-900 text-white">🛠️ Standard Kaizen</option>
+                        <option value="major" className="bg-slate-900 text-white">🏭 Major Kaizen</option>
+                        <option value="advanced" className="bg-slate-900 text-white">🔬 Advanced Kaizen</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Líder do Projeto</label>
+                      <label className={labelClass}>Líder do Projeto</label>
                       <input
                         type="text"
                         value={leaderName}
                         onChange={(e) => setLeaderName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                        className={inputClass}
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Setor Fabril</label>
+                      <label className={labelClass}>Setor Fabril</label>
                       <input
                         type="text"
                         value={sector}
                         onChange={(e) => setSector(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                        className={inputClass}
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Área / Célula / Posto</label>
+                      <label className={labelClass}>Área / Célula / Posto</label>
                       <input
                         type="text"
                         value={area}
                         onChange={(e) => setArea(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                        className={inputClass}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">
+                    <label className={labelClass}>
                       Membros da Equipe (separados por vírgula)
                     </label>
                     <input
@@ -340,84 +382,64 @@ export function KaizenA3Modal({
                       value={teamMembersText}
                       onChange={(e) => setTeamMembersText(e.target.value)}
                       placeholder="Ex: Mariana Souza, Carlos Silveira, Lucas Silva"
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                      className={inputClass}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">
+                    <label className={labelClass}>
                       1. Contexto & Declaração do Problema (com dados baseline) *
                     </label>
                     <textarea
                       rows={3}
                       value={problemStatement}
                       onChange={(e) => setProblemStatement(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-purple-500"
+                      className={inputClass}
                     />
                   </div>
 
                   {/* CAIXA DOS 5 PORQUÊS */}
-                  <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-200 space-y-2.5">
-                    <div className="flex items-center justify-between pb-1 border-b border-purple-200">
-                      <span className="font-bold text-purple-900 text-xs flex items-center gap-1.5">
-                        <HelpCircle className="w-4 h-4 text-purple-600" />
+                  <div className={`p-4 rounded-2xl border space-y-2.5 ${
+                    tintedGlass
+                      ? 'bg-purple-950/35 border-purple-500/30'
+                      : 'bg-purple-50/50 border-purple-200'
+                  }`}>
+                    <div className={`flex items-center justify-between pb-1 border-b ${
+                      tintedGlass ? 'border-purple-500/25' : 'border-purple-200'
+                    }`}>
+                      <span className={`font-bold text-xs flex items-center gap-1.5 ${
+                        tintedGlass ? 'text-purple-200' : 'text-purple-900'
+                      }`}>
+                        <HelpCircle className={`w-4 h-4 ${tintedGlass ? 'text-purple-400' : 'text-purple-600'}`} />
                         Análise de Causa Raiz (Método dos 5 Porquês da Toyota)
                       </span>
                     </div>
 
-                    <div>
-                      <span className="text-[10px] font-bold text-purple-800">1º Por quê?</span>
-                      <input
-                        type="text"
-                        value={why1}
-                        onChange={(e) => setWhy1(e.target.value)}
-                        placeholder="Ex: Por que a peça saiu invertida?..."
-                        className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-slate-800 text-xs"
-                      />
-                    </div>
+                    {[
+                      { label: '1º Por quê?', val: why1, set: setWhy1, ph: 'Ex: Por que a peça saiu invertida?...' },
+                      { label: '2º Por quê?', val: why2, set: setWhy2, ph: '' },
+                      { label: '3º Por quê?', val: why3, set: setWhy3, ph: '' },
+                      { label: '4º Por quê?', val: why4, set: setWhy4, ph: '' },
+                      { label: '5º Por quê?', val: why5, set: setWhy5, ph: '' },
+                    ].map((item, idx) => (
+                      <div key={idx}>
+                        <span className={`text-[10px] font-bold ${tintedGlass ? 'text-purple-300' : 'text-purple-800'}`}>{item.label}</span>
+                        <input
+                          type="text"
+                          value={item.val}
+                          onChange={(e) => item.set(e.target.value)}
+                          placeholder={item.ph}
+                          className={`w-full rounded-lg px-2.5 py-1.5 text-xs ${
+                            tintedGlass
+                              ? 'aptis-glass-input text-white placeholder-slate-400'
+                              : 'bg-white border border-purple-200 text-slate-800'
+                          }`}
+                        />
+                      </div>
+                    ))}
 
-                    <div>
-                      <span className="text-[10px] font-bold text-purple-800">2º Por quê?</span>
-                      <input
-                        type="text"
-                        value={why2}
-                        onChange={(e) => setWhy2(e.target.value)}
-                        className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] font-bold text-purple-800">3º Por quê?</span>
-                      <input
-                        type="text"
-                        value={why3}
-                        onChange={(e) => setWhy3(e.target.value)}
-                        className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] font-bold text-purple-800">4º Por quê?</span>
-                      <input
-                        type="text"
-                        value={why4}
-                        onChange={(e) => setWhy4(e.target.value)}
-                        className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] font-bold text-purple-800">5º Por quê?</span>
-                      <input
-                        type="text"
-                        value={why5}
-                        onChange={(e) => setWhy5(e.target.value)}
-                        className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-slate-800 text-xs"
-                      />
-                    </div>
-
-                    <div className="pt-2 border-t border-purple-200">
-                      <label className="block text-purple-900 font-black text-xs mb-1">
+                    <div className={`pt-2 border-t ${tintedGlass ? 'border-purple-500/25' : 'border-purple-200'}`}>
+                      <label className={`block font-black text-xs mb-1 ${tintedGlass ? 'text-purple-200' : 'text-purple-900'}`}>
                         🎯 Causa Raiz Conclusiva Identificada:
                       </label>
                       <input
@@ -425,28 +447,32 @@ export function KaizenA3Modal({
                         value={rootCause}
                         onChange={(e) => setRootCause(e.target.value)}
                         placeholder="Causa raiz fundamental a ser eliminada..."
-                        className="w-full bg-white border-2 border-purple-400 rounded-xl px-3 py-2 text-slate-900 font-bold text-xs"
+                        className={`w-full rounded-xl px-3 py-2 font-bold text-xs ${
+                          tintedGlass
+                            ? 'bg-slate-900/90 border-2 border-purple-500/60 text-white'
+                            : 'bg-white border-2 border-purple-400 text-slate-900'
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Condição Almejada (Target)</label>
+                      <label className={labelClass}>Condição Almejada (Target)</label>
                       <textarea
                         rows={2}
                         value={targetCondition}
                         onChange={(e) => setTargetCondition(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-purple-500"
+                        className={inputClass}
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-700 font-semibold mb-1">Meta SMART / KPI de Destino</label>
+                      <label className={labelClass}>Meta SMART / KPI de Destino</label>
                       <textarea
                         rows={2}
                         value={targetKpiGoal}
                         onChange={(e) => setTargetKpiGoal(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-purple-500"
+                        className={inputClass}
                       />
                     </div>
                   </div>
@@ -456,8 +482,10 @@ export function KaizenA3Modal({
               {/* ABA 2: DO (5W2H) */}
               {activePdcaTab === 'do' && (
                 <div className="space-y-4 animate-in fade-in duration-150">
-                  <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-200 space-y-3">
-                    <span className="font-bold text-blue-900 text-xs block">
+                  <div className={`p-4 rounded-2xl border space-y-3 ${
+                    tintedGlass ? 'bg-blue-950/35 border-blue-500/30' : 'bg-blue-50/50 border-blue-200'
+                  }`}>
+                    <span className={`font-bold text-xs block ${tintedGlass ? 'text-blue-200' : 'text-blue-900'}`}>
                       Adicionar Nova Ação ao Plano 5W2H
                     </span>
                     <form onSubmit={handleAddAction} className="grid grid-cols-1 sm:grid-cols-4 gap-2">
@@ -467,7 +495,7 @@ export function KaizenA3Modal({
                           value={newActionWhat}
                           onChange={(e) => setNewActionWhat(e.target.value)}
                           placeholder="O que fazer? (Ação corretiva/contramedida)..."
-                          className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-slate-900 text-xs"
+                          className={inputClass}
                           required
                         />
                       </div>
@@ -477,7 +505,7 @@ export function KaizenA3Modal({
                           value={newActionWho}
                           onChange={(e) => setNewActionWho(e.target.value)}
                           placeholder="Quem? (Responsável)"
-                          className="w-full bg-white border border-blue-200 rounded-xl px-3 py-2 text-slate-900 text-xs"
+                          className={inputClass}
                         />
                       </div>
                       <div className="flex gap-2">
@@ -485,7 +513,7 @@ export function KaizenA3Modal({
                           type="date"
                           value={newActionWhen}
                           onChange={(e) => setNewActionWhen(e.target.value)}
-                          className="w-full bg-white border border-blue-200 rounded-xl px-2.5 py-2 text-slate-900 text-xs"
+                          className={inputClass}
                         />
                         <button
                           type="submit"
@@ -499,32 +527,38 @@ export function KaizenA3Modal({
 
                   {/* Lista de Ações 5W2H */}
                   <div className="space-y-2">
-                    <span className="font-bold text-slate-800 text-xs block">
+                    <span className={`font-bold text-xs block ${tintedGlass ? 'text-slate-200' : 'text-slate-800'}`}>
                       Ações do Plano ({actionPlan.length})
                     </span>
                     {actionPlan.map((act) => (
                       <div
                         key={act.id}
-                        className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs"
+                        className={`p-3 rounded-xl flex items-center justify-between gap-3 border ${
+                          tintedGlass ? 'aptis-glass-subcard border-white/10' : 'bg-white border-slate-200 shadow-2xs'
+                        }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <button
                             type="button"
                             onClick={() => handleToggleActionStatus(act.id)}
-                            className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors cursor-pointer ${
                               act.status === 'done' ? 'bg-emerald-600 text-white' :
                               act.status === 'doing' ? 'bg-amber-500 text-white' :
-                              'bg-slate-100 text-slate-400 border border-slate-300'
+                              (tintedGlass ? 'bg-slate-800 text-slate-400 border border-white/15' : 'bg-slate-100 text-slate-400 border border-slate-300')
                             }`}
                           >
                             {act.status === 'done' ? '✓' : act.status === 'doing' ? '•' : '○'}
                           </button>
                           <div>
-                            <span className={`font-medium text-xs ${act.status === 'done' ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                            <span className={`font-medium text-xs ${
+                              act.status === 'done'
+                                ? 'line-through text-slate-400'
+                                : (tintedGlass ? 'text-white' : 'text-slate-800')
+                            }`}>
                               {act.what}
                             </span>
                             <span className="text-[10px] text-slate-400 block">
-                              Responsável: <strong>{act.who}</strong> • Prazo: {act.when}
+                              Responsável: <strong className={tintedGlass ? 'text-slate-200' : 'text-slate-700'}>{act.who}</strong> • Prazo: {act.when}
                             </span>
                           </div>
                         </div>
@@ -532,7 +566,7 @@ export function KaizenA3Modal({
                         <button
                           type="button"
                           onClick={() => handleDeleteAction(act.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1"
+                          className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -546,7 +580,7 @@ export function KaizenA3Modal({
               {activePdcaTab === 'check' && (
                 <div className="space-y-4 animate-in fade-in duration-150">
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">
+                    <label className={labelClass}>
                       Verificação de Resultados (Antes vs. Depois)
                     </label>
                     <textarea
@@ -554,13 +588,15 @@ export function KaizenA3Modal({
                       value={verificationResults}
                       onChange={(e) => setVerificationResults(e.target.value)}
                       placeholder="Descreva o que foi medido após a implementação..."
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-purple-500"
+                      className={inputClass}
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-200">
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl border ${
+                    tintedGlass ? 'bg-emerald-950/35 border-emerald-500/30' : 'bg-emerald-50/50 border-emerald-200'
+                  }`}>
                     <div>
-                      <label className="block text-emerald-900 font-semibold mb-1">
+                      <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-emerald-200' : 'text-emerald-900'}`}>
                         Economia Anual Estimada (R$)
                       </label>
                       <input
@@ -568,11 +604,15 @@ export function KaizenA3Modal({
                         value={savingsAnnual}
                         onChange={(e) => setSavingsAnnual(e.target.value)}
                         placeholder="Ex: 42000"
-                        className="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-emerald-900 font-mono font-bold"
+                        className={`w-full rounded-xl px-3 py-2 font-mono font-bold ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-emerald-300'
+                            : 'bg-white border border-emerald-300 text-emerald-900'
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-emerald-900 font-semibold mb-1">
+                      <label className={`block font-semibold mb-1 ${tintedGlass ? 'text-emerald-200' : 'text-emerald-900'}`}>
                         Horas Salvas por Mês (Horas de Operador)
                       </label>
                       <input
@@ -580,7 +620,11 @@ export function KaizenA3Modal({
                         value={hoursSavedMonthly}
                         onChange={(e) => setHoursSavedMonthly(e.target.value)}
                         placeholder="Ex: 18"
-                        className="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-emerald-900 font-mono font-bold"
+                        className={`w-full rounded-xl px-3 py-2 font-mono font-bold ${
+                          tintedGlass
+                            ? 'aptis-glass-input text-emerald-300'
+                            : 'bg-white border border-emerald-300 text-emerald-900'
+                        }`}
                       />
                     </div>
                   </div>
@@ -593,7 +637,7 @@ export function KaizenA3Modal({
                       onChange={(e) => setIsTargetAchieved(e.target.checked)}
                       className="w-4 h-4 text-emerald-600 rounded"
                     />
-                    <label htmlFor="meta-atingida" className="text-slate-800 font-bold text-xs cursor-pointer">
+                    <label htmlFor="meta-atingida" className={`font-bold text-xs cursor-pointer ${tintedGlass ? 'text-slate-200' : 'text-slate-800'}`}>
                       Meta SMART do Kaizen foi plenamente atingida e comprovada
                     </label>
                   </div>
@@ -604,7 +648,7 @@ export function KaizenA3Modal({
               {activePdcaTab === 'act' && (
                 <div className="space-y-4 animate-in fade-in duration-150">
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">
+                    <label className={labelClass}>
                       Padronização Criada / Atualizada (POP, LPO, IT de Posto)
                     </label>
                     <textarea
@@ -612,11 +656,13 @@ export function KaizenA3Modal({
                       value={standardizationSummary}
                       onChange={(e) => setStandardizationSummary(e.target.value)}
                       placeholder="Identifique quais procedimentos operacionais foram atualizados..."
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-purple-500"
+                      className={inputClass}
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className={`flex items-center gap-2 p-3 rounded-xl border ${
+                    tintedGlass ? 'aptis-glass-subcard border-white/10' : 'bg-slate-50 border-slate-200'
+                  }`}>
                     <input
                       type="checkbox"
                       id="matriz-skills"
@@ -624,13 +670,13 @@ export function KaizenA3Modal({
                       onChange={(e) => setSkillsMatrixUpdated(e.target.checked)}
                       className="w-4 h-4 text-purple-600 rounded"
                     />
-                    <label htmlFor="matriz-skills" className="text-slate-800 font-semibold text-xs cursor-pointer">
+                    <label htmlFor="matriz-skills" className={`font-semibold text-xs cursor-pointer ${tintedGlass ? 'text-slate-200' : 'text-slate-800'}`}>
                       A Matriz de Habilidades (Aptis Skills) foi atualizada com o novo procedimento
                     </label>
                   </div>
 
                   <div>
-                    <label className="block text-slate-700 font-semibold mb-1">
+                    <label className={labelClass}>
                       Lições Aprendidas & Próximos Passos (Yokoten / Replicação em outras linhas)
                     </label>
                     <textarea
@@ -638,7 +684,7 @@ export function KaizenA3Modal({
                       value={lessonsLearned}
                       onChange={(e) => setLessonsLearned(e.target.value)}
                       placeholder="Como essa boa prática pode ser expandida para outros postos ou turnos?..."
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-purple-500"
+                      className={inputClass}
                     />
                   </div>
                 </div>
@@ -649,9 +695,11 @@ export function KaizenA3Modal({
 
         {/* CONTEÚDO: MODO DE PREVIEW CLÁSSICO A3 TOYOTA (2 COLUNAS) */}
         {viewMode === 'preview' && (
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-100 text-xs">
-            {/* Folha A3 Estilizada */}
-            <div className="bg-white border-2 border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 max-w-4xl mx-auto">
+          <div className={`flex-1 overflow-y-auto p-5 space-y-4 text-xs ${
+            tintedGlass ? 'bg-slate-950/60' : 'bg-slate-100'
+          }`}>
+            {/* Folha A3 Estilizada (sempre fundo claro para impressão executiva A3) */}
+            <div className="bg-white border-2 border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 max-w-4xl mx-auto text-slate-900">
               {/* Cabeçalho A3 */}
               <div className="border-b-2 border-slate-800 pb-3 flex items-start justify-between">
                 <div>
@@ -665,7 +713,7 @@ export function KaizenA3Modal({
                     <span>Data: <strong>{project.createdAt}</strong></span>
                   </div>
                 </div>
-                <KaizenLevelBadge level={level} />
+                <KaizenLevelBadge level={level} tintedGlass={false} />
               </div>
 
               {/* Grid A3 de 2 Colunas */}
@@ -768,11 +816,15 @@ export function KaizenA3Modal({
         )}
 
         {/* FOOTER COM BOTÕES */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2 text-xs">
+        <div className={`p-4 border-t flex items-center justify-end gap-2 text-xs ${
+          tintedGlass ? 'border-white/10 bg-white/[0.03]' : 'border-slate-200 bg-slate-50'
+        }`}>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-slate-600 hover:text-slate-900 cursor-pointer font-semibold"
+            className={`px-4 py-2 cursor-pointer font-semibold ${
+              tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+            }`}
           >
             Cancelar
           </button>

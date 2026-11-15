@@ -10,13 +10,15 @@ interface NewKaizenModalProps {
   onClose: () => void;
   onSave: (project: KaizenProject) => void;
   tenantId: string;
+  tintedGlass?: boolean;
 }
 
 export function NewKaizenModal({
   isOpen,
   onClose,
   onSave,
-  tenantId
+  tenantId,
+  tintedGlass = false
 }: NewKaizenModalProps) {
   const { sectors: plantSectors } = usePlantSectors();
   const safePlantSectors = Array.isArray(plantSectors) && plantSectors.length > 0 ? plantSectors : [];
@@ -97,121 +99,140 @@ export function NewKaizenModal({
     onClose();
   };
 
+  const inputClass = tintedGlass
+    ? 'w-full aptis-glass-input rounded-xl px-3 py-2 text-white placeholder-slate-400 focus:outline-none'
+    : 'w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500';
+
+  const labelClass = `block font-semibold mb-1 ${tintedGlass ? 'text-slate-200' : 'text-slate-700'}`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-6">
-        <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+      <div className={`rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-6 border ${
+        tintedGlass
+          ? 'aptis-glass-modal border-white/10 text-white'
+          : 'bg-white border-slate-200 text-slate-900'
+      }`}>
+        <div className={`p-5 border-b flex items-center justify-between ${
+          tintedGlass ? 'border-white/10 bg-white/[0.03]' : 'border-slate-200 bg-slate-50'
+        }`}>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+              tintedGlass ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-purple-100 text-purple-700'
+            }`}>
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Novo Projeto Kaizen</h3>
-              <p className="text-xs text-slate-500">Cadastre a oportunidade de melhoria e atribua o nível e equipe.</p>
+              <h3 className={`text-base font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>Novo Projeto Kaizen</h3>
+              <p className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>Cadastre a oportunidade de melhoria e atribua o nível e equipe.</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200">
+          <button
+            onClick={onClose}
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              tintedGlass ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'
+            }`}
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">Título da Melhoria *</label>
+            <label className={labelClass}>Título da Melhoria *</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Dispositivo Poka-Yoke na furação de chapas..."
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+              className={inputClass}
               required
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Nível de Kaizen *</label>
+              <label className={labelClass}>Nível de Kaizen *</label>
               <select
                 value={level}
                 onChange={(e) => setLevel(e.target.value as KaizenLevel)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 font-bold focus:outline-none focus:border-purple-500"
+                className={`${inputClass} font-bold`}
               >
-                <option value="quick">⚡ Quick Kaizen (Rápido / 1-3 dias)</option>
-                <option value="standard">🛠️ Standard Kaizen (Célula / 1-2 sem)</option>
-                <option value="major">🏭 Major Kaizen (Multidisciplinar / 1-2 meses)</option>
-                <option value="advanced">🔬 Advanced Kaizen (Automação / Engenharia)</option>
+                <option value="quick" className="bg-slate-900 text-white">⚡ Quick Kaizen (Rápido / 1-3 dias)</option>
+                <option value="standard" className="bg-slate-900 text-white">🛠️ Standard Kaizen (Célula / 1-2 sem)</option>
+                <option value="major" className="bg-slate-900 text-white">🏭 Major Kaizen (Multidisciplinar / 1-2 meses)</option>
+                <option value="advanced" className="bg-slate-900 text-white">🔬 Advanced Kaizen (Automação / Engenharia)</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Categoria</label>
+              <label className={labelClass}>Categoria</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as KaizenCategory)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                className={inputClass}
               >
-                <option value="produtividade">Produtividade & SMED</option>
-                <option value="qualidade">Qualidade & Refugo</option>
-                <option value="segurança">Segurança & NR</option>
-                <option value="ergonomia">Ergonomia</option>
-                <option value="custo">Custo & Consumo</option>
+                <option value="produtividade" className="bg-slate-900 text-white">Produtividade & SMED</option>
+                <option value="qualidade" className="bg-slate-900 text-white">Qualidade & Refugo</option>
+                <option value="segurança" className="bg-slate-900 text-white">Segurança & NR</option>
+                <option value="ergonomia" className="bg-slate-900 text-white">Ergonomia</option>
+                <option value="custo" className="bg-slate-900 text-white">Custo & Consumo</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Setor Fabril</label>
+              <label className={labelClass}>Setor Fabril</label>
               <select
                 value={sector}
                 onChange={(e) => setSector(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                className={inputClass}
               >
                 {availableSectors.map(s => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s} className="bg-slate-900 text-white">{s}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Área / Máquina / Célula</label>
+              <label className={labelClass}>Área / Máquina / Célula</label>
               <input
                 type="text"
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
                 placeholder="Ex: Prensa 04, Célula CNC 01..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                className={inputClass}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Líder do Kaizen *</label>
+              <label className={labelClass}>Líder do Kaizen *</label>
               <input
                 type="text"
                 value={leaderName}
                 onChange={(e) => setLeaderName(e.target.value)}
                 placeholder="Ex: José Carlos Nascimento"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                className={inputClass}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Cargo do Líder</label>
+              <label className={labelClass}>Cargo do Líder</label>
               <input
                 type="text"
                 value={leaderRole}
                 onChange={(e) => setLeaderRole(e.target.value)}
                 placeholder="Ex: Operador Líder de Turno"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                className={inputClass}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">
+            <label className={labelClass}>
               Participantes da Equipe (separados por vírgula)
             </label>
             <input
@@ -219,61 +240,65 @@ export function NewKaizenModal({
               value={teamMembersText}
               onChange={(e) => setTeamMembersText(e.target.value)}
               placeholder="Ex: Mariana Souza, Lucas Silva, Aline Ferreira"
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">Descrição do Problema Encontrado *</label>
+            <label className={labelClass}>Descrição do Problema Encontrado *</label>
             <textarea
               rows={2}
               value={problemDescription}
               onChange={(e) => setProblemDescription(e.target.value)}
               placeholder="O que está gerando retrabalho, perda de tempo ou risco?..."
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-purple-500"
+              className={inputClass}
               required
             />
           </div>
 
           <div>
-            <label className="block text-slate-700 font-semibold mb-1">Ideia de Solução Proposta</label>
+            <label className={labelClass}>Ideia de Solução Proposta</label>
             <textarea
               rows={2}
               value={proposedSolution}
               onChange={(e) => setProposedSolution(e.target.value)}
               placeholder="Qual dispositivo, procedimento ou alteração mecânica será feita?..."
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-purple-500"
+              className={inputClass}
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Economia Estimada Anual (R$)</label>
+              <label className={labelClass}>Economia Estimada Anual (R$)</label>
               <input
                 type="number"
                 value={estimatedSavings}
                 onChange={(e) => setEstimatedSavings(e.target.value)}
                 placeholder="Ex: 25000"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Horas Salvas por Mês</label>
+              <label className={labelClass}>Horas Salvas por Mês</label>
               <input
                 type="number"
                 value={hoursSaved}
                 onChange={(e) => setHoursSaved(e.target.value)}
                 placeholder="Ex: 15"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-purple-500"
+                className={inputClass}
               />
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+          <div className={`pt-3 border-t flex items-center justify-end gap-2 ${
+            tintedGlass ? 'border-white/10' : 'border-slate-200'
+          }`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-slate-600 hover:text-slate-900 cursor-pointer font-semibold"
+              className={`px-4 py-2 cursor-pointer font-semibold ${
+                tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               Cancelar
             </button>
