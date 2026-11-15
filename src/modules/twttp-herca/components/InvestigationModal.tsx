@@ -43,6 +43,7 @@ interface InvestigationModalProps {
   onSave: (inv: HercaInvestigation) => void;
   onOpenOpl?: (inv: HercaInvestigation) => void;
   onOpenPdfReport?: (inv: HercaInvestigation) => void;
+  tintedGlass?: boolean;
 }
 
 const defaultInvestigation: HercaInvestigation = {
@@ -98,6 +99,7 @@ export function InvestigationModal({
   onSave,
   onOpenOpl,
   onOpenPdfReport,
+  tintedGlass = false,
 }: InvestigationModalProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
   const [formData, setFormData] = useState<HercaInvestigation>(
@@ -207,39 +209,59 @@ export function InvestigationModal({
     });
   };
 
+  const inputClass = tintedGlass
+    ? 'w-full px-3 py-2 aptis-glass-input rounded-xl text-white placeholder-slate-400 text-xs focus:outline-none'
+    : 'w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:ring-2 focus:ring-indigo-500 outline-none';
+
+  const labelClass = `block text-xs font-bold uppercase mb-1 ${tintedGlass ? 'text-slate-200' : 'text-slate-700'}`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col my-8 max-h-[90vh] overflow-hidden">
+      <div className={`w-full max-w-4xl rounded-3xl border shadow-2xl flex flex-col my-8 max-h-[90vh] overflow-hidden ${
+        tintedGlass
+          ? 'aptis-glass-modal border-white/10 text-white'
+          : 'bg-white border-slate-200 text-slate-900'
+      }`}>
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
+        <div className={`p-6 border-b flex items-center justify-between ${
+          tintedGlass ? 'border-white/10 bg-white/[0.03]' : 'border-slate-100 bg-slate-50/50'
+        }`}>
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
               <BrainCircuit className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2 py-0.5 rounded-md">
+                <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                  tintedGlass ? 'text-indigo-300 bg-indigo-500/20 border border-indigo-500/35' : 'text-indigo-600 bg-indigo-50'
+                }`}>
                   {formData.code}
                 </span>
-                <span className="text-xs text-slate-500 font-semibold">
+                <span className={`text-xs font-semibold ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                   {investigation ? 'Editar Investigação' : 'Nova Investigação de Falha Humana'}
                 </span>
               </div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              <h2 className={`text-lg font-bold mt-0.5 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                 {formData.title || 'Nova Análise de Causa Raiz'}
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className={`p-2 rounded-xl transition cursor-pointer ${
+              tintedGlass
+                ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Step Progress Tabs */}
-        <div className="grid grid-cols-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold">
+        <div className={`grid grid-cols-4 border-b text-xs font-semibold ${
+          tintedGlass ? 'border-white/10 bg-slate-950/40' : 'border-slate-200 bg-white'
+        }`}>
           {[
             { num: 1, label: '1. Fato & Impacto' },
             { num: 2, label: '2. TWTTP (Gemba)' },
@@ -249,14 +271,16 @@ export function InvestigationModal({
             <button
               key={tab.num}
               onClick={() => setCurrentStep(tab.num as any)}
-              className={`py-3 px-2 text-center transition flex items-center justify-center gap-2 border-b-2 ${
+              className={`py-3 px-2 text-center transition flex items-center justify-center gap-2 border-b-2 cursor-pointer ${
                 currentStep === tab.num
-                  ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-50/30 dark:bg-indigo-950/20'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                  ? (tintedGlass ? 'border-indigo-400 text-indigo-300 bg-indigo-500/15' : 'border-indigo-600 text-indigo-600 bg-indigo-50/30')
+                  : (tintedGlass ? 'border-transparent text-slate-400 hover:text-white' : 'border-transparent text-slate-500 hover:text-slate-800')
               }`}
             >
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                currentStep === tab.num ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                currentStep === tab.num
+                  ? 'bg-indigo-600 text-white'
+                  : (tintedGlass ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600')
               }`}>
                 {tab.num}
               </span>
@@ -272,7 +296,7 @@ export function InvestigationModal({
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Título do Evento *
                   </label>
                   <input
@@ -280,43 +304,43 @@ export function InvestigationModal({
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Ex: Troca Inadvertida de Válvula de CIP"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-indigo-500 outline-hidden"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Status da Investigação
                   </label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as InvestigationStatus })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-indigo-500 outline-hidden"
+                    className={inputClass}
                   >
-                    <option value="draft">Rascunho</option>
-                    <option value="under_investigation">Em Investigação</option>
-                    <option value="actions_pending">Ações em Execução</option>
-                    <option value="effective_validated">Eficácia Comprovada</option>
-                    <option value="closed">Encerrada</option>
+                    <option value="draft" className="bg-slate-900 text-white">Rascunho</option>
+                    <option value="under_investigation" className="bg-slate-900 text-white">Em Investigação</option>
+                    <option value="actions_pending" className="bg-slate-900 text-white">Ações em Execução</option>
+                    <option value="effective_validated" className="bg-slate-900 text-white">Eficácia Comprovada</option>
+                    <option value="closed" className="bg-slate-900 text-white">Encerrada</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Data do Incidente
                   </label>
                   <input
                     type="date"
                     value={formData.incidentDate}
                     onChange={(e) => setFormData({ ...formData, incidentDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Turno
                   </label>
                   <input
@@ -324,48 +348,48 @@ export function InvestigationModal({
                     value={formData.shift}
                     onChange={(e) => setFormData({ ...formData, shift: e.target.value })}
                     placeholder="Ex: 2º Turno (14h - 22h)"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Severidade
                   </label>
                   <select
                     value={formData.severity}
                     onChange={(e) => setFormData({ ...formData, severity: e.target.value as SeverityLevel })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   >
-                    <option value="low">Baixa</option>
-                    <option value="medium">Média</option>
-                    <option value="high">Alta</option>
-                    <option value="critical">Crítica</option>
+                    <option value="low" className="bg-slate-900 text-white">Baixa</option>
+                    <option value="medium" className="bg-slate-900 text-white">Média</option>
+                    <option value="high" className="bg-slate-900 text-white">Alta</option>
+                    <option value="critical" className="bg-slate-900 text-white">Crítica</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Setor Industrial
                   </label>
                   <select
                     value={formData.sector}
                     onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    className={`${inputClass} font-medium`}
                   >
                     {plantSectors.map(s => (
-                      <option key={s.id} value={s.name}>{s.name}</option>
+                      <option key={s.id} value={s.name} className="bg-slate-900 text-white">{s.name}</option>
                     ))}
                     {formData.sector && !plantSectors.some(s => s.name === formData.sector) && (
-                      <option value={formData.sector}>{formData.sector}</option>
+                      <option value={formData.sector} className="bg-slate-900 text-white">{formData.sector}</option>
                     )}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Posto / Máquina
                   </label>
                   <input
@@ -373,12 +397,12 @@ export function InvestigationModal({
                     value={formData.station}
                     onChange={(e) => setFormData({ ...formData, station: e.target.value })}
                     placeholder="Ex: Skid CIP Linha 03"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Perda Estimada (R$)
                   </label>
                   <input
@@ -386,14 +410,14 @@ export function InvestigationModal({
                     value={formData.estimatedLossReais || ''}
                     onChange={(e) => setFormData({ ...formData, estimatedLossReais: Number(e.target.value) })}
                     placeholder="0"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Operador Envolvido
                   </label>
                   <input
@@ -401,24 +425,24 @@ export function InvestigationModal({
                     value={formData.operatorName}
                     onChange={(e) => setFormData({ ...formData, operatorName: e.target.value })}
                     placeholder="Nome do operador"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Tempo no Posto (meses)
                   </label>
                   <input
                     type="number"
                     value={formData.operatorExperienceMonths}
                     onChange={(e) => setFormData({ ...formData, operatorExperienceMonths: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                  <label className={labelClass}>
                     Líder Investigador (WCM)
                   </label>
                   <input
@@ -426,13 +450,13 @@ export function InvestigationModal({
                     value={formData.leadInvestigator}
                     onChange={(e) => setFormData({ ...formData, leadInvestigator: e.target.value })}
                     placeholder="Nome do líder/engenheiro"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                <label className={labelClass}>
                   Descrição Factual do Incidente (Gemba) *
                 </label>
                 <textarea
@@ -440,12 +464,12 @@ export function InvestigationModal({
                   value={formData.incidentDescription}
                   onChange={(e) => setFormData({ ...formData, incidentDescription: e.target.value })}
                   placeholder="Descreva o que ocorreu de maneira objetiva, sem juízo de valor ou termos culpabilizantes..."
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                <label className={labelClass}>
                   Ação de Contenção Imediata
                 </label>
                 <textarea
@@ -453,7 +477,7 @@ export function InvestigationModal({
                   value={formData.immediateContainment}
                   onChange={(e) => setFormData({ ...formData, immediateContainment: e.target.value })}
                   placeholder="Qual bloqueio imediato foi realizado para evitar que o lote ou a máquina seguisse em não conformidade?"
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs outline-hidden"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -462,150 +486,107 @@ export function InvestigationModal({
           {/* STEP 2: DIAGNÓSTICO TWTTP */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 text-xs">
-                <div className="flex items-center gap-2 font-bold text-indigo-700 dark:text-indigo-300 mb-1">
+              <div className={`p-4 rounded-2xl border text-xs ${
+                tintedGlass
+                  ? 'bg-indigo-950/35 border-indigo-500/30 text-slate-300'
+                  : 'bg-indigo-50 border-indigo-200 text-slate-600'
+              }`}>
+                <div className={`flex items-center gap-2 font-bold mb-1 ${tintedGlass ? 'text-indigo-300' : 'text-indigo-700'}`}>
                   <GraduationCap className="w-4 h-4" />
                   Metodologia TWTTP (The Way To Teach People - O Jeito de Ensinar Pessoas)
                 </div>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="leading-relaxed">
                   No WCM, a falha nunca é responsabilidade exclusiva do operador. Avalie as 4 perguntas no Gemba e classifique com honestidade o método que o líder utilizou ao capacitar este profissional.
                 </p>
               </div>
 
               {/* 4 Gemba Questions */}
               <div className="space-y-4">
-                {/* 1. Knew What */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      1. Sabia o QUE fazer? (Conhecia o padrão ou procedimento estabelecido?)
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhat: true } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${formData.twttp.knewWhat ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        SIM
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhat: false } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${!formData.twttp.knewWhat ? 'bg-rose-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        NÃO
-                      </button>
+                {[
+                  {
+                    q: '1. Sabia o QUE fazer? (Conhecia o padrão ou procedimento estabelecido?)',
+                    flag: formData.twttp.knewWhat,
+                    setFlag: (v: boolean) => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhat: v } }),
+                    val: formData.twttp.knewWhatDetails,
+                    setVal: (v: string) => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhatDetails: v } }),
+                    ph: 'Evidência no Gemba: qual documento ou rotina existia...',
+                  },
+                  {
+                    q: '2. Sabia COMO fazer? (Possuía habilidade motora e prática comprovada na máquina?)',
+                    flag: formData.twttp.knewHow,
+                    setFlag: (v: boolean) => setFormData({ ...formData, twttp: { ...formData.twttp, knewHow: v } }),
+                    val: formData.twttp.knewHowDetails,
+                    setVal: (v: string) => setFormData({ ...formData, twttp: { ...formData.twttp, knewHowDetails: v } }),
+                    ph: 'Evidência: fez prova prática ou apenas leu o documento?',
+                  },
+                  {
+                    q: '3. Sabia o PORQUÊ fazer? (Entendia as consequências e o risco no processo?)',
+                    flag: formData.twttp.knewWhy,
+                    setFlag: (v: boolean) => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhy: v } }),
+                    val: formData.twttp.knewWhyDetails,
+                    setVal: (v: string) => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhyDetails: v } }),
+                    ph: 'Evidência: sabia qual perda de qualidade ou segurança decorre deste passo?',
+                  },
+                  {
+                    q: '4. Tinha CONDIÇÕES físicas/ergonômicas no posto para não errar?',
+                    flag: formData.twttp.hadConditions,
+                    setFlag: (v: boolean) => setFormData({ ...formData, twttp: { ...formData.twttp, hadConditions: v } }),
+                    val: formData.twttp.hadConditionsDetails,
+                    setVal: (v: string) => setFormData({ ...formData, twttp: { ...formData.twttp, hadConditionsDetails: v } }),
+                    ph: 'Evidência: havia iluminação, identificação clara, ausência de peças espelhadas...',
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-xl border space-y-2 ${
+                      tintedGlass ? 'aptis-glass-subcard border-white/10' : 'border-slate-200 bg-slate-50/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-800'}`}>
+                        {item.q}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => item.setFlag(true)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            item.flag
+                              ? 'bg-emerald-600 text-white'
+                              : (tintedGlass ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600')
+                          }`}
+                        >
+                          SIM
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => item.setFlag(false)}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                            !item.flag
+                              ? 'bg-rose-600 text-white'
+                              : (tintedGlass ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600')
+                          }`}
+                        >
+                          NÃO
+                        </button>
+                      </div>
                     </div>
+                    <input
+                      type="text"
+                      value={item.val}
+                      onChange={(e) => item.setVal(e.target.value)}
+                      placeholder={item.ph}
+                      className={inputClass}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={formData.twttp.knewWhatDetails}
-                    onChange={(e) => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhatDetails: e.target.value } })}
-                    placeholder="Evidência no Gemba: qual documento ou rotina existia..."
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                  />
-                </div>
-
-                {/* 2. Knew How */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      2. Sabia COMO fazer? (Possuía habilidade motora e prática comprovada na máquina?)
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, knewHow: true } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${formData.twttp.knewHow ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        SIM
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, knewHow: false } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${!formData.twttp.knewHow ? 'bg-rose-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        NÃO
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.twttp.knewHowDetails}
-                    onChange={(e) => setFormData({ ...formData, twttp: { ...formData.twttp, knewHowDetails: e.target.value } })}
-                    placeholder="Evidência: fez prova prática ou apenas leu o documento?"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                  />
-                </div>
-
-                {/* 3. Knew Why */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      3. Sabia o PORQUÊ fazer? (Entendia as consequências e o risco no processo?)
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhy: true } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${formData.twttp.knewWhy ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        SIM
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhy: false } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${!formData.twttp.knewWhy ? 'bg-rose-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        NÃO
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.twttp.knewWhyDetails}
-                    onChange={(e) => setFormData({ ...formData, twttp: { ...formData.twttp, knewWhyDetails: e.target.value } })}
-                    placeholder="Evidência: sabia qual perda de qualidade ou segurança decorre deste passo?"
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                  />
-                </div>
-
-                {/* 4. Had Conditions */}
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      4. Tinha CONDIÇÕES físicas/ergonômicas no posto para não errar?
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, hadConditions: true } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${formData.twttp.hadConditions ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        SIM
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, hadConditions: false } })}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition ${!formData.twttp.hadConditions ? 'bg-rose-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                      >
-                        NÃO
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={formData.twttp.hadConditionsDetails}
-                    onChange={(e) => setFormData({ ...formData, twttp: { ...formData.twttp, hadConditionsDetails: e.target.value } })}
-                    placeholder="Evidência: havia iluminação, identificação clara, ausência de peças espelhadas..."
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                  />
-                </div>
+                ))}
               </div>
 
               {/* Leader Instruction Method Scale (1 to 4) */}
-              <div className="p-4 rounded-2xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
-                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 uppercase">
+              <div className={`p-4 rounded-2xl border space-y-3 ${
+                tintedGlass ? 'bg-indigo-950/25 border-indigo-500/30' : 'border-indigo-200 bg-indigo-50/30'
+              }`}>
+                <label className={`block text-xs font-bold uppercase ${tintedGlass ? 'text-indigo-200' : 'text-slate-800'}`}>
                   Classificação do Método de Ensino do Líder (Escala WCM 1 a 4)
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
@@ -619,14 +600,18 @@ export function InvestigationModal({
                       key={level.val}
                       type="button"
                       onClick={() => setFormData({ ...formData, twttp: { ...formData.twttp, leaderInstructionMethod: level.val as any } })}
-                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
                         formData.twttp.leaderInstructionMethod === level.val
-                          ? 'border-indigo-600 bg-indigo-600 text-white font-bold shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                          ? 'border-indigo-500 bg-indigo-600 text-white font-bold shadow-xs'
+                          : (tintedGlass ? 'aptis-glass-subcard border-white/10 text-slate-200' : 'border-slate-200 bg-white text-slate-700')
                       }`}
                     >
                       <div className="font-bold text-[11px] mb-1">{level.title}</div>
-                      <div className={`text-[10px] leading-tight ${formData.twttp.leaderInstructionMethod === level.val ? 'text-indigo-100' : 'text-slate-500'}`}>
+                      <div className={`text-[10px] leading-tight ${
+                        formData.twttp.leaderInstructionMethod === level.val
+                          ? 'text-indigo-100'
+                          : (tintedGlass ? 'text-slate-400' : 'text-slate-500')
+                      }`}>
                         {level.desc}
                       </div>
                     </button>
@@ -639,7 +624,7 @@ export function InvestigationModal({
                     value={formData.twttp.leaderNotes}
                     onChange={(e) => setFormData({ ...formData, twttp: { ...formData.twttp, leaderNotes: e.target.value } })}
                     placeholder="Observações sobre a atuação da liderança no treinamento..."
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -651,7 +636,7 @@ export function InvestigationModal({
             <div className="space-y-6">
               {/* HERCA Error Classification */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-2">
+                <label className={`${labelClass} mb-2`}>
                   Classificação do Erro Humano (Taxonomia HERCA) *
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -667,14 +652,14 @@ export function InvestigationModal({
                       key={err.key}
                       type="button"
                       onClick={() => setFormData({ ...formData, hercaErrorType: err.key as ErrorClassificationType })}
-                      className={`p-3 rounded-xl border text-left transition ${
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer ${
                         formData.hercaErrorType === err.key
-                          ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300'
+                          ? (tintedGlass ? 'border-purple-400 bg-purple-500/25 text-white font-bold' : 'border-purple-600 bg-purple-50 text-purple-900 font-bold')
+                          : (tintedGlass ? 'aptis-glass-subcard border-white/10 text-slate-200' : 'border-slate-200 bg-slate-50/50 text-slate-700')
                       }`}
                     >
                       <div className="text-xs font-bold">{err.label}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{err.desc}</div>
+                      <div className={`text-[10px] mt-0.5 ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>{err.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -682,20 +667,24 @@ export function InvestigationModal({
 
               {/* Systemic Factors Tags */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">
+                <label className={labelClass}>
                   Fatores Sistêmicos Contribuintes (Pressione Enter para adicionar)
                 </label>
-                <div className="flex flex-wrap items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl min-h-[44px]">
+                <div className={`flex flex-wrap items-center gap-2 p-2 rounded-xl min-h-[44px] ${
+                  tintedGlass ? 'aptis-glass-input' : 'bg-slate-50 border border-slate-200'
+                }`}>
                   {formData.hercaSystemicFactors.map((factor) => (
                     <span
                       key={factor}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-medium"
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                        tintedGlass ? 'bg-indigo-500/25 text-indigo-200 border border-indigo-500/35' : 'bg-indigo-100 text-indigo-700'
+                      }`}
                     >
                       {factor}
                       <button
                         type="button"
                         onClick={() => handleRemoveFactor(factor)}
-                        className="hover:text-rose-600 ml-0.5"
+                        className="hover:text-rose-500 ml-0.5 cursor-pointer"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -707,33 +696,39 @@ export function InvestigationModal({
                     onChange={(e) => setSystemicFactorInput(e.target.value)}
                     onKeyDown={handleAddFactor}
                     placeholder="Adicionar fator (ex: Ruído > 85dB, Peças simétricas, Falta de Poka-Yoke)..."
-                    className="flex-1 bg-transparent border-none text-xs outline-hidden min-w-[200px]"
+                    className={`flex-1 bg-transparent border-none text-xs outline-none min-w-[200px] ${
+                      tintedGlass ? 'text-white placeholder-slate-400' : 'text-slate-900 placeholder-slate-400'
+                    }`}
                   />
                 </div>
               </div>
 
               {/* 5 Whys Chain */}
-              <div className="space-y-3 p-5 rounded-2xl bg-slate-50/60 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+              <div className={`space-y-3 p-5 rounded-2xl border ${
+                tintedGlass ? 'aptis-glass-subcard border-white/10' : 'bg-slate-50/60 border-slate-200'
+              }`}>
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                  <h4 className={`text-xs font-bold uppercase flex items-center gap-2 ${tintedGlass ? 'text-white' : 'text-slate-700'}`}>
                     <Layers className="w-4 h-4 text-purple-500" />
                     Cadeia dos 5 Porquês HERCA
                   </h4>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-500 font-semibold">Categoria Ishikawa:</span>
+                    <span className={`text-[11px] font-semibold ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>Categoria Ishikawa:</span>
                     <select
                       value={formData.fiveWhys.rootCauseCategory}
                       onChange={(e) => setFormData({
                         ...formData,
                         fiveWhys: { ...formData.fiveWhys, rootCauseCategory: e.target.value as any }
                       })}
-                      className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                      className={`px-2 py-1 rounded-lg text-xs ${
+                        tintedGlass ? 'aptis-glass-input text-white' : 'bg-white border border-slate-200 text-slate-800'
+                      }`}
                     >
-                      <option value="Metodo">Método</option>
-                      <option value="Maquina">Máquina / Ferramenta</option>
-                      <option value="MaoDeObra">Mão de Obra (Instrução)</option>
-                      <option value="Material">Material</option>
-                      <option value="GestaoEngenharia">Gestão & Engenharia</option>
+                      <option value="Metodo" className="bg-slate-900 text-white">Método</option>
+                      <option value="Maquina" className="bg-slate-900 text-white">Máquina / Ferramenta</option>
+                      <option value="MaoDeObra" className="bg-slate-900 text-white">Mão de Obra (Instrução)</option>
+                      <option value="Material" className="bg-slate-900 text-white">Material</option>
+                      <option value="GestaoEngenharia" className="bg-slate-900 text-white">Gestão & Engenharia</option>
                     </select>
                   </div>
                 </div>
@@ -757,13 +752,13 @@ export function InvestigationModal({
                         fiveWhys: { ...formData.fiveWhys, [item.key]: e.target.value }
                       })}
                       placeholder={item.placeholder}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs"
+                      className={inputClass}
                     />
                   </div>
                 ))}
 
                 <div className="pt-2">
-                  <label className="block text-xs font-bold text-purple-700 dark:text-purple-300 uppercase mb-1">
+                  <label className={`block text-xs font-bold uppercase mb-1 ${tintedGlass ? 'text-purple-300' : 'text-purple-700'}`}>
                     Declaração da Causa Raiz HERCA (Sistêmica) *
                   </label>
                   <textarea
@@ -774,7 +769,7 @@ export function InvestigationModal({
                       fiveWhys: { ...formData.fiveWhys, rootCauseStatement: e.target.value }
                     })}
                     placeholder="Síntese da causa raiz sistêmica sem culpabilização do colaborador..."
-                    className="w-full p-3 bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 rounded-xl text-xs outline-hidden"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -785,13 +780,17 @@ export function InvestigationModal({
           {currentStep === 4 && (
             <div className="space-y-6">
               {/* Top Banner with OPL Quick Generator */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-transparent border border-purple-200 dark:border-purple-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                tintedGlass
+                  ? 'bg-purple-950/35 border-purple-500/30'
+                  : 'bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-transparent border-purple-200'
+              }`}>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 font-bold text-purple-700 dark:text-purple-300 text-xs">
+                  <div className={`flex items-center gap-2 font-bold text-xs ${tintedGlass ? 'text-purple-300' : 'text-purple-700'}`}>
                     <Sparkles className="w-4 h-4" />
                     Hierarquia de Contramedidas WCM & Lição de Ponto Único
                   </div>
-                  <p className="text-slate-600 dark:text-slate-400 text-xs">
+                  <p className={`text-xs ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
                     Priorize ações físicas à prova de erro (Poka-Yoke) e gere uma OPL ilustrada para o posto de trabalho.
                   </p>
                 </div>
@@ -799,7 +798,7 @@ export function InvestigationModal({
                   <button
                     type="button"
                     onClick={handleGenerateOpl}
-                    className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     {formData.opl ? 'Visualizar / Editar OPL' : 'Gerar OPL Automática'}
@@ -807,7 +806,7 @@ export function InvestigationModal({
                   <button
                     type="button"
                     onClick={handleAddAction}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Adicionar Ação
@@ -818,8 +817,10 @@ export function InvestigationModal({
               {/* Actions List */}
               <div className="space-y-4">
                 {formData.actions.length === 0 ? (
-                  <div className="p-8 text-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400">
-                    <Cpu className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <div className={`p-8 text-center rounded-2xl border border-dashed text-slate-400 ${
+                    tintedGlass ? 'border-white/15' : 'border-slate-300'
+                  }`}>
+                    <Cpu className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-xs font-semibold">Nenhuma ação cadastrada para esta investigação.</p>
                     <p className="text-[11px] mt-0.5">Clique no botão &quot;Adicionar Ação&quot; para planejar contramedidas robustas.</p>
                   </div>
@@ -827,11 +828,15 @@ export function InvestigationModal({
                   formData.actions.map((act, idx) => (
                     <div
                       key={act.id}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs space-y-3"
+                      className={`p-4 rounded-2xl border space-y-3 ${
+                        tintedGlass ? 'aptis-glass-subcard border-white/10' : 'border-slate-200 bg-white shadow-xs'
+                      }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            tintedGlass ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'
+                          }`}>
                             {idx + 1}
                           </span>
                           <input
@@ -839,7 +844,9 @@ export function InvestigationModal({
                             value={act.title}
                             onChange={(e) => handleUpdateAction(act.id, { title: e.target.value })}
                             placeholder="Título da Ação (ex: Trava Poka-Yoke no Skid 03)"
-                            className="font-bold text-xs bg-transparent border-none outline-hidden text-slate-900 dark:text-white"
+                            className={`font-bold text-xs bg-transparent border-none outline-none flex-1 ${
+                              tintedGlass ? 'text-white placeholder-slate-400' : 'text-slate-900 placeholder-slate-400'
+                            }`}
                           />
                         </div>
 
@@ -848,31 +855,35 @@ export function InvestigationModal({
                           <select
                             value={act.hierarchy}
                             onChange={(e) => handleUpdateAction(act.id, { hierarchy: e.target.value as ActionHierarchy })}
-                            className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border-none"
+                            className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${
+                              tintedGlass ? 'aptis-glass-input text-white' : 'bg-slate-100 text-slate-700'
+                            }`}
                           >
-                            <option value="poka_yoke">★ Poka-Yoke (Mecânico/Elétrico)</option>
-                            <option value="engineering">Engenharia / Sensor</option>
-                            <option value="visual_control">Gestão Visual</option>
-                            <option value="procedure_opl">Procedimento / OPL</option>
-                            <option value="training_twttp">Treinamento 4 Passos TWTTP</option>
+                            <option value="poka_yoke" className="bg-slate-900 text-white">★ Poka-Yoke (Mecânico/Elétrico)</option>
+                            <option value="engineering" className="bg-slate-900 text-white">Engenharia / Sensor</option>
+                            <option value="visual_control" className="bg-slate-900 text-white">Gestão Visual</option>
+                            <option value="procedure_opl" className="bg-slate-900 text-white">Procedimento / OPL</option>
+                            <option value="training_twttp" className="bg-slate-900 text-white">Treinamento 4 Passos TWTTP</option>
                           </select>
 
                           {/* Status */}
                           <select
                             value={act.status}
                             onChange={(e) => handleUpdateAction(act.id, { status: e.target.value as any })}
-                            className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border-none"
+                            className={`text-[11px] font-semibold px-2 py-1 rounded-lg ${
+                              tintedGlass ? 'aptis-glass-input text-white' : 'bg-slate-100 text-slate-700'
+                            }`}
                           >
-                            <option value="pending">Pendente</option>
-                            <option value="in_progress">Em Andamento</option>
-                            <option value="completed">Concluída</option>
-                            <option value="verified_effective">Eficácia Validada</option>
+                            <option value="pending" className="bg-slate-900 text-white">Pendente</option>
+                            <option value="in_progress" className="bg-slate-900 text-white">Em Andamento</option>
+                            <option value="completed" className="bg-slate-900 text-white">Concluída</option>
+                            <option value="verified_effective" className="bg-slate-900 text-white">Eficácia Validada</option>
                           </select>
 
                           <button
                             type="button"
                             onClick={() => handleRemoveAction(act.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 transition"
+                            className="p-1 text-slate-400 hover:text-rose-500 transition cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -882,69 +893,69 @@ export function InvestigationModal({
                       {/* 5W2H Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase">O que (What)</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">O que (What)</label>
                           <input
                             type="text"
                             value={act.what}
                             onChange={(e) => handleUpdateAction(act.id, { what: e.target.value })}
                             placeholder="O que será feito..."
-                            className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                            className={`mt-0.5 ${inputClass}`}
                           />
                         </div>
 
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase">Por que (Why)</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Por que (Why)</label>
                           <input
                             type="text"
                             value={act.why}
                             onChange={(e) => handleUpdateAction(act.id, { why: e.target.value })}
                             placeholder="Motivo / benefício..."
-                            className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                            className={`mt-0.5 ${inputClass}`}
                           />
                         </div>
 
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase">Quem (Who)</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Quem (Who)</label>
                           <input
                             type="text"
                             value={act.who}
                             onChange={(e) => handleUpdateAction(act.id, { who: e.target.value })}
                             placeholder="Responsável..."
-                            className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                            className={`mt-0.5 ${inputClass}`}
                           />
                         </div>
 
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase">Quando (When)</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Quando (When)</label>
                           <input
                             type="date"
                             value={act.whenDate}
                             onChange={(e) => handleUpdateAction(act.id, { whenDate: e.target.value })}
-                            className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                            className={`mt-0.5 ${inputClass}`}
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase">Como (How)</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Como (How)</label>
                           <input
                             type="text"
                             value={act.how}
                             onChange={(e) => handleUpdateAction(act.id, { how: e.target.value })}
                             placeholder="Método de implementação técnica..."
-                            className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                            className={`mt-0.5 ${inputClass}`}
                           />
                         </div>
 
                         <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase">Custo Estimado (R$)</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Custo Estimado (R$)</label>
                           <input
                             type="number"
                             value={act.howMuchCost || ''}
                             onChange={(e) => handleUpdateAction(act.id, { howMuchCost: Number(e.target.value) })}
                             placeholder="0"
-                            className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                            className={`mt-0.5 ${inputClass}`}
                           />
                         </div>
                       </div>
@@ -957,13 +968,17 @@ export function InvestigationModal({
         </div>
 
         {/* Footer Navigation */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
+        <div className={`p-4 border-t flex items-center justify-between ${
+          tintedGlass ? 'border-white/10 bg-white/[0.03]' : 'border-slate-100 bg-slate-50/50'
+        }`}>
           <div className="flex items-center gap-2">
             {currentStep > 1 && (
               <button
                 type="button"
                 onClick={handlePrev}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold transition"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  tintedGlass ? 'text-slate-300 hover:bg-white/10' : 'text-slate-600 hover:bg-slate-200'
+                }`}
               >
                 <ArrowLeft className="w-4 h-4" />
                 Voltar
@@ -974,7 +989,11 @@ export function InvestigationModal({
               <button
                 type="button"
                 onClick={() => onOpenPdfReport(formData)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold transition"
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  tintedGlass
+                    ? 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/35'
+                    : 'bg-purple-50 hover:bg-purple-100 text-purple-700'
+                }`}
               >
                 <Printer className="w-3.5 h-3.5" />
                 Dossiê em PDF
@@ -986,7 +1005,9 @@ export function InvestigationModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs font-semibold transition"
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                tintedGlass ? 'text-slate-300 hover:bg-white/10' : 'text-slate-600 hover:bg-slate-200'
+              }`}
             >
               Cancelar
             </button>
@@ -995,7 +1016,7 @@ export function InvestigationModal({
               <button
                 type="button"
                 onClick={handleNext}
-                className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
               >
                 Próxima Etapa
                 <ArrowRight className="w-4 h-4" />
@@ -1004,7 +1025,7 @@ export function InvestigationModal({
               <button
                 type="button"
                 onClick={handleSave}
-                className="inline-flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20"
+                className="inline-flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 Salvar Investigação

@@ -29,21 +29,22 @@ interface InvestigationListProps {
   onOpenOpl: (inv: HercaInvestigation) => void;
   onOpenPdfReport?: (inv: HercaInvestigation) => void;
   onDeleteInvestigation?: (id: string) => void;
+  tintedGlass?: boolean;
 }
 
-const statusConfig: Record<InvestigationStatus, { label: string; color: string }> = {
-  draft: { label: 'Rascunho', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
-  under_investigation: { label: 'Em Investigação', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' },
-  actions_pending: { label: 'Ações em Execução', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' },
-  effective_validated: { label: 'Eficácia Comprovada', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' },
-  closed: { label: 'Encerrada', color: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' },
+const statusConfig: Record<InvestigationStatus, { label: string; light: string; dark: string }> = {
+  draft: { label: 'Rascunho', light: 'bg-slate-100 text-slate-700', dark: 'bg-slate-800 text-slate-300 border border-white/10' },
+  under_investigation: { label: 'Em Investigação', light: 'bg-amber-100 text-amber-700', dark: 'bg-amber-500/20 text-amber-300 border border-amber-500/35' },
+  actions_pending: { label: 'Ações em Execução', light: 'bg-blue-100 text-blue-700', dark: 'bg-blue-500/20 text-blue-300 border border-blue-500/35' },
+  effective_validated: { label: 'Eficácia Comprovada', light: 'bg-emerald-100 text-emerald-700', dark: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/35' },
+  closed: { label: 'Encerrada', light: 'bg-purple-100 text-purple-700', dark: 'bg-purple-500/20 text-purple-300 border border-purple-500/35' },
 };
 
-const severityConfig: Record<SeverityLevel, { label: string; color: string }> = {
-  low: { label: 'Baixa', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800' },
-  medium: { label: 'Média', color: 'bg-blue-100 text-blue-700 dark:bg-blue-950' },
-  high: { label: 'Alta', color: 'bg-amber-100 text-amber-700 dark:bg-amber-950' },
-  critical: { label: 'Crítica', color: 'bg-rose-100 text-rose-700 dark:bg-rose-950' },
+const severityConfig: Record<SeverityLevel, { label: string; light: string; dark: string }> = {
+  low: { label: 'Baixa', light: 'bg-slate-100 text-slate-700', dark: 'bg-slate-800 text-slate-300 border border-white/10' },
+  medium: { label: 'Média', light: 'bg-blue-100 text-blue-700', dark: 'bg-blue-500/20 text-blue-300 border border-blue-500/35' },
+  high: { label: 'Alta', light: 'bg-amber-100 text-amber-700', dark: 'bg-amber-500/20 text-amber-300 border border-amber-500/35' },
+  critical: { label: 'Crítica', light: 'bg-rose-100 text-rose-700', dark: 'bg-rose-500/20 text-rose-300 border border-rose-500/35' },
 };
 
 const errorTypeLabels: Record<ErrorClassificationType, string> = {
@@ -61,6 +62,7 @@ export function InvestigationList({
   onNewInvestigation,
   onOpenOpl,
   onOpenPdfReport,
+  tintedGlass = false,
 }: InvestigationListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -89,10 +91,16 @@ export function InvestigationList({
     return matchesSearch && matchesStatus && matchesSeverity && matchesSector;
   });
 
+  const selectClass = tintedGlass
+    ? 'px-2.5 py-1.5 aptis-glass-input rounded-lg text-white text-xs focus:outline-none'
+    : 'px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs focus:outline-none';
+
   return (
     <div className="space-y-6">
       {/* Search and Filters Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+      <div className={`p-4 rounded-2xl space-y-4 ${
+        tintedGlass ? 'aptis-glass-dark' : 'aptis-glass-light bg-white border border-slate-200 shadow-xs'
+      }`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Search Box */}
           <div className="relative flex-1">
@@ -102,14 +110,18 @@ export function InvestigationList({
               placeholder="Buscar por código (ex: INV-2026-001), título, setor, operador ou investigador..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition"
+              className={`w-full pl-10 pr-4 py-2 text-xs rounded-xl transition focus:outline-none ${
+                tintedGlass
+                  ? 'aptis-glass-input text-white placeholder-slate-400'
+                  : 'bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500'
+              }`}
             />
           </div>
 
           {/* New Investigation Button */}
           <button
             onClick={onNewInvestigation}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition shadow-xs"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Nova Investigação
@@ -117,8 +129,10 @@ export function InvestigationList({
         </div>
 
         {/* Dropdown Filters */}
-        <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-500 font-medium">
+        <div className={`flex flex-wrap items-center gap-3 pt-2 border-t text-xs ${
+          tintedGlass ? 'border-white/10' : 'border-slate-100'
+        }`}>
+          <div className={`flex items-center gap-1.5 font-medium ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
             <Filter className="w-3.5 h-3.5" />
             <span>Filtros:</span>
           </div>
@@ -127,38 +141,38 @@ export function InvestigationList({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-hidden"
+            className={selectClass}
           >
-            <option value="all">Todos os Status</option>
-            <option value="draft">Rascunho</option>
-            <option value="under_investigation">Em Investigação</option>
-            <option value="actions_pending">Ações em Execução</option>
-            <option value="effective_validated">Eficácia Comprovada</option>
-            <option value="closed">Encerrada</option>
+            <option value="all" className="bg-slate-900 text-white">Todos os Status</option>
+            <option value="draft" className="bg-slate-900 text-white">Rascunho</option>
+            <option value="under_investigation" className="bg-slate-900 text-white">Em Investigação</option>
+            <option value="actions_pending" className="bg-slate-900 text-white">Ações em Execução</option>
+            <option value="effective_validated" className="bg-slate-900 text-white">Eficácia Comprovada</option>
+            <option value="closed" className="bg-slate-900 text-white">Encerrada</option>
           </select>
 
           {/* Severity Filter */}
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-hidden"
+            className={selectClass}
           >
-            <option value="all">Todas as Severidades</option>
-            <option value="low">Baixa</option>
-            <option value="medium">Média</option>
-            <option value="high">Alta</option>
-            <option value="critical">Crítica</option>
+            <option value="all" className="bg-slate-900 text-white">Todas as Severidades</option>
+            <option value="low" className="bg-slate-900 text-white">Baixa</option>
+            <option value="medium" className="bg-slate-900 text-white">Média</option>
+            <option value="high" className="bg-slate-900 text-white">Alta</option>
+            <option value="critical" className="bg-slate-900 text-white">Crítica</option>
           </select>
 
           {/* Sector Filter */}
           <select
             value={sectorFilter}
             onChange={(e) => setSectorFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-hidden"
+            className={selectClass}
           >
-            <option value="all">Todos os Setores</option>
+            <option value="all" className="bg-slate-900 text-white">Todos os Setores</option>
             {sectors.map(sec => (
-              <option key={sec} value={sec}>{sec}</option>
+              <option key={sec} value={sec} className="bg-slate-900 text-white">{sec}</option>
             ))}
           </select>
 
@@ -170,7 +184,9 @@ export function InvestigationList({
                 setSectorFilter('all');
                 setSearchTerm('');
               }}
-              className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline ml-auto"
+              className={`font-semibold hover:underline ml-auto cursor-pointer ${
+                tintedGlass ? 'text-indigo-300' : 'text-indigo-600'
+              }`}
             >
               Limpar Filtros
             </button>
@@ -181,17 +197,19 @@ export function InvestigationList({
       {/* Investigations Table / Cards */}
       <div className="space-y-3">
         {filteredInvestigations.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800">
-            <ShieldAlert className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+          <div className={`p-12 text-center rounded-2xl ${
+            tintedGlass ? 'aptis-glass-dark' : 'aptis-glass-light bg-white border border-slate-200'
+          }`}>
+            <ShieldAlert className="w-12 h-12 text-slate-400 mx-auto mb-3 opacity-60" />
+            <h3 className={`text-base font-bold ${tintedGlass ? 'text-white' : 'text-slate-800'}`}>
               Nenhuma investigação encontrada
             </h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            <p className={`text-xs mt-1 max-w-md mx-auto ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
               Tente alterar os termos de busca ou filtros aplicados, ou registre uma nova investigação de causa raiz.
             </p>
             <button
               onClick={onNewInvestigation}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               Abrir Investigação
@@ -201,72 +219,100 @@ export function InvestigationList({
           filteredInvestigations.map((inv) => {
             const pokaCount = inv.actions.filter(a => a.hierarchy === 'poka_yoke').length;
             const completedActions = inv.actions.filter(a => a.status === 'completed' || a.status === 'verified_effective').length;
+            const sCfg = statusConfig[inv.status] || statusConfig.under_investigation;
+            const sevCfg = severityConfig[inv.severity] || severityConfig.medium;
 
             return (
               <div
                 key={inv.id}
                 onClick={() => onSelectInvestigation(inv)}
-                className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-600 hover:shadow-md transition cursor-pointer group"
+                className={`p-5 rounded-2xl transition cursor-pointer group ${
+                  tintedGlass
+                    ? 'aptis-glass-dark hover:border-indigo-400/50'
+                    : 'aptis-glass-light bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md'
+                }`}
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   {/* Left Info */}
                   <div className="space-y-2 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="font-mono font-bold text-indigo-700 dark:text-indigo-300 px-2.5 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-900">
+                      <span className={`font-mono font-bold px-2.5 py-0.5 rounded-lg border ${
+                        tintedGlass
+                          ? 'text-indigo-300 bg-indigo-500/20 border-indigo-500/35'
+                          : 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                      }`}>
                         {inv.code}
                       </span>
-                      <span className={`px-2.5 py-0.5 rounded-full font-semibold uppercase text-[10px] ${statusConfig[inv.status].color}`}>
-                        {statusConfig[inv.status].label}
+                      <span className={`px-2.5 py-0.5 rounded-full font-semibold uppercase text-[10px] ${
+                        tintedGlass ? sCfg.dark : sCfg.light
+                      }`}>
+                        {sCfg.label}
                       </span>
-                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] uppercase ${severityConfig[inv.severity].color}`}>
-                        Severidade {severityConfig[inv.severity].label}
+                      <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] uppercase ${
+                        tintedGlass ? sevCfg.dark : sevCfg.light
+                      }`}>
+                        Severidade {sevCfg.label}
                       </span>
                       {inv.recurrenceCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 flex items-center gap-1">
+                        <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] flex items-center gap-1 ${
+                          tintedGlass ? 'bg-rose-500/20 text-rose-300 border border-rose-500/35' : 'bg-rose-100 text-rose-700'
+                        }`}>
                           <AlertTriangle className="w-3 h-3" />
                           Reincidência ({inv.recurrenceCount})
                         </span>
                       )}
                       <span className="text-slate-400">•</span>
-                      <span className="text-slate-500 font-medium flex items-center gap-1">
+                      <span className={`font-medium flex items-center gap-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                         <Calendar className="w-3.5 h-3.5" />
                         {new Date(inv.incidentDate).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">
+                    <h3 className={`text-base font-bold transition ${
+                      tintedGlass
+                        ? 'text-white group-hover:text-indigo-300'
+                        : 'text-slate-900 group-hover:text-indigo-600'
+                    }`}>
                       {inv.title}
                     </h3>
 
-                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                    <p className={`text-xs line-clamp-2 leading-relaxed ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
                       {inv.incidentDescription}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
+                    <div className={`flex flex-wrap items-center gap-4 text-xs pt-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        {inv.sector} • <strong className="text-slate-700 dark:text-slate-300">{inv.station}</strong>
+                        {inv.sector} • <strong className={tintedGlass ? 'text-slate-200' : 'text-slate-700'}>{inv.station}</strong>
                       </span>
                       <span className="flex items-center gap-1">
                         <User className="w-3.5 h-3.5 text-slate-400" />
                         Operador: {inv.operatorName} ({inv.operatorExperienceMonths}m exp.)
                       </span>
-                      <span className="font-semibold text-purple-600 dark:text-purple-400">
+                      <span className={`font-semibold ${tintedGlass ? 'text-purple-300' : 'text-purple-600'}`}>
                         HERCA: {errorTypeLabels[inv.hercaErrorType]}
                       </span>
                     </div>
                   </div>
 
                   {/* Right Badges & Actions */}
-                  <div className="flex md:flex-col items-end justify-between md:justify-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+                  <div className={`flex md:flex-col items-end justify-between md:justify-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 ${
+                    tintedGlass ? 'border-white/10' : 'border-slate-100'
+                  }`}>
                     <div className="flex items-center gap-2">
                       {pokaCount > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                          tintedGlass
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/35'
+                            : 'bg-purple-50 text-purple-700 border-purple-200'
+                        }`}>
                           <Cpu className="w-3.5 h-3.5" />
                           {pokaCount} Poka-Yoke
                         </span>
                       )}
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                        tintedGlass ? 'bg-slate-800/80 text-slate-200 border border-white/10' : 'bg-slate-100 text-slate-700'
+                      }`}>
                         Ações: {completedActions}/{inv.actions.length}
                       </span>
                     </div>
@@ -278,7 +324,11 @@ export function InvestigationList({
                             e.stopPropagation();
                             onOpenPdfReport(inv);
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold transition flex items-center gap-1"
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                            tintedGlass
+                              ? 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/35'
+                              : 'bg-purple-50 hover:bg-purple-100 text-purple-700'
+                          }`}
                           title="Emitir Dossiê em PDF"
                         >
                           <Printer className="w-3.5 h-3.5" />
@@ -291,13 +341,21 @@ export function InvestigationList({
                             e.stopPropagation();
                             onOpenOpl(inv);
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition flex items-center gap-1"
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                            tintedGlass
+                              ? 'bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/35'
+                              : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'
+                          }`}
                         >
                           <FileText className="w-3.5 h-3.5" />
                           Ver OPL
                         </button>
                       )}
-                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center transition ${
+                        tintedGlass
+                          ? 'bg-white/10 text-slate-300 group-hover:bg-indigo-600 group-hover:text-white'
+                          : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-600 group-hover:text-white'
+                      }`}>
                         <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>

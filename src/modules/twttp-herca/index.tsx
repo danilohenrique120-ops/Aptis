@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BrainCircuit, 
   BarChart3, 
@@ -8,14 +8,18 @@ import {
   CheckSquare, 
   FileText, 
   Plus, 
-  Cloud, 
-  RefreshCw,
   Sparkles,
   Layers,
-  Printer
+  Printer,
+  Cpu,
+  CheckCircle2,
+  ShieldAlert,
+  Trash2,
+  Building2
 } from 'lucide-react';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { useTenant } from '@/context/tenant-context';
+import { usePlantSectors } from '@/hooks/use-plant-sectors';
 import { HercaInvestigation, OnePointLesson, HercaAction } from './types';
 import { INITIAL_HERCA_INVESTIGATIONS } from './mock-data';
 import { HercaDashboard } from './components/HercaDashboard';
@@ -29,15 +33,46 @@ import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
 
 export function TwttpHercaModule() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'investigations' | 'actions' | 'opls'>('dashboard');
+  const [selectedSector, setSelectedSector] = useState<string>('all');
+  const [tintedGlass, setTintedGlass] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('aptis_tinted_glass_mode');
+    if (saved !== null) {
+      setTintedGlass(saved === 'true');
+    }
+    const handleModeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      setTintedGlass(customEvent.detail);
+    };
+    window.addEventListener('aptis-glass-mode-change', handleModeChange);
+    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
+  }, []);
 
   const { currentTenant } = useTenant();
+  const { sectors: plantSectors } = usePlantSectors();
 
   // Multi-tenant storage hook connected to Supabase + instant local cache
-  const [investigations, setInvestigations, isSynced] = useTenantStorage<HercaInvestigation[]>(
+  const [investigations, setInvestigations] = useTenantStorage<HercaInvestigation[]>(
     'twttp-herca',
     'investigations',
     INITIAL_HERCA_INVESTIGATIONS
   );
+
+  const safeInvestigations = Array.isArray(investigations) ? investigations : [];
+
+  const availableSectors = useMemo(() => {
+    const set = new Set<string>((plantSectors || []).map(s => s.name));
+    safeInvestigations.forEach(i => {
+      if (i && i.sector) set.add(i.sector);
+    });
+    return Array.from(set);
+  }, [plantSectors, safeInvestigations]);
+
+  const sectorFilteredInvestigations = useMemo(() => {
+    if (selectedSector === 'all') return safeInvestigations;
+    return safeInvestigations.filter(i => i && i.sector === selectedSector);
+  }, [safeInvestigations, selectedSector]);
 
   // Modals state
   const [isInvestigationModalOpen, setIsInvestigationModalOpen] = useState(false);
@@ -222,126 +257,280 @@ export function TwttpHercaModule() {
   };
 
   // Extract all OPLs for the OPLs tab
-  const oplInvestigations = investigations.filter((i: HercaInvestigation) => i.opl);
+  const oplInvestigations = sectorFilteredInvestigations.filter((i: HercaInvestigation) => i && i.opl);
+  const allActions = sectorFilteredInvestigations.flatMap((i: HercaInvestigation) => (i && Array.isArray(i.actions) ? i.actions : []));
+  const pokaYokeActions = allActions.filter(a => a.hierarchy === 'poka_yoke' || a.hierarchy === 'engineering');
+  const pokaYokeRatio = allActions.length > 0 ? Math.round((pokaYokeActions.length / allActions.length) * 100) : 0;
+  const validatedInvestigations = sectorFilteredInvestigations.filter(i => i.status === 'effective_validated' || i.status === 'closed').length;
 
   return (
     <div className="space-y-6 w-full pb-12">
-      {/* HEADER DO MÓDULO (Padrão Oficial Aptis) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-              <BrainCircuit className="w-3.5 h-3.5" /> Qualidade & WCM
-            </span>
-            <span className="text-xs text-slate-500 font-medium">Planta: {currentTenant?.name || 'Planta Principal'}</span>
-            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <Cloud className="w-3 h-3" /> Nuvem Ativa
-            </span>
+      {/* HEADER EXECUTIVO PADRÃO APTIS ROUTINE (4 SUB-CÁPSULAS DE KPIS) */}
+      <div
+        className={`rounded-3xl p-6 transition-all duration-300 ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'aptis-glass-light bg-white border border-slate-200/90 shadow-xs text-slate-900'
+        }`}
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                  tintedGlass
+                    ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                MÓDULO WCM & QUALIDADE
+              </span>
+              <span className={`text-xs font-medium ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+                Unidade: {currentTenant?.name || 'Aptis Tecnologia (Admin Master)'}
+                {selectedSector !== 'all' ? ` • Setor: ${selectedSector}` : ''}
+              </span>
+            </div>
+            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              Aptis TWTTP & HERCA • Causa Raiz de Falha Humana
+            </h1>
+            <p className={`text-xs sm:text-sm mt-1 max-w-3xl ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+              Metodologia World Class Manufacturing para eliminação de falhas humanas: diagnóstico do método de instrução do líder (TWTTP), taxonomia científica do erro (HERCA), 5 Porquês, Poka-Yoke e emissão de Dossiê em PDF.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-            Aptis TWTTP & HERCA • Investigação de Causa Raiz
-          </h1>
-          <p className="text-sm text-slate-600 max-w-3xl mt-1">
-            Metodologia World Class Manufacturing para eliminação de falhas humanas: diagnóstico do método de instrução do líder (TWTTP), taxonomia científica do erro (HERCA), 5 Porquês, Poka-Yoke e emissão de Dossiê em PDF.
-          </p>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            {safeInvestigations.length > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm('Deseja limpar todas as investigações cadastradas nesta planta?')) {
+                    setInvestigations([]);
+                  }
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  tintedGlass
+                    ? 'text-slate-400 hover:text-rose-300 hover:bg-rose-500/10'
+                    : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+                }`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Limpar Casos
+              </button>
+            )}
+
+            <button
+              onClick={() => setIsExcelImporterOpen(true)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer border ${
+                tintedGlass
+                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/35'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+              }`}
+              title="Importar investigações de desvios e falhas do Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              Importar Excel
+            </button>
+
+            <button
+              onClick={handleOpenNewInvestigation}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-blue-600/25 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Nova Investigação
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setIsExcelImporterOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer"
-            title="Importar investigações de desvios e falhas do Excel"
+        {/* 4 SUB-CÁPSULAS DE KPIS (Padrão Aptis Routine) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mt-6">
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Importar Excel
-          </button>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+                Total Investigações
+              </span>
+              <BrainCircuit className={`w-4 h-4 ${tintedGlass ? 'text-slate-400' : 'text-slate-400'}`} />
+            </div>
+            <div className={`text-2xl font-black font-mono mt-1.5 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              {sectorFilteredInvestigations.length}
+            </div>
+          </div>
 
-          <button
-            onClick={handleOpenNewInvestigation}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-600/25 cursor-pointer"
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
           >
-            <Plus className="w-4 h-4" />
-            Nova Investigação
-          </button>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-purple-300' : 'text-purple-600'}`}>
+                Robustez Poka-Yoke
+              </span>
+              <Cpu className={`w-4 h-4 ${tintedGlass ? 'text-purple-400' : 'text-purple-500'}`} />
+            </div>
+            <div className={`text-2xl font-black font-mono mt-1.5 ${tintedGlass ? 'text-purple-300' : 'text-purple-600'}`}>
+              {pokaYokeRatio}%
+            </div>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-cyan-300' : 'text-blue-600'}`}>
+                Eficácia Validada
+              </span>
+              <CheckCircle2 className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-500'}`} />
+            </div>
+            <div className={`text-2xl font-black font-mono mt-1.5 ${tintedGlass ? 'text-cyan-300' : 'text-blue-600'}`}>
+              {validatedInvestigations}
+            </div>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-emerald-300' : 'text-emerald-600'}`}>
+                Lições OPL Emitidas
+              </span>
+              <FileText className={`w-4 h-4 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-500'}`} />
+            </div>
+            <div className={`text-2xl font-black font-mono mt-1.5 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>
+              {oplInvestigations.length}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* NAVEGAÇÃO POR ABAS (Padrão Oficial Aptis) */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto text-xs font-semibold">
-        {[
-          { id: 'dashboard', label: 'Dashboard Executivo', icon: BarChart3 },
-          { id: 'investigations', label: `Investigações (${investigations.length})`, icon: FileSpreadsheet },
-          { id: 'actions', label: `Plano 5W2H (${investigations.flatMap((i: HercaInvestigation) => i.actions).length})`, icon: CheckSquare },
-          { id: 'opls', label: `Lições OPL (${oplInvestigations.length})`, icon: FileText },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`py-2 px-4 rounded-xl flex items-center gap-2 transition whitespace-nowrap cursor-pointer ${
-                isActive
-                  ? 'bg-purple-600 text-white font-bold shadow-md shadow-purple-600/20'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* BARRA DE NAVEGAÇÃO ÓPTICA (APTIS-MENISCUS-TRACK) + CÁPSULA DE SETOR */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="aptis-meniscus-track inline-flex items-center gap-1 p-1.5 rounded-2xl overflow-x-auto max-w-full">
+          {[
+            { id: 'dashboard', label: 'Dashboard Executivo', icon: BarChart3 },
+            { id: 'investigations', label: `Investigações (${sectorFilteredInvestigations.length})`, icon: FileSpreadsheet },
+            { id: 'actions', label: `Plano 5W2H (${allActions.length})`, icon: CheckSquare },
+            { id: 'opls', label: `Lições OPL (${oplInvestigations.length})`, icon: FileText },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-2 px-4 rounded-xl flex items-center gap-2 text-xs transition-all whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? 'aptis-pill-active text-white font-bold'
+                    : 'text-slate-300 hover:text-white font-medium'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Cápsula de Filtro Global de Setor (Padrão Aptis Routine) */}
+        <div
+          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs transition-all ${
+            tintedGlass
+              ? 'aptis-glass-dark text-white'
+              : 'bg-white border border-slate-200/90 shadow-2xs text-slate-800'
+          }`}
+        >
+          <Building2 className={`w-3.5 h-3.5 ${tintedGlass ? 'text-cyan-400' : 'text-cyan-600'}`} />
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+            ÁREA / SETOR:
+          </span>
+          <select
+            value={selectedSector}
+            onChange={(e) => setSelectedSector(e.target.value)}
+            className={`font-bold bg-transparent outline-none cursor-pointer text-xs ${
+              tintedGlass ? 'text-cyan-300' : 'text-slate-900'
+            }`}
+          >
+            <option value="all" className="bg-slate-900 text-white">Todos os Setores</option>
+            {availableSectors.map((sec) => (
+              <option key={sec} value={sec} className="bg-slate-900 text-white">
+                {sec}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* CONTEÚDO PRINCIPAL */}
       <div className="w-full">
         {activeTab === 'dashboard' && (
           <HercaDashboard
-            investigations={investigations}
+            investigations={sectorFilteredInvestigations}
             onSelectInvestigation={handleOpenEditInvestigation}
             onNewInvestigation={handleOpenNewInvestigation}
             onOpenOpl={handleOpenOpl}
             onOpenPdfReport={handleOpenPdfReport}
+            tintedGlass={tintedGlass}
           />
         )}
 
         {activeTab === 'investigations' && (
           <InvestigationList
-            investigations={investigations}
+            investigations={sectorFilteredInvestigations}
             onSelectInvestigation={handleOpenEditInvestigation}
             onNewInvestigation={handleOpenNewInvestigation}
             onOpenOpl={handleOpenOpl}
             onOpenPdfReport={handleOpenPdfReport}
             onDeleteInvestigation={handleDeleteInvestigation}
+            tintedGlass={tintedGlass}
           />
         )}
 
         {activeTab === 'actions' && (
           <ActionPlanPanel
-            investigations={investigations}
+            investigations={sectorFilteredInvestigations}
             onUpdateActionStatus={handleUpdateActionStatus}
             onSelectInvestigation={handleOpenEditInvestigation}
+            tintedGlass={tintedGlass}
           />
         )}
 
         {activeTab === 'opls' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className={`p-5 rounded-2xl flex items-center justify-between ${
+              tintedGlass ? 'aptis-glass-dark' : 'aptis-glass-light bg-white border border-slate-200 shadow-2xs'
+            }`}>
               <div>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className={`text-base font-bold ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                   Catálogo de Lições de Ponto Único (OPL / LPU)
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className={`text-xs mt-0.5 ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                   Padrões visuais gerados a partir de causas raízes para afixação nas máquinas e Skids
                 </p>
               </div>
             </div>
 
             {oplInvestigations.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl bg-white border border-slate-200 text-slate-400">
-                <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                <h4 className="text-sm font-bold text-slate-700">Nenhuma OPL gerada</h4>
-                <p className="text-xs text-slate-500 mt-1">Abra uma investigação e clique no botão &quot;Gerar OPL Automática&quot; na Etapa 4.</p>
+              <div className={`p-12 text-center rounded-2xl ${
+                tintedGlass ? 'aptis-glass-dark text-slate-400' : 'aptis-glass-light bg-white border border-slate-200 text-slate-400'
+              }`}>
+                <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <h4 className={`text-sm font-bold ${tintedGlass ? 'text-white' : 'text-slate-700'}`}>Nenhuma OPL gerada</h4>
+                <p className={`text-xs mt-1 ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Abra uma investigação e clique no botão &quot;Gerar OPL Automática&quot; na Etapa 4.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -351,28 +540,42 @@ export function TwttpHercaModule() {
                     <div
                       key={opl.id}
                       onClick={() => handleOpenOpl(inv)}
-                      className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-purple-400 hover:shadow-md transition cursor-pointer group flex flex-col justify-between"
+                      className={`p-5 rounded-2xl transition cursor-pointer group flex flex-col justify-between ${
+                        tintedGlass
+                          ? 'aptis-glass-dark hover:border-purple-400/50'
+                          : 'aptis-glass-light bg-white border border-slate-200 shadow-xs hover:border-purple-400 hover:shadow-md'
+                      }`}
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs font-bold text-purple-600 px-2 py-0.5 rounded-md bg-purple-50">
+                          <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md border ${
+                            tintedGlass
+                              ? 'bg-purple-500/20 text-purple-300 border-purple-500/35'
+                              : 'text-purple-600 bg-purple-50 border-purple-200'
+                          }`}>
                             {opl.code}
                           </span>
-                          <span className="text-[10px] uppercase font-bold text-slate-500">
+                          <span className={`text-[10px] uppercase font-bold ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
                             {opl.area}
                           </span>
                         </div>
 
-                        <h4 className="text-sm font-bold text-slate-900 group-hover:text-purple-600 transition line-clamp-2">
+                        <h4 className={`text-sm font-bold transition line-clamp-2 ${
+                          tintedGlass
+                            ? 'text-white group-hover:text-purple-300'
+                            : 'text-slate-900 group-hover:text-purple-600'
+                        }`}>
                           {opl.title}
                         </h4>
 
-                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                        <p className={`text-xs line-clamp-2 leading-relaxed ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                           {opl.problemScenario}
                         </p>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-purple-600 font-semibold">
+                      <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs font-semibold ${
+                        tintedGlass ? 'border-white/10 text-purple-300' : 'border-slate-100 text-purple-600'
+                      }`}>
                         <span>Ver e Imprimir Padrão</span>
                         <span>Posto: {opl.station}</span>
                       </div>
@@ -393,6 +596,7 @@ export function TwttpHercaModule() {
         onSave={handleSaveInvestigation}
         onOpenOpl={handleOpenOpl}
         onOpenPdfReport={handleOpenPdfReport}
+        tintedGlass={tintedGlass}
       />
 
       {/* OPL Visual Viewer / Print Modal */}
@@ -400,6 +604,7 @@ export function TwttpHercaModule() {
         investigation={selectedOplInvestigation}
         isOpen={isOplModalOpen}
         onClose={() => setIsOplModalOpen(false)}
+        tintedGlass={tintedGlass}
       />
 
       {/* Professional PDF Report Dossier Modal */}
@@ -408,6 +613,7 @@ export function TwttpHercaModule() {
         isOpen={isPdfModalOpen}
         onClose={() => setIsPdfModalOpen(false)}
         tenantName={currentTenant?.name}
+        tintedGlass={tintedGlass}
       />
 
       {/* Modal de Importação de Excel Inteligente */}

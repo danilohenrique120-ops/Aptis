@@ -27,6 +27,7 @@ interface InvestigationPdfReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   tenantName?: string;
+  tintedGlass?: boolean;
 }
 
 export function InvestigationPdfReportModal({
@@ -34,6 +35,7 @@ export function InvestigationPdfReportModal({
   isOpen,
   onClose,
   tenantName = 'Planta Industrial',
+  tintedGlass = false,
 }: InvestigationPdfReportModalProps) {
   // Report configurations
   const [includeFinancials, setIncludeFinancials] = useState(true);
@@ -89,24 +91,32 @@ export function InvestigationPdfReportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col my-4 max-h-[95vh] overflow-hidden">
+      <div className={`w-full max-w-5xl rounded-3xl border shadow-2xl flex flex-col my-4 max-h-[95vh] overflow-hidden ${
+        tintedGlass
+          ? 'aptis-glass-modal border-white/10 text-white'
+          : 'bg-white border-slate-200 text-slate-900'
+      }`}>
         
         {/* Top Control Bar (Hidden on print) */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <div className={`p-4 border-b flex flex-wrap items-center justify-between gap-3 print:hidden ${
+          tintedGlass ? 'border-white/10 bg-white/[0.03]' : 'border-slate-200 bg-slate-50'
+        }`}>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-purple-600 text-white shadow-xs">
               <FileDown className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950 px-2 py-0.5 rounded-md">
+                <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                  tintedGlass ? 'text-purple-300 bg-purple-500/20 border border-purple-500/35' : 'text-purple-700 bg-purple-100'
+                }`}>
                   {investigation.code}
                 </span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                <span className={`text-xs font-bold ${tintedGlass ? 'text-white' : 'text-slate-700'}`}>
                   Relatório Oficial em PDF
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className={`text-[11px] ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
                 Dossiê executivo de causa raiz estruturado segundo os padrões WCM
               </p>
             </div>
@@ -115,14 +125,18 @@ export function InvestigationPdfReportModal({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-purple-600/20 cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition shadow-md shadow-purple-600/20 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               Imprimir / Salvar como PDF
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition"
+              className={`p-2 rounded-xl transition cursor-pointer ${
+                tintedGlass
+                  ? 'text-slate-400 hover:text-white hover:bg-white/10'
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200'
+              }`}
             >
               <X className="w-5 h-5" />
             </button>
@@ -130,8 +144,12 @@ export function InvestigationPdfReportModal({
         </div>
 
         {/* Configuration Bar for Report Customization (Hidden on print) */}
-        <div className="px-6 py-3 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/40 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-700 dark:text-slate-300 print:hidden">
-          <span className="flex items-center gap-1.5 font-bold text-indigo-700 dark:text-indigo-400">
+        <div className={`px-6 py-3 border-b flex flex-wrap items-center gap-4 text-xs font-medium print:hidden ${
+          tintedGlass
+            ? 'bg-indigo-950/35 border-white/10 text-slate-200'
+            : 'bg-indigo-50/50 border-indigo-100 text-slate-700'
+        }`}>
+          <span className={`flex items-center gap-1.5 font-bold ${tintedGlass ? 'text-indigo-300' : 'text-indigo-700'}`}>
             <Sliders className="w-3.5 h-3.5" />
             Opções do PDF:
           </span>
@@ -535,13 +553,19 @@ export function InvestigationPdfReportModal({
         </div>
 
         {/* Footer info (Hidden on print) */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-between text-xs text-slate-500 print:hidden">
+        <div className={`p-4 border-t flex items-center justify-between text-xs print:hidden ${
+          tintedGlass ? 'border-white/10 bg-white/[0.03] text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-500'
+        }`}>
           <span>
             Dica: Ao imprimir, selecione <strong>&quot;Salvar como PDF&quot;</strong> na impressora do navegador e ative a opção <strong>&quot;Gráficos de segundo plano&quot;</strong> para preservar as cores e selos.
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition"
+            className={`px-4 py-2 rounded-xl font-bold transition cursor-pointer ${
+              tintedGlass
+                ? 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
+                : 'bg-slate-200 text-slate-800 hover:bg-slate-300'
+            }`}
           >
             Fechar Visualizador
           </button>
