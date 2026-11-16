@@ -259,10 +259,11 @@ textarea.bg-slate-50::placeholder {
 }
 
 /* ============================================================================
-   6. APTIS SEQUENCIADOR (#bacterial-gantt-root) LIQUID GLASS DARK ADAPTATION
+   6. APTIS SEQUENCIADOR & ADVISORY LIQUID GLASS DARK ADAPTATION
    ============================================================================ */
 .aptis-mode-dark #bacterial-gantt-root main .bg-white,
-.aptis-mode-dark #bacterial-gantt-root footer.bg-white {
+.aptis-mode-dark #bacterial-gantt-root footer.bg-white,
+.aptis-mode-dark #advisory-root .advisory-body .bg-white {
   background: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.08) 0%,
@@ -275,7 +276,8 @@ textarea.bg-slate-50::placeholder {
   color: #f8fafc !important;
 }
 
-.aptis-mode-dark #bacterial-gantt-root .fixed .bg-white {
+.aptis-mode-dark #bacterial-gantt-root .fixed .bg-white,
+.aptis-mode-dark #advisory-root .fixed .bg-white:not(#printable-executive-report):not(#printable-executive-report *) {
   background: linear-gradient(
     150deg,
     rgba(15, 23, 42, 0.92) 0%,
@@ -295,7 +297,11 @@ textarea.bg-slate-50::placeholder {
 .aptis-mode-dark #bacterial-gantt-root main .bg-slate-100,
 .aptis-mode-dark #bacterial-gantt-root main .bg-slate-100\/70,
 .aptis-mode-dark #bacterial-gantt-root .fixed .bg-slate-50,
-.aptis-mode-dark #bacterial-gantt-root .fixed .bg-slate-50\/50 {
+.aptis-mode-dark #bacterial-gantt-root .fixed .bg-slate-50\/50,
+.aptis-mode-dark #advisory-root .advisory-body .bg-slate-50,
+.aptis-mode-dark #advisory-root .advisory-body .bg-slate-50\/70,
+.aptis-mode-dark #advisory-root .advisory-body .bg-slate-100,
+.aptis-mode-dark #advisory-root .fixed .bg-slate-50:not(#printable-executive-report *) {
   background: rgba(15, 23, 42, 0.55) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   color: #e2e8f0 !important;
@@ -308,7 +314,11 @@ textarea.bg-slate-50::placeholder {
 .aptis-mode-dark #bacterial-gantt-root main .border-slate-250,
 .aptis-mode-dark #bacterial-gantt-root main .border-slate-300,
 .aptis-mode-dark #bacterial-gantt-root .fixed .border-slate-100,
-.aptis-mode-dark #bacterial-gantt-root .fixed .border-slate-200 {
+.aptis-mode-dark #bacterial-gantt-root .fixed .border-slate-200,
+.aptis-mode-dark #advisory-root .advisory-body .border-slate-100,
+.aptis-mode-dark #advisory-root .advisory-body .border-slate-200,
+.aptis-mode-dark #advisory-root .advisory-body .border-slate-300,
+.aptis-mode-dark #advisory-root .fixed .border-slate-200:not(#printable-executive-report *) {
   border-color: rgba(255, 255, 255, 0.11) !important;
 }
 
@@ -318,14 +328,24 @@ textarea.bg-slate-50::placeholder {
 .aptis-mode-dark #bacterial-gantt-root main .text-slate-700,
 .aptis-mode-dark #bacterial-gantt-root .fixed .text-slate-900,
 .aptis-mode-dark #bacterial-gantt-root .fixed .text-slate-800,
-.aptis-mode-dark #bacterial-gantt-root .fixed .text-slate-700 {
+.aptis-mode-dark #bacterial-gantt-root .fixed .text-slate-700,
+.aptis-mode-dark #advisory-root .advisory-body .text-slate-900,
+.aptis-mode-dark #advisory-root .advisory-body .text-slate-800,
+.aptis-mode-dark #advisory-root .advisory-body .text-slate-700,
+.aptis-mode-dark #advisory-root .fixed .text-slate-900:not(#printable-executive-report *),
+.aptis-mode-dark #advisory-root .fixed .text-slate-800:not(#printable-executive-report *),
+.aptis-mode-dark #advisory-root .fixed .text-slate-700:not(#printable-executive-report *) {
   color: #f1f5f9 !important;
 }
 
 .aptis-mode-dark #bacterial-gantt-root main .text-slate-600,
 .aptis-mode-dark #bacterial-gantt-root main .text-slate-500,
 .aptis-mode-dark #bacterial-gantt-root .fixed .text-slate-600,
-.aptis-mode-dark #bacterial-gantt-root .fixed .text-slate-500 {
+.aptis-mode-dark #bacterial-gantt-root .fixed .text-slate-500,
+.aptis-mode-dark #advisory-root .advisory-body .text-slate-600,
+.aptis-mode-dark #advisory-root .advisory-body .text-slate-500,
+.aptis-mode-dark #advisory-root .fixed .text-slate-600:not(#printable-executive-report *),
+.aptis-mode-dark #advisory-root .fixed .text-slate-500:not(#printable-executive-report *) {
   color: #cbd5e1 !important;
 }
 
@@ -334,14 +354,22 @@ textarea.bg-slate-50::placeholder {
 .aptis-mode-dark #bacterial-gantt-root main textarea,
 .aptis-mode-dark #bacterial-gantt-root .fixed input:not([type="checkbox"]),
 .aptis-mode-dark #bacterial-gantt-root .fixed select,
-.aptis-mode-dark #bacterial-gantt-root .fixed textarea {
+.aptis-mode-dark #bacterial-gantt-root .fixed textarea,
+.aptis-mode-dark #advisory-root .advisory-body input:not([type="checkbox"]),
+.aptis-mode-dark #advisory-root .advisory-body select,
+.aptis-mode-dark #advisory-root .advisory-body textarea,
+.aptis-mode-dark #advisory-root .fixed input:not([type="checkbox"]),
+.aptis-mode-dark #advisory-root .fixed select,
+.aptis-mode-dark #advisory-root .fixed textarea {
   background: rgba(15, 23, 42, 0.75) !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
   color: #f8fafc !important;
 }
 
 .aptis-mode-dark #bacterial-gantt-root main select option,
-.aptis-mode-dark #bacterial-gantt-root .fixed select option {
+.aptis-mode-dark #bacterial-gantt-root .fixed select option,
+.aptis-mode-dark #advisory-root .advisory-body select option,
+.aptis-mode-dark #advisory-root .fixed select option {
   background-color: #0f172a !important;
   color: #f8fafc !important;
 }

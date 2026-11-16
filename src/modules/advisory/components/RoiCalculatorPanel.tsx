@@ -74,7 +74,7 @@ export const RoiCalculatorPanel: React.FC<RoiCalculatorPanelProps> = ({
   return (
     <div className="space-y-6">
       {/* Hero Financial Overview */}
-      <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-white border border-emerald-200 shadow-sm">
+      <div className="p-6 rounded-3xl bg-white border border-emerald-200 shadow-sm">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-1.5 max-w-xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
