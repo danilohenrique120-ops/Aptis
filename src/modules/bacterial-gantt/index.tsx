@@ -24,6 +24,20 @@ export default function BacterialGanttModule() {
 
   // Tabs: 'gantt' | 'batch' | 'product' | 'preventatives' | 'deviations'
   const [activeTab, setActiveTab] = useState<'gantt' | 'batch' | 'product' | 'preventatives' | 'deviations'>('gantt');
+  const [tintedGlass, setTintedGlass] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('aptis_tinted_glass_mode');
+    if (saved !== null) {
+      setTintedGlass(saved === 'true');
+    }
+    const handleModeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      setTintedGlass(customEvent.detail);
+    };
+    window.addEventListener('aptis-glass-mode-change', handleModeChange);
+    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
+  }, []);
 
   // Core application states loaded from Supabase multi-tenant persistence with instant local cache
   const [recipes, setRecipes] = useTenantStorage<ProductRecipe[]>('bacterial-gantt', 'recipes', INITIAL_RECIPES);
@@ -1450,49 +1464,72 @@ export default function BacterialGanttModule() {
   }, [batches, preventatives, setupTimes, envaseLinesCount]);
 
   return (
-    <div className="w-full space-y-6 pb-12 font-sans text-slate-800 antialiased" id="bacterial-gantt-root">
+    <div className="w-full space-y-6 pb-12 font-sans antialiased" id="bacterial-gantt-root">
       
-      {/* PROFESSIONAL INDUSTRIAL DASHBOARD HEADER */}
-      <header className="bg-slate-900 border border-slate-800 rounded-2xl shrink-0 shadow-lg text-white p-5 md:p-6">
-        <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center font-bold text-slate-950 text-2xl tracking-tight shadow-md shrink-0">
-              𝝗
+      {/* HEADER EXECUTIVO PADRÃO APTIS ROUTINE (4 SUB-CÁPSULAS DE KPIS) */}
+      <div
+        className={`rounded-3xl p-6 transition-all duration-300 ${
+          tintedGlass
+            ? 'aptis-glass-dark text-white'
+            : 'aptis-glass-light bg-white border border-slate-200/90 shadow-xs text-slate-900'
+        }`}
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span
+                className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${
+                  tintedGlass
+                    ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                MÓDULO PCP & SEQUENCIAMENTO BIOLÓGICO
+              </span>
+              <span className={`text-xs font-medium ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+                Unidade: {currentTenant?.name || 'Aptis Tecnologia (Admin Master)'}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2 leading-none mb-1">
-                <span className="text-base font-black text-white tracking-tight">Líder PCP</span>
-                <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent tracking-wider">BIO</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60">
-                  {currentTenant?.name || 'Enterprise'}
-                </span>
-              </div>
-              <h1 className="text-xs font-semibold text-slate-400 tracking-tight">
-                Sequenciador de Multiplicação Bacteriana • APS & Otimização de Lotes
-              </h1>
-            </div>
+            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              Aptis Sequenciador • Multiplicação Bacteriana & APS
+            </h1>
+            <p className={`text-xs sm:text-sm mt-1 max-w-3xl ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+              Sequenciamento inteligente de biorreatores, controle de setup/CIP, janelas de preventivas, rastreabilidade de OPs e otimização de mix.
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setShowConfigPanels(prev => !prev)}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                tintedGlass
+                  ? 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-200 hover:text-white'
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
               title="Ocultar / Exibir Painéis de Turnos e Capacidades"
             >
-              <Sliders size={13} className="text-amber-400" />
+              <Sliders size={14} className={tintedGlass ? 'text-amber-300' : 'text-amber-600'} />
               {showConfigPanels ? 'Ocultar Painéis PCP' : 'Exibir Painéis PCP'}
             </button>
 
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs bg-emerald-950/70 border border-emerald-800 text-emerald-300 px-3 py-1.5 rounded-lg font-mono flex items-center gap-1.5">
-                  <CloudCheck size={14} className="text-emerald-400" />
+                <span className={`text-xs px-3 py-2 rounded-xl font-mono flex items-center gap-1.5 border ${
+                  tintedGlass
+                    ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-300'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                }`}>
+                  <CloudCheck size={14} />
                   <span className="font-bold">{user.email}</span>
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800/80 text-rose-200 hover:text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer border ${
+                    tintedGlass
+                      ? 'bg-rose-500/20 hover:bg-rose-500/30 border-rose-500/35 text-rose-200'
+                      : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
+                  }`}
                   title="Desconectar Firebase"
                 >
                   <XCircle size={13} /> Sair
@@ -1501,156 +1538,215 @@ export default function BacterialGanttModule() {
             ) : (
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="px-3 py-1.5 bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-800/80 text-indigo-200 hover:text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer border ${
+                  tintedGlass
+                    ? 'bg-indigo-500/20 hover:bg-indigo-500/30 border-indigo-400/35 text-indigo-200'
+                    : 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700'
+                }`}
                 title="Conectar ao Firebase Cloud"
               >
-                <Cloud size={13} className="text-cyan-400" />
+                <Cloud size={14} />
                 <span>Nuvem Firebase</span>
               </button>
             )}
 
             <button
               onClick={handleClearAllData}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer border ${
+                tintedGlass
+                  ? 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-200'
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
               title="Resetar dados para exemplo de fábrica padrão"
             >
-              <Database size={13} /> Resetar Fábrica
+              <Database size={14} /> Resetar Fábrica
+            </button>
+
+            <button
+              onClick={() => setActiveTab('batch')}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/25 flex items-center gap-1.5 cursor-pointer"
+            >
+              <PlayCircle size={14} /> + Novo Lote
             </button>
           </div>
         </div>
-      </header>
 
-      {/* KPI METRIC BAR */}
-      <section className="bg-slate-900/98 text-white border-b border-slate-800 shadow-sm shrink-0">
-        <div className="w-full px-4 py-3 md:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            
-            {/* KPI 1 */}
-            <div className="flex items-center gap-3 bg-slate-800/40 p-3 rounded-lg border border-slate-800">
-              <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                <PlayCircle size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none">Lotes Programados</span>
-                <span className="text-base font-black text-slate-100 font-mono leading-tight">{totalBatchesCount} Lotes</span>
-              </div>
+        {/* 4 SUB-CÁPSULAS DE KPIS (Padrão Aptis Routine) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mt-6">
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>
+                Lotes Programados
+              </span>
+              <PlayCircle className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-500'}`} />
             </div>
-
-            {/* KPI 2 */}
-            <div className="flex items-center gap-3 bg-slate-800/40 p-3 rounded-lg border border-slate-800">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <Layers size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none">Fórmulas / Receitas</span>
-                <span className="text-base font-black text-slate-100 font-mono leading-tight">{formulasCount} Ativas</span>
-              </div>
+            <div className={`text-2xl font-black font-mono mt-1.5 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
+              {totalBatchesCount}
             </div>
+          </div>
 
-            {/* KPI 3 */}
-            <div className="flex items-center gap-3 bg-slate-800/40 p-3 rounded-lg border border-slate-800">
-              <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                <ShieldX size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none">Paradas de Preventiva</span>
-                <span className="text-base font-black text-slate-100 font-mono leading-tight">{preventativesCount} Janelas</span>
-              </div>
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-emerald-300' : 'text-emerald-600'}`}>
+                Fórmulas / Receitas
+              </span>
+              <Layers className={`w-4 h-4 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-500'}`} />
             </div>
+            <div className={`text-2xl font-black font-mono mt-1.5 ${tintedGlass ? 'text-emerald-400' : 'text-emerald-600'}`}>
+              {formulasCount}
+            </div>
+          </div>
 
-            {/* KPI 4 */}
-            <div className="flex items-center gap-3 bg-slate-800/40 p-3 rounded-lg border border-slate-800">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                conflictBatchesCount > 0 ? 'bg-rose-500/20 text-rose-400 animate-pulse' : 'bg-slate-700/50 text-slate-400'
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${tintedGlass ? 'text-amber-300' : 'text-amber-600'}`}>
+                Paradas de Preventiva
+              </span>
+              <ShieldX className={`w-4 h-4 ${tintedGlass ? 'text-amber-400' : 'text-amber-500'}`} />
+            </div>
+            <div className={`text-2xl font-black font-mono mt-1.5 ${tintedGlass ? 'text-amber-300' : 'text-amber-600'}`}>
+              {preventativesCount}
+            </div>
+          </div>
+
+          <div
+            className={`p-4 rounded-2xl transition-all ${
+              tintedGlass
+                ? 'aptis-glass-subcard'
+                : 'bg-white/90 border border-slate-200/90 shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold ${
+                conflictBatchesCount > 0
+                  ? (tintedGlass ? 'text-rose-300' : 'text-rose-600')
+                  : (tintedGlass ? 'text-slate-300' : 'text-slate-500')
               }`}>
-                <AlertOctagon size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none">Lotes com Conflito</span>
-                <span className={`text-base font-black font-mono leading-tight ${
-                  conflictBatchesCount > 0 ? 'text-rose-400' : 'text-slate-300'
-                }`}>
-                  {conflictBatchesCount > 0 ? `${conflictBatchesCount} Bloqueados` : '0 Conflitos'}
-                </span>
-              </div>
+                Lotes com Conflito
+              </span>
+              <AlertOctagon className={`w-4 h-4 ${
+                conflictBatchesCount > 0 ? 'text-rose-400 animate-pulse' : 'text-slate-400'
+              }`} />
             </div>
-
+            <div className={`text-2xl font-black font-mono mt-1.5 ${
+              conflictBatchesCount > 0
+                ? (tintedGlass ? 'text-rose-400' : 'text-rose-600')
+                : (tintedGlass ? 'text-emerald-400' : 'text-emerald-600')
+            }`}>
+              {conflictBatchesCount}
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* DASHBOARD CONTAINER WITH TABS */}
-      <main className="flex-1 w-full p-4 md:p-6 space-y-6 flex flex-col justify-start">
-        
-        {/* TABS SELECTOR ROW */}
-        <div className="flex border-b border-slate-200 bg-white p-1 rounded-xl shadow-xs gap-1 shrink-0" id="tabs-navigation-panel">
-          
+      {/* BARRA DE NAVEGAÇÃO ÓPTICA (APTIS-MENISCUS-TRACK) + CÁPSULA DE ATIVOS */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="aptis-meniscus-track inline-flex items-center gap-1 p-1.5 rounded-2xl overflow-x-auto max-w-full" id="tabs-navigation-panel">
           <button
             onClick={() => setActiveTab('gantt')}
-            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`py-2 px-4 rounded-xl flex items-center gap-2 text-xs transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'gantt'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'aptis-pill-active text-white font-bold'
+                : 'text-slate-300 hover:text-white font-medium'
             }`}
             id="tab-gantt"
           >
-            <Calendar size={15} /> Gantt da Produção
+            <Calendar size={14} /> Gantt da Produção
           </button>
 
           <button
             onClick={() => setActiveTab('batch')}
-            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`py-2 px-4 rounded-xl flex items-center gap-2 text-xs transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'batch'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'aptis-pill-active text-white font-bold'
+                : 'text-slate-300 hover:text-white font-medium'
             }`}
             id="tab-batch"
           >
-            <PlayCircle size={15} /> Programar Novo Lote (PCP)
+            <PlayCircle size={14} /> Programar Novo Lote (PCP)
           </button>
 
           <button
             onClick={() => setActiveTab('product')}
-            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`py-2 px-4 rounded-xl flex items-center gap-2 text-xs transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'product'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'aptis-pill-active text-white font-bold'
+                : 'text-slate-300 hover:text-white font-medium'
             }`}
             id="tab-product"
           >
-            <Layers size={15} /> Fórmulas & Receitas
+            <Layers size={14} /> Fórmulas & Receitas
           </button>
 
           <button
             onClick={() => setActiveTab('preventatives')}
-            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`py-2 px-4 rounded-xl flex items-center gap-2 text-xs transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'preventatives'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'aptis-pill-active text-white font-bold'
+                : 'text-slate-300 hover:text-white font-medium'
             }`}
             id="tab-preventatives"
           >
-            <ShieldX size={15} /> Preventivas & Limpeza
+            <ShieldX size={14} /> Preventivas & Limpeza
           </button>
 
           <button
             onClick={() => setActiveTab('deviations')}
-            className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold rounded-lg transition-all relative cursor-pointer ${
+            className={`py-2 px-4 rounded-xl flex items-center gap-2 text-xs transition-all whitespace-nowrap relative cursor-pointer ${
               activeTab === 'deviations'
-                ? 'bg-rose-900 border border-rose-800 text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+                ? 'aptis-pill-active text-white font-bold'
+                : 'text-slate-300 hover:text-white font-medium'
             }`}
             id="tab-deviations"
           >
-            <AlertTriangle size={15} className={deviations.length > 0 ? "text-rose-500 animate-pulse" : ""} /> 
+            <AlertTriangle size={14} className={deviations.length > 0 ? "text-rose-400 animate-pulse" : ""} /> 
             Desvios & Ocorrências
             {deviations.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[9px] font-black rounded-full h-4 min-w-4 px-1 flex items-center justify-center shadow-xs">
+              <span className="ml-1 bg-rose-500 text-white text-[10px] font-black rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
                 {deviations.length}
               </span>
             )}
           </button>
         </div>
+
+        {/* Cápsula de Status de Ativos da Planta */}
+        <div
+          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs transition-all ${
+            tintedGlass
+              ? 'aptis-glass-dark text-white'
+              : 'bg-white border border-slate-200/90 shadow-2xs text-slate-800'
+          }`}
+        >
+          <Database className={`w-3.5 h-3.5 ${tintedGlass ? 'text-cyan-400' : 'text-cyan-600'}`} />
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
+            ATIVOS DA PLANTA:
+          </span>
+          <span className={`font-bold font-mono ${tintedGlass ? 'text-cyan-300' : 'text-slate-900'}`}>
+            {customAssets.length} Vasos / Linhas
+          </span>
+        </div>
+      </div>
+
+      {/* DASHBOARD CONTAINER WITH TABS */}
+      <main className="flex-1 w-full space-y-6 flex flex-col justify-start">
 
         {/* TAB ACTIVE CONTENT RENDER */}
         <div className="flex-1 flex flex-col justify-start">
