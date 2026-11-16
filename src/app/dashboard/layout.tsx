@@ -28,19 +28,8 @@ export default function DashboardLayout({
     return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
   }, []);
 
-  // Rotas já equipadas com o motor óptico Tinted Glass
-  const isGlassEnabledRoute =
-    pathname === '/dashboard' ||
-    pathname.startsWith('/dashboard/tools/skills-matrix') ||
-    pathname.startsWith('/dashboard/tools/training-matrix') ||
-    pathname.startsWith('/dashboard/tools/kaizen-manager') ||
-    pathname.startsWith('/dashboard/tools/twttp-herca') ||
-    pathname.startsWith('/dashboard/tools/bacterial-gantt') ||
-    pathname.startsWith('/dashboard/tools/advisory') ||
-    pathname.startsWith('/dashboard/tools/manager-tasks') ||
-    pathname.startsWith('/dashboard/tools/one-on-one') ||
-    pathname.startsWith('/dashboard/tools/pdi-manager') ||
-    pathname.startsWith('/dashboard/tools/service-pro');
+  // Todas as rotas do Dashboard operam sob o motor óptico Dual-Mode (Tinted Glass / Light Crystal)
+  const isGlassEnabledRoute = pathname.startsWith('/dashboard');
   const useDarkGlassCanvas = isGlassEnabledRoute && tintedGlass;
 
   return (
