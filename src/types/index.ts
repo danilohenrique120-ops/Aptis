@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'tenant_admin' | 'member';
+export type UserRole = 'superadmin' | 'tenant_admin' | 'sector_manager' | 'member';
 
 export type TenantPlan = 'starter' | 'pro' | 'enterprise';
 
@@ -24,6 +24,20 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
   department?: string;
+  allowedSectorIds?: string[]; // Setores permitidos para gestores de área ('sector_manager' / 'member')
+}
+
+export interface AreaManagerAccount {
+  id: string;
+  tenantId: string;
+  name: string;
+  email: string;
+  password: string;
+  role: 'sector_manager' | 'tenant_admin';
+  jobTitle?: string;
+  allowedSectorIds: string[];
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface License {

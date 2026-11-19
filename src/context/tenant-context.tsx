@@ -8,6 +8,9 @@ import { supabase } from '@/lib/supabase';
 interface TenantContextType {
   currentTenant: Tenant;
   currentUser: User;
+  effectiveUser: User;
+  isSimulatingManager: boolean;
+  simulateAreaManager: (manager: User | null) => void;
   tenants: Tenant[];
   licenses: License[];
   leads: LeadRequest[];
@@ -115,6 +118,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [currentUserId, setCurrentUserId] = useState<string>(() => getLocalString(STORAGE_KEYS.CURRENT_USER_ID, INITIAL_USERS[0].id));
   const [licenses, setLicenses] = useState<License[]>(() => getSanitizedLicenses(INITIAL_LICENSES));
   const [leads, setLeads] = useState<LeadRequest[]>(() => getLocalInitial(STORAGE_KEYS.LEADS, INITIAL_LEADS));
+  const [simulatedManager, setSimulatedManager] = useState<User | null>(null);
 
   // 1. Carrega dados do Supabase e mescla com a fonte da verdade sem resgatar mocks antigos
   useEffect(() => {
@@ -235,11 +239,27 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
     const exists = tenants.some(t => t.id === tenantId);
     if (exists) {
+      setSimulatedManager(null);
       setCurrentTenantId(tenantId);
     }
   };
 
+  const canSimulateManager = currentUser.role === 'superadmin' || currentUser.role === 'tenant_admin';
+  const isSimulatingManager = Boolean(
+    canSimulateManager && simulatedManager && simulatedManager.tenantId === currentTenant.id
+  );
+  const effectiveUser: User = isSimulatingManager && simulatedManager ? simulatedManager : currentUser;
+
+  const simulateAreaManager = (manager: User | null) => {
+    if (!canSimulateManager) {
+      console.warn('[BLOQUEIO DE SEGURANÇA] Apenas administradores podem simular visões de gestor.');
+      return;
+    }
+    setSimulatedManager(manager);
+  };
+
   const logout = async () => {
+    setSimulatedManager(null);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch {}
@@ -375,6 +395,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       value={{
         currentTenant,
         currentUser,
+        effectiveUser,
+        isSimulatingManager,
+        simulateAreaManager,
         tenants,
         licenses,
         leads,

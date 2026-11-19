@@ -2,7 +2,8 @@
 
 import React, { useMemo } from 'react';
 import { SkillStation, EmployeeSkillRecord } from '../types';
-import { PieChart, BarChart3, AlertTriangle, CheckCircle2, TrendingDown } from 'lucide-react';
+import { isCriticalStation } from '../skill-helpers';
+import { PieChart, BarChart3, CheckCircle2, TrendingDown } from 'lucide-react';
 
 interface SkillsDonutAndParetoProps {
   stations: SkillStation[];
@@ -86,31 +87,37 @@ export function SkillsDonutAndParetoCharts({
 
   // 2. CÁLCULO DO DIAGRAMA DE PARETO (80/20 DOS GARGALOS)
   const paretoData = useMemo(() => {
-    // Para cada posto, calcula o déficit de operadores autônomos
-    const stationDeficits = stations.map(st => {
-      const qualified = employees.filter(e => (e.skills[st.id] || 0) >= 3).length;
-      const deficit = Math.max(0, st.minOperatorsRequired - qualified);
-      return {
-        station: st,
-        deficit,
-        qualified,
-        required: st.minOperatorsRequired
-      };
-    });
+    // Para cada posto crítico, calcula o déficit de operadores autônomos
+    const stationDeficits = stations
+      .filter(st => isCriticalStation(st))
+      .map(st => {
+        const qualified = employees.filter(e => (e.skills[st.id] || 0) >= 3).length;
+        const deficit = Math.max(0, st.minOperatorsRequired - qualified);
+        return {
+          station: st,
+          deficit,
+          qualified,
+          required: st.minOperatorsRequired
+        };
+      });
 
     // Ordena do maior déficit para o menor (regra de Pareto)
     const sorted = stationDeficits.sort((a, b) => b.deficit - a.deficit);
     const totalDeficit = sorted.reduce((acc, s) => acc + s.deficit, 0);
 
-    let cumulative = 0;
-    const items = sorted.map(item => {
-      cumulative += item.deficit;
-      const cumulativePct = totalDeficit > 0 ? Math.round((cumulative / totalDeficit) * 100) : 100;
-      return {
-        ...item,
-        cumulativePct
-      };
-    });
+    const items = sorted.reduce<Array<(typeof sorted)[number] & { cumulativePct: number }>>(
+      (acc, item) => {
+        const prevSum = acc.length > 0 ? acc.reduce((sum, curr) => sum + curr.deficit, 0) : 0;
+        const nextCumulative = prevSum + item.deficit;
+        const cumulativePct = totalDeficit > 0 ? Math.round((nextCumulative / totalDeficit) * 100) : 100;
+        acc.push({
+          ...item,
+          cumulativePct
+        });
+        return acc;
+      },
+      []
+    );
 
     return { items, totalDeficit };
   }, [stations, employees]);

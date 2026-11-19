@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTenant } from '@/context/tenant-context';
+import { isPlantAdminUser } from '@/lib/sector-access';
 import { getAllTools } from '@/config/tools-registry';
 import { ToolIcon } from '@/components/ui/tool-icon';
 import { AptisLogo } from '@/components/ui/aptis-logo';
@@ -21,7 +22,8 @@ import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManage
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { currentTenant, hasLicense } = useTenant();
+  const { currentTenant, effectiveUser, hasLicense } = useTenant();
+  const isPlantAdmin = isPlantAdminUser(effectiveUser);
   const allTools = getAllTools();
 
   const licensedTools = allTools.filter(t => hasLicense(t.id));
@@ -168,19 +170,21 @@ export function DashboardSidebar() {
             Suíte Aptis & Licenças
           </Link>
 
-          <button
-            onClick={() => setIsSectorsModalOpen(true)}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.05] hover:text-white transition-all cursor-pointer group text-left"
-            title="Gerenciar áreas e setores fabris cadastrados na planta"
-          >
-            <div className="flex items-center gap-2.5">
-              <Layers className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
-              <span>Áreas & Setores Fabris</span>
-            </div>
-            <span className="text-[10px] bg-white/[0.06] text-cyan-300 px-2 py-0.5 rounded-full border border-white/[0.12] font-semibold font-mono">
-              Central
-            </span>
-          </button>
+          {isPlantAdmin && (
+            <button
+              onClick={() => setIsSectorsModalOpen(true)}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.05] hover:text-white transition-all cursor-pointer group text-left"
+              title="Gerenciar áreas, setores fabris e gestores com permissão por área"
+            >
+              <div className="flex items-center gap-2.5">
+                <Layers className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                <span>Áreas &amp; Gestores</span>
+              </div>
+              <span className="text-[10px] bg-white/[0.06] text-cyan-300 px-2 py-0.5 rounded-full border border-white/[0.12] font-semibold font-mono">
+                Central
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Módulos Licenciados (Ativos) */}

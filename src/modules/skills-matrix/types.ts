@@ -23,11 +23,15 @@ export interface Sector {
   iconName?: string;
 }
 
+export type SkillType = 'hard_station' | 'hard_skill' | 'soft_skill';
+
 export interface SkillStation {
   id: string;
   sectorId: string;
   name: string;
   category: string;
+  skillType?: SkillType; // 'hard_station' (padrão) | 'hard_skill' | 'soft_skill'
+  isCriticalForLineStop?: boolean; // Define se falta de N3+ dispara alerta de gargalo de parada
   minOperatorsRequired: number;
   targetLevel?: SkillLevel; // Nível padrão desejado (default: 3)
 }
@@ -51,6 +55,10 @@ export interface TrainingAction {
   operatorName: string;
   mentorId: string;
   mentorName: string;
+  mentorSectorId?: string;
+  mentorSectorName?: string;
+  mentorOrigin?: 'internal' | 'cross_sector' | 'supervisor';
+  skillType?: SkillType;
   currentLevel: SkillLevel;
   targetLevel: SkillLevel;
   status: 'pending' | 'in_progress' | 'completed';
@@ -81,5 +89,11 @@ export interface SuccessionPlan {
   notes?: string;
 }
 
-export type ViewTab = 'dashboard' | 'matrix' | 'succession' | 'gap_analysis' | 'gestao_a_vista';
+export type ViewTab =
+  | 'dashboard'
+  | 'matrix'
+  | 'trainers_directory'
+  | 'succession'
+  | 'gap_analysis'
+  | 'gestao_a_vista';
 export type DisplayFormat = 'iluo_circles' | 'badges';

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = validateUserCredentials(email, password);
+    const user = await validateUserCredentials(email, password);
     if (!user) {
       // Delay anti-brute force
       await new Promise(resolve => setTimeout(resolve, 400));
@@ -34,7 +34,8 @@ export async function POST(request: Request) {
         email: user.email,
         role: user.role,
         tenantId: user.tenantId,
-        department: user.department
+        department: user.department,
+        allowedSectorIds: user.allowedSectorIds
       }
     });
 

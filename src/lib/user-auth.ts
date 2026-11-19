@@ -1,6 +1,7 @@
 import crypto from 'crypto';
-import { User } from '@/types';
+import { AreaManagerAccount, User } from '@/types';
 import { INITIAL_USERS } from '@/lib/mock-data';
+import { supabase } from '@/lib/supabase';
 
 const AUTH_SECRET = process.env.AUTH_SECRET_KEY || 'aptis_enterprise_auth_secret_key_2026_jwt_fallback';
 export const USER_COOKIE_NAME = 'aptis_user_session';
@@ -23,25 +24,64 @@ export interface AuthSessionPayload {
   role: User['role'];
   tenantId: string;
   department?: string;
+  allowedSectorIds?: string[];
   expiresAt: number;
 }
 
 /**
- * Valida credenciais de e-mail e senha
+ * Valida credenciais de e-mail e senha (usuários estáticos e gestores dinâmicos cadastrados no Supabase)
  */
-export function validateUserCredentials(email: string, password: string): User | null {
+export async function validateUserCredentials(email: string, password: string): Promise<User | null> {
   const normalizedEmail = email.trim().toLowerCase();
   
-  // 1. Procura na lista de usuários cadastrados
-  const user = INITIAL_USERS.find(u => u.email.toLowerCase() === normalizedEmail);
-  if (!user) return null;
-
-  const validPassword = USER_PASSWORDS[normalizedEmail] || 'aptis123';
-  if (password !== validPassword) {
-    return null;
+  // 1. Procura na lista de usuários iniciais cadastrados em código
+  const staticUser = INITIAL_USERS.find(u => u.email.toLowerCase() === normalizedEmail);
+  if (staticUser) {
+    const validPassword = USER_PASSWORDS[normalizedEmail] || 'aptis123';
+    if (password !== validPassword) {
+      return null;
+    }
+    return staticUser;
   }
 
-  return user;
+  // 2. Procura nos Gestores de Área cadastrados dinamicamente por cada empresa no Supabase
+  try {
+    const { data, error } = await supabase
+      .from('tenant_tool_data')
+      .select('tenant_id, data')
+      .eq('tool_id', 'plant-core')
+      .eq('data_key', 'area_managers');
+
+    if (!error && Array.isArray(data)) {
+      for (const row of data) {
+        const managers = Array.isArray(row.data) ? (row.data as AreaManagerAccount[]) : [];
+        const matched = managers.find(
+          m =>
+            m &&
+            m.isActive !== false &&
+            typeof m.email === 'string' &&
+            m.email.trim().toLowerCase() === normalizedEmail &&
+            m.password === password
+        );
+
+        if (matched) {
+          return {
+            id: matched.id,
+            tenantId: matched.tenantId || row.tenant_id,
+            name: matched.name,
+            email: matched.email,
+            role: matched.role || 'sector_manager',
+            department: matched.jobTitle || 'Gestão de Área Fabril',
+            allowedSectorIds: Array.isArray(matched.allowedSectorIds) ? matched.allowedSectorIds : []
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Falha ao consultar gestores dinâmicos no Supabase:', err);
+  }
+
+  return null;
 }
 
 /**
@@ -57,6 +97,7 @@ export function createUserSessionToken(user: User, expiresInDays = 7): string {
     role: user.role,
     tenantId: user.tenantId,
     department: user.department,
+    allowedSectorIds: user.allowedSectorIds,
     expiresAt
   };
 

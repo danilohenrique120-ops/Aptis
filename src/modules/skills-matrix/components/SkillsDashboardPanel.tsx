@@ -6,10 +6,9 @@ import {
   SkillStation, 
   EmployeeSkillRecord, 
   SuccessionPlan, 
-  SkillLevel,
   TrainingAction 
 } from '../types';
-import { IluoCircle } from './IluoCircle';
+import { isCriticalStation } from '../skill-helpers';
 import { SkillsRadarChart } from './SkillsRadarChart';
 import { SkillsDonutAndParetoCharts } from './SkillsDonutAndParetoCharts';
 import { 
@@ -17,19 +16,13 @@ import {
   Award, 
   AlertTriangle, 
   CheckCircle2, 
-  TrendingUp, 
   Filter, 
   RefreshCw, 
-  Layers, 
   UserCheck, 
   Sparkles, 
   Search,
   ShieldCheck,
-  ShieldAlert,
-  ArrowUpRight,
-  Clock,
-  Zap,
-  Target
+  ArrowUpRight
 } from 'lucide-react';
 
 interface SkillsDashboardPanelProps {
@@ -39,8 +32,9 @@ interface SkillsDashboardPanelProps {
   employees: EmployeeSkillRecord[];
   successionPlans: SuccessionPlan[];
   trainingActions: TrainingAction[];
+  canViewAllSectors?: boolean;
   onSelectSector: (sectorId: string) => void;
-  onNavigateTab: (tab: 'matrix' | 'succession' | 'gap_analysis') => void;
+  onNavigateTab: (tab: 'matrix' | 'succession' | 'gap_analysis' | 'trainers_directory') => void;
   tintedGlass?: boolean;
 }
 
@@ -50,8 +44,7 @@ export function SkillsDashboardPanel({
   stations,
   employees,
   successionPlans,
-  trainingActions,
-  onSelectSector,
+  canViewAllSectors = true,
   onNavigateTab,
   tintedGlass = false
 }: SkillsDashboardPanelProps) {
@@ -63,12 +56,27 @@ export function SkillsDashboardPanel({
   const [selectedSuccessionFilter, setSelectedSuccessionFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Garante isolamento estrito via valor derivado (sem setState em effect)
+  const effectiveSectorFilter = useMemo(() => {
+    if (!canViewAllSectors && selectedSectorFilter === 'all') {
+      return 'current';
+    }
+    if (
+      !canViewAllSectors &&
+      selectedSectorFilter !== 'current' &&
+      !sectors.some(s => s.id === selectedSectorFilter)
+    ) {
+      return 'current';
+    }
+    return selectedSectorFilter;
+  }, [canViewAllSectors, selectedSectorFilter, sectors]);
+
   // 1. Escopo de Setores filtrado
   const scopedSectors = useMemo(() => {
-    if (selectedSectorFilter === 'current') return [activeSector];
-    if (selectedSectorFilter === 'all') return sectors;
-    return sectors.filter(s => s.id === selectedSectorFilter);
-  }, [selectedSectorFilter, activeSector, sectors]);
+    if (effectiveSectorFilter === 'current') return [activeSector];
+    if (effectiveSectorFilter === 'all' && canViewAllSectors) return sectors;
+    return sectors.filter(s => s.id === effectiveSectorFilter);
+  }, [effectiveSectorFilter, activeSector, sectors, canViewAllSectors]);
 
   const scopedSectorIds = useMemo(() => scopedSectors.map(s => s.id), [scopedSectors]);
 
@@ -113,12 +121,13 @@ export function SkillsDashboardPanel({
   // 4. Cálculos e KPIs Dinâmicos
   const totalEmployeesCount = filteredEmployees.length;
 
-  // Postos críticos analisados
+  // Postos críticos analisados (respeitando flag isCriticalForLineStop)
   const stationAnalysis = useMemo(() => {
     return baseStations.map(st => {
       const qualifiedEmps = baseEmployees.filter(emp => (emp.skills[st.id] || 0) >= 3);
-      const isUnderStaffed = qualifiedEmps.length < st.minOperatorsRequired;
-      const deficit = Math.max(0, st.minOperatorsRequired - qualifiedEmps.length);
+      const isCriticalSkill = isCriticalStation(st);
+      const isUnderStaffed = isCriticalSkill && qualifiedEmps.length < st.minOperatorsRequired;
+      const deficit = isCriticalSkill ? Math.max(0, st.minOperatorsRequired - qualifiedEmps.length) : 0;
       return {
         station: st,
         qualifiedCount: qualifiedEmps.length,
@@ -127,16 +136,6 @@ export function SkillsDashboardPanel({
       };
     });
   }, [baseStations, baseEmployees]);
-
-  const filteredStations = useMemo(() => {
-    if (selectedStationRiskFilter === 'critical') {
-      return stationAnalysis.filter(s => s.isUnderStaffed);
-    }
-    if (selectedStationRiskFilter === 'healthy') {
-      return stationAnalysis.filter(s => !s.isUnderStaffed);
-    }
-    return stationAnalysis;
-  }, [stationAnalysis, selectedStationRiskFilter]);
 
   const criticalStationsCount = stationAnalysis.filter(s => s.isUnderStaffed).length;
   const stationsCoverageRate = baseStations.length > 0
@@ -214,7 +213,7 @@ export function SkillsDashboardPanel({
     setSearchTerm('');
   };
 
-  const isFiltered = selectedSectorFilter !== 'current' ||
+  const isFiltered = effectiveSectorFilter !== 'current' ||
     selectedShiftFilter !== 'all' ||
     selectedIluoFilter !== 'all' ||
     selectedStationRiskFilter !== 'all' ||
@@ -274,7 +273,7 @@ export function SkillsDashboardPanel({
               Setor / Linha
             </label>
             <select
-              value={selectedSectorFilter}
+              value={effectiveSectorFilter}
               onChange={e => setSelectedSectorFilter(e.target.value)}
               className={`w-full px-2.5 py-1.5 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer ${
                 tintedGlass
@@ -283,7 +282,9 @@ export function SkillsDashboardPanel({
               }`}
             >
               <option value="current">Setor Ativo: {activeSector.code}</option>
-              <option value="all">🏭 Fábrica Inteira (Todos os Setores)</option>
+              {canViewAllSectors && (
+                <option value="all">🏭 Fábrica Inteira (Todos os Setores)</option>
+              )}
               {sectors.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
               ))}

@@ -8,12 +8,23 @@ import {
   Building2,
   ExternalLink,
   LogOut,
-  Crown
+  Crown,
+  Eye,
+  X
 } from 'lucide-react';
 
 export function DashboardHeader() {
   const pathname = usePathname();
-  const { currentTenant, currentUser, tenants, switchTenant, logout } = useTenant();
+  const {
+    currentTenant,
+    currentUser,
+    effectiveUser,
+    isSimulatingManager,
+    simulateAreaManager,
+    tenants,
+    switchTenant,
+    logout
+  } = useTenant();
   const [tintedGlass, setTintedGlass] = useState(true);
 
   useEffect(() => {
@@ -123,6 +134,28 @@ export function DashboardHeader() {
 
       {/* Lado Direito: Perfil do Gestor & Ações */}
       <div className="flex items-center gap-3">
+        {isSimulatingManager && (
+          <div
+            className={`flex items-center gap-2 px-3 py-1 rounded-xl text-[11px] font-bold border ${
+              isDarkGlass
+                ? 'bg-amber-500/20 text-amber-200 border-amber-400/40'
+                : 'bg-amber-50 text-amber-800 border-amber-300'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="hidden md:inline">Simulando Gestor: {effectiveUser.name}</span>
+            <button
+              type="button"
+              onClick={() => simulateAreaManager(null)}
+              className="ml-1 px-2 py-0.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+              title="Sair da simulação e voltar ao perfil Admin"
+            >
+              <X className="w-3 h-3" />
+              Sair
+            </button>
+          </div>
+        )}
+
         {/* Link para Vitrine Pública */}
         <Link
           href="/"
@@ -151,7 +184,7 @@ export function DashboardHeader() {
               boxShadow: '0 0 16px rgba(6, 182, 212, 0.35)'
             }}
           >
-            {currentUser.name
+            {effectiveUser.name
               .split(' ')
               .map(n => n[0])
               .slice(0, 2)
@@ -163,14 +196,14 @@ export function DashboardHeader() {
                 isDarkGlass ? 'text-white' : 'text-slate-800'
               }`}
             >
-              {currentUser.name}
+              {effectiveUser.name}
             </div>
             <div
               className={`text-[10px] leading-tight font-medium ${
                 isDarkGlass ? 'text-slate-400' : 'text-slate-400'
               }`}
             >
-              {currentUser.department ||
+              {effectiveUser.department ||
                 (isMasterWorkspace ? 'Diretoria Aptis' : currentTenant.name)}
             </div>
           </div>

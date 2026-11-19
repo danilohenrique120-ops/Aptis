@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useSyncExternalStore } from 'react';
 import { useTenant } from '@/context/tenant-context';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
+import { getAccessibleSectors, isPlantAdminUser } from '@/lib/sector-access';
 import { 
   SkillLevel, 
   SkillStation, 
+  SkillType,
   EmployeeSkillRecord, 
   SkillLevelInfo, 
   Sector, 
@@ -14,6 +16,12 @@ import {
   ViewTab, 
   DisplayFormat 
 } from './types';
+import {
+  buildPlantSkillCatalog,
+  getEffectiveSkillType,
+  getSkillTypeMeta,
+  isCriticalStation
+} from './skill-helpers';
 import { IluoCircle } from './components/IluoCircle';
 import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
@@ -24,6 +32,7 @@ import { GapAnalysisPanel } from './components/GapAnalysisPanel';
 import { SuccessionMatrixPanel } from './components/SuccessionMatrixPanel';
 import { AddSuccessionModal } from './components/AddSuccessionModal';
 import { SkillsDashboardPanel } from './components/SkillsDashboardPanel';
+import { PlantTrainersDirectoryPanel } from './components/PlantTrainersDirectoryPanel';
 import { 
   Users, 
   Award, 
@@ -36,20 +45,15 @@ import {
   Sparkles, 
   Download, 
   Maximize2, 
-  Minimize2, 
   ShieldAlert, 
-  CheckCircle2, 
   Layers, 
   Radio, 
-  Check, 
   Lock,
-  ArrowRight,
-  TrendingUp,
-  GraduationCap,
   Trash2,
   LayoutDashboard,
   UserCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Globe
 } from 'lucide-react';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
 import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
@@ -100,55 +104,27 @@ export const SKILL_LEVEL_DEFINITIONS: Record<SkillLevel, SkillLevelInfo> = {
 // ==========================================
 // DADOS INICIAIS MULTI-SETOR ISOLADOS
 // ==========================================
-const INITIAL_SECTORS: Sector[] = [
-  {
-    id: 'sec-usinagem',
-    code: 'USI',
-    name: 'Usinagem CNC & Precisão',
-    description: 'Tornos CNC, centros de usinagem e retíficas cilíndricas.',
-    managerName: 'Carlos Silveira',
-    managerRole: 'Supervisor de Usinagem',
-    authorizedRoles: ['superadmin', 'tenant_admin', 'sec-usinagem-supervisor'],
-    color: 'from-blue-600 to-indigo-600'
-  },
-  {
-    id: 'sec-estampagem',
-    code: 'EST',
-    name: 'Estamparia & Prensas',
-    description: 'Prensas hidráulicas de 200T a 500T, corte e repuxo de chapas.',
-    managerName: 'Mariana Souza',
-    managerRole: 'Supervisora de Estamparia',
-    authorizedRoles: ['superadmin', 'tenant_admin', 'sec-estampagem-supervisor'],
-    color: 'from-amber-600 to-orange-600'
-  },
-  {
-    id: 'sec-montagem',
-    code: 'MON',
-    name: 'Montagem & Solda Robotizada',
-    description: 'Células de solda MIG/MAG, montagem mecânica e testes finais.',
-    managerName: 'Rodrigo Santoro',
-    managerRole: 'Coordenador de Montagem',
-    authorizedRoles: ['superadmin', 'tenant_admin', 'sec-montagem-supervisor'],
-    color: 'from-emerald-600 to-teal-600'
-  }
-];
-
 const INITIAL_STATIONS: SkillStation[] = [
   // Usinagem
-  { id: 'st-cnc-4e', sectorId: 'sec-usinagem', name: 'Torno CNC 4 Eixos', category: 'Torneamento', minOperatorsRequired: 2, targetLevel: 3 },
-  { id: 'st-cnc-cent', sectorId: 'sec-usinagem', name: 'Centro de Usinagem Vertical', category: 'Fresamento', minOperatorsRequired: 2, targetLevel: 3 },
-  { id: 'st-retifica', sectorId: 'sec-usinagem', name: 'Retífica Cilíndrica CNC', category: 'Acabamento', minOperatorsRequired: 1, targetLevel: 3 },
-  { id: 'st-metrologia', sectorId: 'sec-usinagem', name: 'Controle Tridimensional (MMC)', category: 'Qualidade', minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-cnc-4e', sectorId: 'sec-usinagem', name: 'Torno CNC 4 Eixos', category: 'Torneamento', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-cnc-cent', sectorId: 'sec-usinagem', name: 'Centro de Usinagem Vertical', category: 'Fresamento', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-retifica', sectorId: 'sec-usinagem', name: 'Retífica Cilíndrica CNC', category: 'Acabamento', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 1, targetLevel: 3 },
+  { id: 'st-metrologia', sectorId: 'sec-usinagem', name: 'Controle Tridimensional (MMC)', category: 'Qualidade', skillType: 'hard_skill', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-usi-twi', sectorId: 'sec-usinagem', name: 'Didática de Treinamento TWI', category: 'Comportamental & Liderança', skillType: 'soft_skill', isCriticalForLineStop: false, minOperatorsRequired: 1, targetLevel: 3 },
   
   // Estamparia
-  { id: 'st-prensa-200', sectorId: 'sec-estampagem', name: 'Prensa Hidráulica 200T', category: 'Estamparia', minOperatorsRequired: 2, targetLevel: 3 },
-  { id: 'st-prensa-500', sectorId: 'sec-estampagem', name: 'Prensa Mecânica Excêntrica 500T', category: 'Estamparia Pesada', minOperatorsRequired: 2, targetLevel: 3 },
-  { id: 'st-corte-laser', sectorId: 'sec-estampagem', name: 'Corte a Laser Fibra Óptica', category: 'Corte', minOperatorsRequired: 1, targetLevel: 3 },
+  { id: 'st-prensa-200', sectorId: 'sec-estampagem', name: 'Prensa Hidráulica 200T', category: 'Estamparia', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-prensa-500', sectorId: 'sec-estampagem', name: 'Prensa Mecânica Excêntrica 500T', category: 'Estamparia Pesada', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-corte-laser', sectorId: 'sec-estampagem', name: 'Corte a Laser Fibra Óptica', category: 'Corte', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 1, targetLevel: 3 },
+  { id: 'st-est-loto', sectorId: 'sec-estampagem', name: 'LOTO & Bloqueio de Energias', category: 'Segurança Industrial', skillType: 'hard_skill', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-est-twi', sectorId: 'sec-estampagem', name: 'Didática de Treinamento TWI', category: 'Comportamental & Liderança', skillType: 'soft_skill', isCriticalForLineStop: false, minOperatorsRequired: 1, targetLevel: 3 },
 
   // Montagem
-  { id: 'st-solda-mig', sectorId: 'sec-montagem', name: 'Célula de Solda Robotizada MIG', category: 'Soldagem', minOperatorsRequired: 2, targetLevel: 3 },
-  { id: 'st-bancada-mont', sectorId: 'sec-montagem', name: 'Bancada Montagem Eletromecânica', category: 'Montagem', minOperatorsRequired: 3, targetLevel: 3 },
-  { id: 'st-teste-estanc', sectorId: 'sec-montagem', name: 'Teste de Estanqueidade & Pressão', category: 'Qualidade Final', minOperatorsRequired: 2, targetLevel: 3 }
+  { id: 'st-solda-mig', sectorId: 'sec-montagem', name: 'Célula de Solda Robotizada MIG', category: 'Soldagem', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-bancada-mont', sectorId: 'sec-montagem', name: 'Bancada Montagem Eletromecânica', category: 'Montagem', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 3, targetLevel: 3 },
+  { id: 'st-teste-estanc', sectorId: 'sec-montagem', name: 'Teste de Estanqueidade & Pressão', category: 'Qualidade Final', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-mon-loto', sectorId: 'sec-montagem', name: 'LOTO & Bloqueio de Energias', category: 'Segurança Industrial', skillType: 'hard_skill', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
+  { id: 'st-mon-comunicacao', sectorId: 'sec-montagem', name: 'Comunicação Assertiva entre Turnos', category: 'Comportamental & Liderança', skillType: 'soft_skill', isCriticalForLineStop: false, minOperatorsRequired: 2, targetLevel: 3 }
 ];
 
 const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
@@ -159,7 +135,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Marcos Vinicius',
     role: 'Operador Especialista CNC',
     shift: 'Turno A',
-    skills: { 'st-cnc-4e': 4, 'st-cnc-cent': 4, 'st-retifica': 3, 'st-metrologia': 4 }
+    skills: { 'st-cnc-4e': 4, 'st-cnc-cent': 4, 'st-retifica': 3, 'st-metrologia': 4, 'st-usi-twi': 4 }
   },
   {
     employeeId: 'emp-2',
@@ -167,7 +143,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Aline Ferreira',
     role: 'Operadora de Usinagem Pleno',
     shift: 'Turno A',
-    skills: { 'st-cnc-4e': 3, 'st-cnc-cent': 2, 'st-retifica': 1, 'st-metrologia': 3 }
+    skills: { 'st-cnc-4e': 3, 'st-cnc-cent': 2, 'st-retifica': 1, 'st-metrologia': 3, 'st-usi-twi': 2 }
   },
   {
     employeeId: 'emp-3',
@@ -175,7 +151,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Felipe Alencar',
     role: 'Operador CNC Júnior',
     shift: 'Turno B',
-    skills: { 'st-cnc-4e': 2, 'st-cnc-cent': 1, 'st-retifica': 2, 'st-metrologia': 1 }
+    skills: { 'st-cnc-4e': 2, 'st-cnc-cent': 1, 'st-retifica': 2, 'st-metrologia': 1, 'st-usi-twi': 1 }
   },
   {
     employeeId: 'emp-4',
@@ -183,7 +159,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Lucas Andrade',
     role: 'Auxiliar de Usinagem',
     shift: 'Turno B',
-    skills: { 'st-cnc-4e': 1, 'st-cnc-cent': 1, 'st-retifica': 1, 'st-metrologia': 1 }
+    skills: { 'st-cnc-4e': 1, 'st-cnc-cent': 1, 'st-retifica': 1, 'st-metrologia': 1, 'st-usi-twi': 1 }
   },
 
   // Estamparia
@@ -193,7 +169,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Beatriz Lima',
     role: 'Operadora Líder de Prensas',
     shift: 'Turno A',
-    skills: { 'st-prensa-200': 4, 'st-prensa-500': 4, 'st-corte-laser': 3 }
+    skills: { 'st-prensa-200': 4, 'st-prensa-500': 4, 'st-corte-laser': 3, 'st-est-loto': 4, 'st-est-twi': 4 }
   },
   {
     employeeId: 'emp-6',
@@ -201,7 +177,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Rodrigo Santoro',
     role: 'Operador de Prensa',
     shift: 'Turno A',
-    skills: { 'st-prensa-200': 3, 'st-prensa-500': 2, 'st-corte-laser': 1 }
+    skills: { 'st-prensa-200': 3, 'st-prensa-500': 2, 'st-corte-laser': 1, 'st-est-loto': 3, 'st-est-twi': 2 }
   },
   {
     employeeId: 'emp-7',
@@ -209,7 +185,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Claudio Roberto',
     role: 'Operador de Corte',
     shift: 'Turno B',
-    skills: { 'st-prensa-200': 1, 'st-prensa-500': 1, 'st-corte-laser': 4 }
+    skills: { 'st-prensa-200': 1, 'st-prensa-500': 1, 'st-corte-laser': 4, 'st-est-loto': 2, 'st-est-twi': 1 }
   },
 
   // Montagem
@@ -219,7 +195,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Daniel Silveira',
     role: 'Soldador Especialista',
     shift: 'Turno A',
-    skills: { 'st-solda-mig': 4, 'st-bancada-mont': 3, 'st-teste-estanc': 3 }
+    skills: { 'st-solda-mig': 4, 'st-bancada-mont': 3, 'st-teste-estanc': 3, 'st-mon-loto': 2, 'st-mon-comunicacao': 4 }
   },
   {
     employeeId: 'emp-9',
@@ -227,7 +203,7 @@ const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
     employeeName: 'Vanessa Castro',
     role: 'Montadora Eletromecânica',
     shift: 'Turno A',
-    skills: { 'st-solda-mig': 1, 'st-bancada-mont': 4, 'st-teste-estanc': 3 }
+    skills: { 'st-solda-mig': 1, 'st-bancada-mont': 4, 'st-teste-estanc': 3, 'st-mon-loto': 1, 'st-mon-comunicacao': 2 }
   }
 ];
 
@@ -373,27 +349,61 @@ const INITIAL_SUCCESSION_PLANS: SuccessionPlan[] = [
   }
 ];
 
+const subscribeTintedGlass = (callback: () => void) => {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('aptis-glass-mode-change', callback);
+  window.addEventListener('storage', callback);
+  return () => {
+    window.removeEventListener('aptis-glass-mode-change', callback);
+    window.removeEventListener('storage', callback);
+  };
+};
+
+const getTintedGlassSnapshot = () => {
+  if (typeof window === 'undefined') return true;
+  const saved = localStorage.getItem('aptis_tinted_glass_mode');
+  return saved !== null ? saved === 'true' : true;
+};
+
+const getTintedGlassServerSnapshot = () => true;
+
 export default function SkillsMatrixModule() {
-  const { currentTenant, currentUser } = useTenant();
+  const { currentTenant, effectiveUser, isSimulatingManager, simulateAreaManager } = useTenant();
+  const isPlantAdmin = isPlantAdminUser(effectiveUser);
 
   // Multi-Sector State unificado da planta
-  const { sectors: plantSectors, addSector } = usePlantSectors();
-  const safePlantSectors = Array.isArray(plantSectors) && plantSectors.length > 0 
-    ? plantSectors 
-    : DEFAULT_PLANT_SECTORS;
+  const { sectors: plantSectors } = usePlantSectors();
+  const safePlantSectors = useMemo(
+    () => (Array.isArray(plantSectors) && plantSectors.length > 0 ? plantSectors : DEFAULT_PLANT_SECTORS),
+    [plantSectors]
+  );
 
-  const sectors: Sector[] = safePlantSectors.map((ps: PlantSector) => ({
-    id: ps.id,
-    code: ps.code,
-    name: ps.name,
-    description: ps.description || `Matriz de Habilidades do setor ${ps.name}`,
-    managerName: ps.managerName || 'Supervisor Responsável',
-    managerRole: ps.managerRole || 'Supervisor de Operações',
-    authorizedRoles: ['superadmin', 'tenant_admin', `${ps.id}-supervisor`],
-    color: ps.color || 'from-blue-600 to-indigo-600'
-  }));
+  const sectors: Sector[] = useMemo(
+    () =>
+      safePlantSectors.map((ps: PlantSector) => ({
+        id: ps.id,
+        code: ps.code,
+        name: ps.name,
+        description: ps.description || `Matriz de Habilidades do setor ${ps.name}`,
+        managerName: ps.managerName || 'Supervisor Responsável',
+        managerRole: ps.managerRole || 'Supervisor de Operações',
+        authorizedRoles: ['superadmin', 'tenant_admin', `${ps.id}-supervisor`],
+        color: ps.color || 'from-blue-600 to-indigo-600'
+      })),
+    [safePlantSectors]
+  );
 
-  const defaultFallbackSector: Sector = sectors[0] || {
+  // Isolamento Estrito de Setores: Gestor de Área só enxerga os setores vinculados ao seu perfil
+  const accessibleSectors = useMemo(
+    () => getAccessibleSectors(sectors, effectiveUser),
+    [sectors, effectiveUser]
+  );
+  const accessibleSectorIdSet = useMemo(
+    () => new Set(accessibleSectors.map(s => s.id)),
+    [accessibleSectors]
+  );
+
+  const defaultFallbackSector: Sector = accessibleSectors[0] || sectors[0] || {
     id: 'sec-usinagem',
     code: 'USI',
     name: 'Usinagem CNC & Precisão',
@@ -405,11 +415,11 @@ export default function SkillsMatrixModule() {
   };
 
   const [selectedSectorId, setSelectedSectorId] = useState<string>(safePlantSectors[0]?.id || 'sec-usinagem');
+
   const [stations, setStations] = useTenantStorage<SkillStation[]>('skills-matrix', 'stations', INITIAL_STATIONS);
   const [employees, setEmployees] = useTenantStorage<EmployeeSkillRecord[]>('skills-matrix', 'employees', INITIAL_EMPLOYEES);
   const [trainingActions, setTrainingActions] = useTenantStorage<TrainingAction[]>('skills-matrix', 'actions', INITIAL_ACTIONS);
   const [successionPlans, setSuccessionPlans] = useTenantStorage<SuccessionPlan[]>('skills-matrix', 'succession', INITIAL_SUCCESSION_PLANS);
-  const [isLoaded, setIsLoaded] = useState(true);
 
   // View & Presentation State - Default to 'dashboard' for dynamic management overview
   const [activeTab, setActiveTab] = useState<ViewTab>('dashboard');
@@ -417,20 +427,12 @@ export default function SkillsMatrixModule() {
   const [highlightGaps, setHighlightGaps] = useState<boolean>(false);
   const [search, setSearch] = useState('');
   const [selectedShift, setSelectedShift] = useState('all');
-  const [tintedGlass, setTintedGlass] = useState<boolean>(true);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('aptis_tinted_glass_mode');
-    if (saved !== null) {
-      setTintedGlass(saved === 'true');
-    }
-    const handleModeChange = (e: Event) => {
-      const customEvent = e as CustomEvent<boolean>;
-      setTintedGlass(customEvent.detail);
-    };
-    window.addEventListener('aptis-glass-mode-change', handleModeChange);
-    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
-  }, []);
+  const [stationTypeFilter, setStationTypeFilter] = useState<'all' | SkillType>('all');
+  const tintedGlass = useSyncExternalStore(
+    subscribeTintedGlass,
+    getTintedGlassSnapshot,
+    getTintedGlassServerSnapshot
+  );
 
   // Modals
   const [isSectorModalOpen, setIsSectorModalOpen] = useState(false);
@@ -440,19 +442,22 @@ export default function SkillsMatrixModule() {
   const [isSuccessionModalOpen, setIsSuccessionModalOpen] = useState(false);
 
   // Importação de Excel Inteligente
-  const handleImportSkillsExcel = (rows: Record<string, any>[]) => {
+  const handleImportSkillsExcel = (rows: Record<string, unknown>[]) => {
     const updatedStations = [...stations];
     const updatedEmployees = [...employees];
 
     rows.forEach((row, idx) => {
-      const name = (row.employeeName || '').trim();
+      const name = String(row.employeeName || '').trim();
       if (!name) return;
 
-      const rowSectorName = (row.sector || '').trim().toLowerCase();
-      const matchedSector = sectors.find(s => s.name.toLowerCase() === rowSectorName || s.code.toLowerCase() === rowSectorName) || activeSector;
+      const rowSectorName = String(row.sector || '').trim().toLowerCase();
+      const matchedCandidate = accessibleSectors.find(
+        s => s.name.toLowerCase() === rowSectorName || s.code.toLowerCase() === rowSectorName
+      );
+      const matchedSector = matchedCandidate || activeSector;
       const targetSectorId = matchedSector.id;
 
-      const stationName = (row.station || '').trim();
+      const stationName = String(row.station || '').trim();
       let targetStationId = '';
       if (stationName) {
         let foundStation = updatedStations.find(st => st.sectorId === targetSectorId && st.name.toLowerCase() === stationName.toLowerCase());
@@ -481,8 +486,9 @@ export default function SkillsMatrixModule() {
 
       const empId = row.employeeId ? String(row.employeeId).trim() : `emp-imp-${Date.now()}-${idx}`;
       const existingIdx = updatedEmployees.findIndex(e => 
-        (e.employeeId && e.employeeId === empId) || 
-        e.employeeName.toLowerCase() === name.toLowerCase()
+        (isPlantAdmin || accessibleSectorIdSet.has(e.sectorId)) &&
+        ((e.employeeId && e.employeeId === empId) || 
+        e.employeeName.toLowerCase() === name.toLowerCase())
       );
 
       if (existingIdx >= 0) {
@@ -519,14 +525,38 @@ export default function SkillsMatrixModule() {
     };
   };
 
-  const activeSector: Sector = sectors.find(s => s.id === selectedSectorId) || sectors[0] || defaultFallbackSector;
+  const activeSector: Sector =
+    accessibleSectors.find(s => s.id === selectedSectorId) ||
+    accessibleSectors[0] ||
+    defaultFallbackSector;
 
-  // Postos e colaboradores isolados do setor ativo (com fallback de array)
-  const safeStations = Array.isArray(stations) ? stations : [];
-  const safeEmployees = Array.isArray(employees) ? employees : [];
+  // Postos e colaboradores isolados do setor ativo (com fallback de array memoizado)
+  const safeStations = useMemo(() => (Array.isArray(stations) ? stations : []), [stations]);
+  const safeEmployees = useMemo(() => (Array.isArray(employees) ? employees : []), [employees]);
 
   const sectorStations = safeStations.filter(s => s && s.sectorId === activeSector.id);
+  const displayedSectorStations =
+    stationTypeFilter === 'all'
+      ? sectorStations
+      : sectorStations.filter(s => getEffectiveSkillType(s) === stationTypeFilter);
   const sectorEmployees = safeEmployees.filter(e => e && e.sectorId === activeSector.id);
+
+  // Catálogo sanitizado da fábrica inteira (para sugestão anti-duplicidade ao criar skill)
+  const plantSkillCatalog = useMemo(
+    () => buildPlantSkillCatalog(safeStations, sectors),
+    [safeStations, sectors]
+  );
+
+  // Escopo visível no Dashboard (Admin vê toda a planta; Gestor vê apenas seus setores)
+  const dashboardStations = isPlantAdmin
+    ? safeStations
+    : safeStations.filter(s => accessibleSectorIdSet.has(s.sectorId));
+  const dashboardEmployees = isPlantAdmin
+    ? safeEmployees
+    : safeEmployees.filter(e => accessibleSectorIdSet.has(e.sectorId));
+  const dashboardSuccession = isPlantAdmin
+    ? successionPlans
+    : successionPlans.filter(p => accessibleSectorIdSet.has(p.sectorId));
 
   const filteredEmployees = sectorEmployees.filter(emp => {
     if (!emp) return false;
@@ -549,6 +579,22 @@ export default function SkillsMatrixModule() {
           skills: {
             ...emp.skills,
             [stationId]: nextLvl
+          }
+        };
+      }
+      return emp;
+    }));
+  };
+
+  // Promoção direta para nível alvo (usada ao aprovar conclusão no plano de treinamento)
+  const handleSetSkillLevel = (empId: string, stationId: string, level: SkillLevel) => {
+    setEmployees(prev => prev.map(emp => {
+      if (emp.employeeId === empId) {
+        return {
+          ...emp,
+          skills: {
+            ...emp.skills,
+            [stationId]: level
           }
         };
       }
@@ -601,6 +647,7 @@ export default function SkillsMatrixModule() {
     : 0;
 
   const criticalStationsCount = sectorStations.filter(st => {
+    if (!isCriticalStation(st)) return false;
     const qualified = sectorEmployees.filter(emp => (emp.skills[st.id] || 0) >= 3).length;
     return qualified < st.minOperatorsRequired;
   }).length;
@@ -657,6 +704,13 @@ export default function SkillsMatrixModule() {
       beadGradient: 'linear-gradient(135deg, #22d3ee 0%, #0891b2 100%)'
     },
     {
+      id: 'trainers_directory',
+      label: 'Banco de Multiplicadores',
+      icon: Globe,
+      glowColor: 'rgba(16, 185, 129, 0.58)',
+      beadGradient: 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
+    },
+    {
       id: 'succession',
       label: 'Matriz de Sucessão',
       icon: UserCheck,
@@ -676,12 +730,40 @@ export default function SkillsMatrixModule() {
       id: 'gestao_a_vista',
       label: 'Modo TV Chão de Fábrica',
       icon: Maximize2,
-      glowColor: 'rgba(16, 185, 129, 0.58)',
-      beadGradient: 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
+      glowColor: 'rgba(14, 165, 233, 0.58)',
+      beadGradient: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)'
     }
   ];
 
   const activeMeniscusTab = skillsTabs.find(t => t.id === activeTab) || skillsTabs[0];
+
+  // Se for Gestor de Área sem nenhum setor vinculado, bloqueia qualquer exposição de matrizes
+  if (!isPlantAdmin && accessibleSectors.length === 0) {
+    return (
+      <div className={`rounded-3xl border p-10 text-center space-y-4 ${
+        tintedGlass ? 'aptis-glass-dark border-white/10 text-white' : 'aptis-glass-light text-slate-900'
+      }`}>
+        <div className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center border ${
+          tintedGlass ? 'bg-amber-500/20 border-amber-500/35 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-600'
+        }`}>
+          <Lock className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-black">Nenhuma Área Vinculada ao Seu Perfil</h2>
+        <p className={`text-sm max-w-lg mx-auto ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+          Por política de governança e privacidade, você só visualiza a matriz de habilidades dos setores atribuídos ao seu usuário ({effectiveUser.email}). Solicite ao Administrador da Planta que vincule suas áreas em <strong>Áreas &amp; Gestores</strong>.
+        </p>
+        {isSimulatingManager && (
+          <button
+            type="button"
+            onClick={() => simulateAreaManager(null)}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+          >
+            Sair da Simulação e Voltar para Admin
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 w-full">
@@ -798,18 +880,24 @@ export default function SkillsMatrixModule() {
             ) : (
               <button
                 onClick={() => {
-                  if (
-                    window.confirm(
-                      'Tem certeza que deseja zerar a matriz de habilidades, operadores e plano de sucessão?'
-                    )
-                  ) {
-                    setStations([]);
-                    setEmployees([]);
-                    setTrainingActions([]);
-                    setSuccessionPlans([]);
+                  const confirmMsg = isPlantAdmin
+                    ? 'Tem certeza que deseja zerar a matriz de habilidades, operadores e plano de sucessão?'
+                    : `Tem certeza que deseja limpar os dados do setor ${activeSector.name}? Os demais setores não serão afetados.`;
+                  if (window.confirm(confirmMsg)) {
+                    if (isPlantAdmin) {
+                      setStations([]);
+                      setEmployees([]);
+                      setTrainingActions([]);
+                      setSuccessionPlans([]);
+                    } else {
+                      setStations(prev => prev.filter(s => s.sectorId !== activeSector.id));
+                      setEmployees(prev => prev.filter(e => e.sectorId !== activeSector.id));
+                      setTrainingActions(prev => prev.filter(a => a.sectorId !== activeSector.id));
+                      setSuccessionPlans(prev => prev.filter(p => p.sectorId !== activeSector.id));
+                    }
                   }
                 }}
-                title="Limpar matriz de competências e sucessão"
+                title={isPlantAdmin ? 'Limpar matriz de competências e sucessão' : `Limpar apenas o setor ${activeSector.code}`}
                 className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs transition-colors cursor-pointer rounded-xl ${
                   tintedGlass
                     ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
@@ -817,7 +905,7 @@ export default function SkillsMatrixModule() {
                 }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Limpar Matriz
+                {isPlantAdmin ? 'Limpar Matriz' : `Limpar ${activeSector.code}`}
               </button>
             )}
 
@@ -1061,7 +1149,7 @@ export default function SkillsMatrixModule() {
           </label>
           <select
             id="sector-select"
-            value={selectedSectorId}
+            value={activeSector.id}
             onChange={e => setSelectedSectorId(e.target.value)}
             className={`text-xs font-bold bg-transparent outline-none cursor-pointer min-w-[180px] ${
               tintedGlass
@@ -1069,21 +1157,35 @@ export default function SkillsMatrixModule() {
                 : 'text-slate-900 [&>option]:bg-white [&>option]:text-slate-900'
             }`}
           >
-            {sectors.map(sec => (
+            {accessibleSectors.map(sec => (
               <option key={sec.id} value={sec.id} className="py-1">
                 {sec.name} ({sec.code})
               </option>
             ))}
           </select>
-          <button
-            onClick={() => setIsSectorModalOpen(true)}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-              tintedGlass ? 'hover:bg-white/10 text-cyan-400' : 'hover:bg-slate-100 text-blue-600'
-            }`}
-            title="Gerenciar Setores da Planta"
-          >
-            <PlusCircle className="w-4 h-4" />
-          </button>
+          {isPlantAdmin ? (
+            <button
+              onClick={() => setIsSectorModalOpen(true)}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                tintedGlass ? 'hover:bg-white/10 text-cyan-400' : 'hover:bg-slate-100 text-blue-600'
+              }`}
+              title="Gerenciar Setores & Gestores da Planta"
+            >
+              <PlusCircle className="w-4 h-4" />
+            </button>
+          ) : (
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                tintedGlass
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              }`}
+              title="Visualização restrita às áreas vinculadas ao seu perfil"
+            >
+              <Lock className="w-3 h-3" />
+              Área Restrita
+            </span>
+          )}
         </div>
       </div>
 
@@ -1092,14 +1194,27 @@ export default function SkillsMatrixModule() {
          ===================================================================== */}
       {activeTab === 'dashboard' ? (
         <SkillsDashboardPanel
-          sectors={sectors}
+          sectors={accessibleSectors}
           activeSector={activeSector}
-          stations={stations}
-          employees={employees}
-          successionPlans={successionPlans}
+          stations={dashboardStations}
+          employees={dashboardEmployees}
+          successionPlans={dashboardSuccession}
           trainingActions={trainingActions}
+          canViewAllSectors={isPlantAdmin}
           onSelectSector={(sectorId) => setSelectedSectorId(sectorId)}
           onNavigateTab={(tab) => setActiveTab(tab)}
+          tintedGlass={tintedGlass}
+        />
+      ) : activeTab === 'trainers_directory' ? (
+        <PlantTrainersDirectoryPanel
+          sectors={sectors}
+          activeSector={activeSector}
+          allStations={safeStations}
+          allEmployees={safeEmployees}
+          sectorStations={sectorStations}
+          sectorEmployees={sectorEmployees}
+          onAddTrainingAction={handleAddTrainingAction}
+          onAddStation={handleAddStation}
           tintedGlass={tintedGlass}
         />
       ) : activeTab === 'succession' ? (
@@ -1117,16 +1232,56 @@ export default function SkillsMatrixModule() {
           sector={activeSector}
           stations={sectorStations}
           employees={sectorEmployees}
+          allPlantStations={safeStations}
+          allPlantEmployees={safeEmployees}
+          allSectors={sectors}
           trainingActions={trainingActions}
           onAddTrainingAction={handleAddTrainingAction}
           onUpdateActionStatus={handleUpdateActionStatus}
           onDeleteTrainingAction={handleDeleteTrainingAction}
           onCycleLevel={handleCycleLevel}
+          onSetSkillLevel={handleSetSkillLevel}
+          onOpenTrainersDirectory={() => setActiveTab('trainers_directory')}
           tintedGlass={tintedGlass}
         />
       ) : (
-        /* Matriz Operacional ILUO / Gestão à Vista */
+        /* Matriz Operacional ILUO / Modo TV Chão de Fábrica */
         <div className="space-y-4">
+          {activeTab === 'gestao_a_vista' && (
+            <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              tintedGlass
+                ? 'bg-gradient-to-r from-slate-900/90 via-cyan-950/50 to-slate-900/90 border-cyan-500/30 text-white'
+                : 'bg-gradient-to-r from-cyan-50 to-blue-50 border-cyan-200 text-slate-900'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <Radio className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">
+                    Gestão à Vista • Modo TV Chão de Fábrica
+                  </div>
+                  <h3 className="text-sm font-black">
+                    Painel da Célula: {activeSector.name} ({activeSector.code}) • Líder: {activeSector.managerName}
+                  </h3>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-xs font-bold">
+                <span className={`px-3 py-1.5 rounded-xl border ${
+                  tintedGlass ? 'bg-white/10 border-white/15' : 'bg-white border-slate-200'
+                }`}>
+                  Polivalência: {polyvalentRate}%
+                </span>
+                <span className={`px-3 py-1.5 rounded-xl border ${
+                  criticalStationsCount > 0
+                    ? tintedGlass ? 'bg-rose-500/20 border-rose-500/35 text-rose-300' : 'bg-rose-50 border-rose-200 text-rose-700'
+                    : tintedGlass ? 'bg-emerald-500/20 border-emerald-500/35 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                }`}>
+                  {criticalStationsCount > 0 ? `${criticalStationsCount} Gargalo(s) de Linha` : 'Linha 100% Coberta'}
+                </span>
+              </div>
+            </div>
+          )}
           {/* Barra de Busca, Filtro de Turno e Controles Visuais */}
           <div
             className={`p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 ${
@@ -1149,6 +1304,27 @@ export default function SkillsMatrixModule() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+              {/* Filtro de Natureza da Competência */}
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${
+                  tintedGlass ? 'aptis-glass-subcard text-white' : 'bg-white border border-slate-200 text-slate-800'
+                }`}
+              >
+                <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>Tipo:</span>
+                <select
+                  value={stationTypeFilter}
+                  onChange={e => setStationTypeFilter(e.target.value as 'all' | SkillType)}
+                  className={`bg-transparent outline-none cursor-pointer font-bold ${
+                    tintedGlass ? 'text-cyan-300 [&>option]:bg-slate-900' : 'text-slate-900'
+                  }`}
+                >
+                  <option value="all">Todas (Postos, Hard &amp; Soft)</option>
+                  <option value="hard_station">Postos / Máquinas</option>
+                  <option value="hard_skill">Hard Skills</option>
+                  <option value="soft_skill">Soft Skills</option>
+                </select>
+              </div>
+
               {/* Filtro de Turno */}
               <div
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${
@@ -1282,14 +1458,42 @@ export default function SkillsMatrixModule() {
               }`}
             >
               <p className={`text-sm ${tintedGlass ? 'text-slate-400' : 'text-slate-500'}`}>
-                Nenhum posto de trabalho cadastrado para {activeSector.name}.
+                Nenhum posto ou competência cadastrada para {activeSector.name}.
               </p>
               <button
                 onClick={() => setIsStationModalOpen(true)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer"
               >
-                Cadastrar Primeiro Posto
+                Cadastrar Primeiro Posto / Competência
               </button>
+            </div>
+          ) : displayedSectorStations.length === 0 ? (
+            <div
+              className={`rounded-3xl border p-10 text-center space-y-3 ${
+                tintedGlass ? 'aptis-glass-dark text-white border-white/10' : 'aptis-glass-light text-slate-900'
+              }`}
+            >
+              <p className={`text-sm ${tintedGlass ? 'text-slate-300' : 'text-slate-600'}`}>
+                Nenhuma competência do tipo selecionado cadastrada em {activeSector.name}.
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStationTypeFilter('all')}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold border cursor-pointer ${
+                    tintedGlass ? 'aptis-glass-subcard text-white' : 'bg-white border-slate-300 text-slate-800'
+                  }`}
+                >
+                  Exibir Todas as Competências
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsStationModalOpen(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Cadastrar Nova Competência
+                </button>
+              </div>
             </div>
           ) : (
             <div
@@ -1319,23 +1523,35 @@ export default function SkillsMatrixModule() {
                       <th className="py-3.5 px-3 font-semibold text-xs uppercase tracking-wider text-center w-24">
                         Turno
                       </th>
-                      {sectorStations.map(st => (
-                        <th
-                          key={st.id}
-                          className={`py-3.5 px-3 font-semibold text-xs text-center border-l min-w-[150px] ${
-                            tintedGlass ? 'border-white/10' : 'border-slate-200'
-                          }`}
-                        >
-                          <div className={`font-bold ${tintedGlass ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {st.name}
-                          </div>
-                          <div className={`text-[10px] font-normal mt-0.5 ${
-                            tintedGlass ? 'text-cyan-300' : 'text-blue-600'
-                          }`}>
-                            Mín. req: <strong>{st.minOperatorsRequired}</strong> autônomos
-                          </div>
-                        </th>
-                      ))}
+                      {displayedSectorStations.map(st => {
+                        const typeMeta = getSkillTypeMeta(getEffectiveSkillType(st));
+                        return (
+                          <th
+                            key={st.id}
+                            className={`py-3.5 px-3 font-semibold text-xs text-center border-l min-w-[155px] ${
+                              tintedGlass ? 'border-white/10' : 'border-slate-200'
+                            }`}
+                          >
+                            <div className="mb-1 flex items-center justify-center gap-1">
+                              <span
+                                className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded border ${
+                                  tintedGlass ? typeMeta.darkBadge : typeMeta.lightBadge
+                                }`}
+                              >
+                                {typeMeta.shortLabel}
+                              </span>
+                            </div>
+                            <div className={`font-bold ${tintedGlass ? 'text-slate-100' : 'text-slate-900'}`}>
+                              {st.name}
+                            </div>
+                            <div className={`text-[10px] font-normal mt-0.5 ${
+                              tintedGlass ? 'text-cyan-300' : 'text-blue-600'
+                            }`}>
+                              Meta: <strong>{st.minOperatorsRequired}</strong> autônomos
+                            </div>
+                          </th>
+                        );
+                      })}
                       <th
                         className={`py-3.5 px-3 font-semibold text-xs uppercase tracking-wider text-center border-l w-28 ${
                           tintedGlass ? 'border-white/10' : 'border-slate-200'
@@ -1393,7 +1609,7 @@ export default function SkillsMatrixModule() {
                               </span>
                             </td>
 
-                            {sectorStations.map(st => {
+                            {displayedSectorStations.map(st => {
                               const lvl = emp.skills[st.id] || 1;
                               const info = SKILL_LEVEL_DEFINITIONS[lvl];
                               const isGap = highlightGaps && lvl < (st.targetLevel || 3);
@@ -1479,8 +1695,9 @@ export default function SkillsMatrixModule() {
                         Operadores Autônomos (N3 ou N4)
                       </td>
                       <td className="py-3.5 px-3 text-center">-</td>
-                      {sectorStations.map(st => {
+                      {displayedSectorStations.map(st => {
                         const count = sectorEmployees.filter(emp => (emp.skills[st.id] || 0) >= 3).length;
+                        const isLineCritical = isCriticalStation(st);
                         const isUnder = count < st.minOperatorsRequired;
                         return (
                           <td
@@ -1488,13 +1705,17 @@ export default function SkillsMatrixModule() {
                             className={`py-3.5 px-3 text-center border-l ${
                               tintedGlass ? 'border-white/10' : 'border-slate-200'
                             } ${
-                              isUnder
+                              isUnder && isLineCritical
                                 ? tintedGlass
                                   ? 'bg-rose-500/15 text-rose-300 font-bold'
                                   : 'bg-rose-50 text-rose-700 font-bold'
-                                : tintedGlass
-                                  ? 'text-white'
-                                  : 'text-slate-900'
+                                : isUnder
+                                  ? tintedGlass
+                                    ? 'bg-purple-500/15 text-purple-300 font-bold'
+                                    : 'bg-purple-50 text-purple-700 font-bold'
+                                  : tintedGlass
+                                    ? 'text-white'
+                                    : 'text-slate-900'
                             }`}
                           >
                             <div className="font-bold">
@@ -1503,12 +1724,16 @@ export default function SkillsMatrixModule() {
                             {isUnder && (
                               <span
                                 className={`inline-block text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full mt-0.5 border ${
-                                  tintedGlass
-                                    ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
-                                    : 'bg-rose-100 text-rose-700 border-rose-200'
+                                  isLineCritical
+                                    ? tintedGlass
+                                      ? 'bg-rose-500/20 text-rose-300 border-rose-400/35'
+                                      : 'bg-rose-100 text-rose-700 border-rose-200'
+                                    : tintedGlass
+                                      ? 'bg-purple-500/20 text-purple-300 border-purple-400/35'
+                                      : 'bg-purple-100 text-purple-700 border-purple-200'
                                 }`}
                               >
-                                Gargalo
+                                {isLineCritical ? 'Gargalo' : 'Meta Dev.'}
                               </span>
                             )}
                           </td>
@@ -1547,6 +1772,7 @@ export default function SkillsMatrixModule() {
         isOpen={isStationModalOpen}
         onClose={() => setIsStationModalOpen(false)}
         sector={activeSector}
+        plantSkillCatalog={plantSkillCatalog}
         onAddStation={handleAddStation}
         tintedGlass={tintedGlass}
       />

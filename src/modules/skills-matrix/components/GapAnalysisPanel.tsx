@@ -1,34 +1,48 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Sector, SkillStation, EmployeeSkillRecord, TrainingAction, SkillLevel } from '../types';
+import {
+  CrossSectorTrainerMatch,
+  findCrossSectorTrainers,
+  getEffectiveSkillType,
+  getSkillTypeMeta,
+  isCriticalStation
+} from '../skill-helpers';
 import { 
-  AlertTriangle, 
   CheckCircle2, 
   ArrowRight, 
   Sparkles, 
-  Calendar, 
-  UserCheck, 
-  Clock, 
   Plus, 
   ShieldAlert,
   GraduationCap,
   Trash2,
   Settings2,
   X,
-  Check
+  Check,
+  Globe
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+
+const getFutureIsoDate = (daysAhead: number) =>
+  new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+const createTrainingActionId = () => `act-${Date.now().toString().slice(-6)}`;
 
 interface GapAnalysisPanelProps {
   sector: Sector;
   stations: SkillStation[];
   employees: EmployeeSkillRecord[];
+  allPlantStations?: SkillStation[];
+  allPlantEmployees?: EmployeeSkillRecord[];
+  allSectors?: Sector[];
   trainingActions: TrainingAction[];
   onAddTrainingAction: (action: TrainingAction) => void;
   onUpdateActionStatus: (actionId: string, status: TrainingAction['status']) => void;
   onDeleteTrainingAction: (actionId: string) => void;
   onCycleLevel: (empId: string, stationId: string) => void;
+  onSetSkillLevel?: (empId: string, stationId: string, level: SkillLevel) => void;
+  onOpenTrainersDirectory?: () => void;
   tintedGlass?: boolean;
 }
 
@@ -36,11 +50,16 @@ export function GapAnalysisPanel({
   sector,
   stations,
   employees,
+  allPlantStations,
+  allPlantEmployees,
+  allSectors,
   trainingActions,
   onAddTrainingAction,
   onUpdateActionStatus,
   onDeleteTrainingAction,
   onCycleLevel,
+  onSetSkillLevel,
+  onOpenTrainersDirectory,
   tintedGlass = false
 }: GapAnalysisPanelProps) {
   // Parâmetros customizados por card: stationId -> { operatorId, mentorId, scheduledDate, isCustomized }
@@ -60,7 +79,13 @@ export function GapAnalysisPanel({
   const [modalScheduledDate, setModalScheduledDate] = useState<string>('');
   const [modalNotes, setModalNotes] = useState<string>('');
 
-  // Análise de postos críticos
+  const [defaultFutureDate] = useState<string>(() => getFutureIsoDate(30));
+
+  const plantStationsSource = useMemo(() => allPlantStations || stations, [allPlantStations, stations]);
+  const plantEmployeesSource = useMemo(() => allPlantEmployees || employees, [allPlantEmployees, employees]);
+  const plantSectorsSource = useMemo(() => allSectors || [sector], [allSectors, sector]);
+
+  // Análise de postos e competências abaixo da meta
   const criticalStations = stations.map(station => {
     const autonomous = employees.filter(emp => (emp.skills[station.id] || 0) >= 3);
     const deficit = Math.max(0, station.minOperatorsRequired - autonomous.length);
@@ -68,35 +93,132 @@ export function GapAnalysisPanel({
     const candidatesN1 = employees.filter(emp => (emp.skills[station.id] || 0) === 1);
     const otherCandidates = employees.filter(emp => (emp.skills[station.id] || 0) < 3);
     const mentors = employees.filter(emp => (emp.skills[station.id] || 0) === 4);
+    const crossSectorMentors = findCrossSectorTrainers(
+      station,
+      sector.id,
+      plantStationsSource,
+      plantEmployeesSource,
+      plantSectorsSource
+    );
+    const compatibleCrossMentors = crossSectorMentors.filter(
+      m => m.matchQuality === 'exact' || m.matchQuality === 'related'
+    );
 
     return {
       station,
+      isLineCritical: isCriticalStation(station),
       autonomousCount: autonomous.length,
       deficit,
       isCritical: deficit > 0,
       candidatesN2,
       candidatesN1,
       otherCandidates,
-      mentors
+      mentors,
+      crossSectorMentors,
+      compatibleCrossMentors
     };
   });
 
   const criticalOnly = criticalStations.filter(cs => cs.isCritical);
 
-  // Obter configuração ativa do card (com defaults inteligentes)
+  const crossMentorsForModal = useMemo(() => {
+    if (!activeConfigStation) return [];
+    return findCrossSectorTrainers(
+      activeConfigStation,
+      sector.id,
+      plantStationsSource,
+      plantEmployeesSource,
+      plantSectorsSource
+    );
+  }, [activeConfigStation, sector.id, plantStationsSource, plantEmployeesSource, plantSectorsSource]);
+
+  const resolveMentorDetails = (
+    mentorValue: string,
+    crossMentorsList: CrossSectorTrainerMatch[]
+  ): {
+    mentorId: string;
+    mentorName: string;
+    mentorSectorId?: string;
+    mentorSectorName?: string;
+    mentorOrigin: 'internal' | 'cross_sector' | 'supervisor';
+  } => {
+    if (!mentorValue || mentorValue === 'supervisor') {
+      return {
+        mentorId: 'supervisor',
+        mentorName: `Supervisor (${sector.managerName})`,
+        mentorSectorId: sector.id,
+        mentorSectorName: sector.name,
+        mentorOrigin: 'supervisor'
+      };
+    }
+
+    if (mentorValue.startsWith('cross::')) {
+      const empId = mentorValue.replace('cross::', '');
+      const foundCross =
+        crossMentorsList.find(m => m.employeeId === empId) ||
+        plantEmployeesSource
+          .filter(e => e.employeeId === empId)
+          .map(e => {
+            const sec = plantSectorsSource.find(s => s.id === e.sectorId);
+            return {
+              employeeId: e.employeeId,
+              employeeName: e.employeeName,
+              sectorId: e.sectorId,
+              sectorCode: sec?.code || 'PLANTA',
+              sectorName: sec?.name || 'Outra Área'
+            };
+          })[0];
+
+      if (foundCross) {
+        return {
+          mentorId: foundCross.employeeId,
+          mentorName: `${foundCross.employeeName} (${foundCross.sectorCode} • N4)`,
+          mentorSectorId: foundCross.sectorId,
+          mentorSectorName: `${foundCross.sectorName} (${foundCross.sectorCode})`,
+          mentorOrigin: 'cross_sector'
+        };
+      }
+    }
+
+    const internalMentor = employees.find(e => e.employeeId === mentorValue);
+    if (internalMentor) {
+      return {
+        mentorId: internalMentor.employeeId,
+        mentorName: internalMentor.employeeName,
+        mentorSectorId: sector.id,
+        mentorSectorName: sector.name,
+        mentorOrigin: 'internal'
+      };
+    }
+
+    return {
+      mentorId: 'supervisor',
+      mentorName: `Supervisor (${sector.managerName})`,
+      mentorSectorId: sector.id,
+      mentorSectorName: sector.name,
+      mentorOrigin: 'supervisor'
+    };
+  };
+
+  // Obter configuração ativa do card (com defaults inteligentes: N4 local -> N4 compatível da planta -> Supervisor)
   const getCardConfig = (
     stationId: string, 
     defaultCandidate?: EmployeeSkillRecord, 
-    defaultMentor?: EmployeeSkillRecord
+    defaultMentor?: EmployeeSkillRecord,
+    defaultCrossMentor?: CrossSectorTrainerMatch
   ) => {
     if (cardConfigs[stationId]) {
       return cardConfigs[stationId];
     }
-    const defaultDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const defaultMentorValue = defaultMentor
+      ? defaultMentor.employeeId
+      : defaultCrossMentor
+        ? `cross::${defaultCrossMentor.employeeId}`
+        : 'supervisor';
     return {
       operatorId: defaultCandidate?.employeeId || (employees[0]?.employeeId || ''),
-      mentorId: defaultMentor?.employeeId || 'supervisor',
-      scheduledDate: defaultDate,
+      mentorId: defaultMentorValue,
+      scheduledDate: defaultFutureDate,
       isCustomized: false
     };
   };
@@ -105,14 +227,15 @@ export function GapAnalysisPanel({
   const handleOpenConfigModal = (
     station: SkillStation, 
     defaultCandidate?: EmployeeSkillRecord, 
-    defaultMentor?: EmployeeSkillRecord
+    defaultMentor?: EmployeeSkillRecord,
+    defaultCrossMentor?: CrossSectorTrainerMatch
   ) => {
-    const config = getCardConfig(station.id, defaultCandidate, defaultMentor);
+    const config = getCardConfig(station.id, defaultCandidate, defaultMentor, defaultCrossMentor);
     setActiveConfigStation(station);
     setModalOperatorId(config.operatorId);
     setModalMentorId(config.mentorId);
     setModalScheduledDate(config.scheduledDate);
-    setModalNotes(`Capacitação focada no posto ${station.name}.`);
+    setModalNotes(`Capacitação focada em ${station.name}.`);
   };
 
   // Salvar alterações de pré-determinação no card
@@ -134,17 +257,21 @@ export function GapAnalysisPanel({
 
     if (andScheduleImmediately) {
       const operator = employees.find(e => e.employeeId === modalOperatorId);
-      const mentor = employees.find(e => e.employeeId === modalMentorId);
+      const mentorInfo = resolveMentorDetails(modalMentorId, crossMentorsForModal);
 
       const newAction: TrainingAction = {
-        id: `act-${Date.now().toString().slice(-6)}`,
+        id: createTrainingActionId(),
         sectorId: sector.id,
         stationId: activeConfigStation.id,
         stationName: activeConfigStation.name,
         operatorId: operator?.employeeId || modalOperatorId,
         operatorName: operator?.employeeName || 'Operador',
-        mentorId: mentor?.employeeId || 'supervisor',
-        mentorName: mentor?.employeeName || `Supervisor (${sector.managerName})`,
+        mentorId: mentorInfo.mentorId,
+        mentorName: mentorInfo.mentorName,
+        mentorSectorId: mentorInfo.mentorSectorId,
+        mentorSectorName: mentorInfo.mentorSectorName,
+        mentorOrigin: mentorInfo.mentorOrigin,
+        skillType: getEffectiveSkillType(activeConfigStation),
         currentLevel: operator?.skills[activeConfigStation.id] || 1,
         targetLevel: 3,
         status: 'pending',
@@ -166,28 +293,34 @@ export function GapAnalysisPanel({
   const handleScheduleFromCard = (
     station: SkillStation, 
     defaultCandidate?: EmployeeSkillRecord, 
-    defaultMentor?: EmployeeSkillRecord
+    defaultMentor?: EmployeeSkillRecord,
+    defaultCrossMentor?: CrossSectorTrainerMatch,
+    crossMentorsList: CrossSectorTrainerMatch[] = []
   ) => {
-    const config = getCardConfig(station.id, defaultCandidate, defaultMentor);
+    const config = getCardConfig(station.id, defaultCandidate, defaultMentor, defaultCrossMentor);
     const operator = employees.find(e => e.employeeId === config.operatorId) || defaultCandidate;
-    const mentor = employees.find(e => e.employeeId === config.mentorId);
+    const mentorInfo = resolveMentorDetails(config.mentorId, crossMentorsList);
 
     if (!operator) return;
 
     const newAction: TrainingAction = {
-      id: `act-${Date.now().toString().slice(-6)}`,
+      id: createTrainingActionId(),
       sectorId: sector.id,
       stationId: station.id,
       stationName: station.name,
       operatorId: operator.employeeId,
       operatorName: operator.employeeName,
-      mentorId: mentor?.employeeId || 'supervisor',
-      mentorName: mentor?.employeeName || `Supervisor (${sector.managerName})`,
+      mentorId: mentorInfo.mentorId,
+      mentorName: mentorInfo.mentorName,
+      mentorSectorId: mentorInfo.mentorSectorId,
+      mentorSectorName: mentorInfo.mentorSectorName,
+      mentorOrigin: mentorInfo.mentorOrigin,
+      skillType: getEffectiveSkillType(station),
       currentLevel: operator.skills[station.id] || 1,
       targetLevel: 3,
       status: 'pending',
       scheduledDate: config.scheduledDate,
-      notes: `Capacitação para atingir autonomia (N3) no posto ${station.name}.`
+      notes: `Capacitação para atingir autonomia (N3) em ${station.name}.`
     };
 
     onAddTrainingAction(newAction);
@@ -234,17 +367,34 @@ export function GapAnalysisPanel({
             </p>
           </div>
 
-          <button
-            onClick={() => {
-              if (stations.length > 0) {
-                handleOpenConfigModal(stations[0], employees[0]);
-              }
-            }}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Agendar Ação Manual
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {onOpenTrainersDirectory && (
+              <button
+                type="button"
+                onClick={onOpenTrainersDirectory}
+                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                  tintedGlass
+                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-400/35'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                }`}
+                title="Pesquisar Multiplicadores N4 em toda a fábrica"
+              >
+                <Globe className="w-4 h-4" />
+                Buscar N4 na Planta
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (stations.length > 0) {
+                  handleOpenConfigModal(stations[0], employees[0]);
+                }
+              }}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Agendar Ação Manual
+            </button>
+          </div>
         </div>
       </div>
 
@@ -292,25 +442,34 @@ export function GapAnalysisPanel({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {criticalOnly.map(({ station, autonomousCount, deficit, candidatesN2, candidatesN1, otherCandidates, mentors }) => {
+            {criticalOnly.map(({ station, isLineCritical, autonomousCount, deficit, candidatesN2, candidatesN1, otherCandidates, mentors, crossSectorMentors, compatibleCrossMentors }) => {
               const primaryCandidate = candidatesN2[0] || candidatesN1[0] || otherCandidates[0];
               const primaryMentor = mentors[0];
-              const config = getCardConfig(station.id, primaryCandidate, primaryMentor);
+              const primaryCrossMentor = compatibleCrossMentors[0];
+              const config = getCardConfig(station.id, primaryCandidate, primaryMentor, primaryCrossMentor);
+              const typeMeta = getSkillTypeMeta(getEffectiveSkillType(station));
 
               // Operador e tutor atualmente selecionados
               const currentCandidate = employees.find(e => e.employeeId === config.operatorId) || primaryCandidate;
-              const currentMentor = employees.find(e => e.employeeId === config.mentorId);
-              const currentMentorName = currentMentor 
-                ? `${currentMentor.employeeName} (${currentMentor.skills[station.id] === 4 ? 'Especialista N4' : currentMentor.role})`
-                : `Supervisor da Célula (${sector.managerName})`;
+              const resolvedMentor = resolveMentorDetails(config.mentorId, crossSectorMentors);
+              const currentMentorName =
+                resolvedMentor.mentorOrigin === 'cross_sector'
+                  ? `🌐 ${resolvedMentor.mentorName}`
+                  : resolvedMentor.mentorOrigin === 'internal'
+                    ? `${resolvedMentor.mentorName} (Especialista N4)`
+                    : `Supervisor da Célula (${sector.managerName})`;
 
               return (
                 <div 
                   key={station.id} 
                   className={`rounded-2xl p-5 border flex flex-col justify-between transition-all ${
-                    tintedGlass
-                      ? 'aptis-glass-dark border-rose-500/30 hover:border-rose-500/50 text-white'
-                      : 'bg-white border-rose-200 shadow-xs hover:shadow-md text-slate-900'
+                    isLineCritical
+                      ? tintedGlass
+                        ? 'aptis-glass-dark border-rose-500/30 hover:border-rose-500/50 text-white'
+                        : 'bg-white border-rose-200 shadow-xs hover:shadow-md text-slate-900'
+                      : tintedGlass
+                        ? 'aptis-glass-dark border-purple-500/30 hover:border-purple-500/50 text-white'
+                        : 'bg-white border-purple-200 shadow-xs hover:shadow-md text-slate-900'
                   }`}
                 >
                   <div>
@@ -319,13 +478,24 @@ export function GapAnalysisPanel({
                       tintedGlass ? 'border-white/10' : 'border-slate-100'
                     }`}>
                       <div>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                          tintedGlass
-                            ? 'text-rose-300 bg-rose-500/20 border-rose-500/30'
-                            : 'text-rose-700 bg-rose-50 border-rose-200'
-                        }`}>
-                          Déficit de {deficit} operador(es)
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                            isLineCritical
+                              ? tintedGlass
+                                ? 'text-rose-300 bg-rose-500/20 border-rose-500/30'
+                                : 'text-rose-700 bg-rose-50 border-rose-200'
+                              : tintedGlass
+                                ? 'text-purple-300 bg-purple-500/20 border-purple-500/30'
+                                : 'text-purple-700 bg-purple-50 border-purple-200'
+                          }`}>
+                            {isLineCritical ? `Déficit de ${deficit} operador(es)` : `Meta de desenvolvimento: -${deficit}`}
+                          </span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                            tintedGlass ? typeMeta.darkBadge : typeMeta.lightBadge
+                          }`}>
+                            {typeMeta.shortLabel}
+                          </span>
+                        </div>
                         <h4 className={`text-base font-bold mt-1 ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                           {station.name}
                         </h4>
@@ -334,7 +504,11 @@ export function GapAnalysisPanel({
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className={`text-2xl font-black ${tintedGlass ? 'text-rose-400' : 'text-rose-600'}`}>
+                        <span className={`text-2xl font-black ${
+                          isLineCritical
+                            ? tintedGlass ? 'text-rose-400' : 'text-rose-600'
+                            : tintedGlass ? 'text-purple-400' : 'text-purple-600'
+                        }`}>
                           {autonomousCount}
                         </span>
                         <span className="text-xs text-slate-400 block font-medium">
@@ -380,13 +554,13 @@ export function GapAnalysisPanel({
                   }`}>
                     <button
                       type="button"
-                      onClick={() => handleOpenConfigModal(station, primaryCandidate, primaryMentor)}
+                      onClick={() => handleOpenConfigModal(station, primaryCandidate, primaryMentor, primaryCrossMentor)}
                       className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer border ${
                         tintedGlass
                           ? 'text-slate-300 hover:text-cyan-400 hover:bg-white/10 border-white/15'
                           : 'text-slate-600 hover:text-blue-600 hover:bg-slate-100 border-slate-200'
                       }`}
-                      title="Clique para mudar o tutor, o operador ou o prazo deste gap"
+                      title="Clique para mudar o tutor (inclusive N4 de outro setor), o operador ou o prazo"
                     >
                       <Settings2 className="w-3.5 h-3.5 text-slate-400" />
                       <span>Ajustar ({formatDate(config.scheduledDate)})</span>
@@ -394,7 +568,7 @@ export function GapAnalysisPanel({
 
                     <button
                       type="button"
-                      onClick={() => handleScheduleFromCard(station, primaryCandidate, primaryMentor)}
+                      onClick={() => handleScheduleFromCard(station, primaryCandidate, primaryMentor, primaryCrossMentor, crossSectorMentors)}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
                     >
                       Agendar Capacitação
@@ -470,7 +644,16 @@ export function GapAnalysisPanel({
                         <span className="block text-[10px] text-slate-400 font-normal">Nível de entrada: N{action.currentLevel}</span>
                       </td>
                       <td className={`py-3 px-4 font-medium ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
-                        {action.mentorName}
+                        <div>{action.mentorName}</div>
+                        {action.mentorOrigin === 'cross_sector' && action.mentorSectorName && (
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 border ${
+                            tintedGlass
+                              ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'
+                          }`}>
+                            🌐 Cross-Setor: {action.mentorSectorName}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3 px-3 text-center">
                         <span className={`px-2 py-0.5 rounded font-bold ${
@@ -517,8 +700,12 @@ export function GapAnalysisPanel({
                             <button
                               onClick={() => {
                                 onUpdateActionStatus(action.id, 'completed');
-                                onCycleLevel(action.operatorId, action.stationId);
-                                setFeedbackMessage(`Operador ${action.operatorName} promovido a N3 na Matriz!`);
+                                if (onSetSkillLevel) {
+                                  onSetSkillLevel(action.operatorId, action.stationId, action.targetLevel || 3);
+                                } else {
+                                  onCycleLevel(action.operatorId, action.stationId);
+                                }
+                                setFeedbackMessage(`Operador ${action.operatorName} promovido a N${action.targetLevel || 3} na Matriz!`);
                                 setTimeout(() => setFeedbackMessage(null), 3000);
                               }}
                               className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-semibold transition-colors cursor-pointer shadow-2xs"
@@ -638,27 +825,40 @@ export function GapAnalysisPanel({
               {/* Tutor */}
               <div>
                 <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Tutor / Instrutor Responsável:
+                  Tutor / Instrutor Responsável (Setor ou Fábrica Inteira N4):
                 </label>
                 <select
                   value={modalMentorId}
                   onChange={e => setModalMentorId(e.target.value)}
                   className={`w-full text-xs rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 font-medium cursor-pointer ${
                     tintedGlass
-                      ? 'aptis-glass-input text-white [&>option]:bg-slate-900'
+                      ? 'aptis-glass-input text-white [&>option]:bg-slate-900 [&>optgroup]:bg-slate-900 [&>optgroup]:text-cyan-300'
                       : 'bg-slate-50 border border-slate-300 text-slate-800'
                   }`}
                 >
-                  <option value="supervisor">👔 Supervisor da Célula ({sector.managerName})</option>
-                  {employees.map(emp => {
-                    const lvl = emp.skills[activeConfigStation.id] || 1;
-                    const isExpert = lvl === 4;
-                    return (
-                      <option key={emp.employeeId} value={emp.employeeId}>
-                        {emp.employeeName} {isExpert ? '🏆 N4 Especialista' : `(Nível ${lvl})`}
-                      </option>
-                    );
-                  })}
+                  <optgroup label={`Liderança & Equipe de ${sector.code}`}>
+                    <option value="supervisor">👔 Supervisor da Célula ({sector.managerName})</option>
+                    {employees.map(emp => {
+                      const lvl = emp.skills[activeConfigStation.id] || 1;
+                      const isExpert = lvl === 4;
+                      return (
+                        <option key={emp.employeeId} value={emp.employeeId}>
+                          {emp.employeeName} {isExpert ? '🏆 N4 Especialista (Local)' : `(Nível ${lvl})`}
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+
+                  {crossMentorsForModal.length > 0 && (
+                    <optgroup label="🌐 Multiplicadores N4 de Outras Áreas da Planta">
+                      {crossMentorsForModal.map(trainer => (
+                        <option key={trainer.key} value={`cross::${trainer.employeeId}`}>
+                          {trainer.matchQuality === 'exact' ? '⭐ Match Exato • ' : trainer.matchQuality === 'related' ? '🔹 Relacionada • ' : ''}
+                          {trainer.employeeName} ({trainer.sectorCode} • N4 em {trainer.stationName})
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
 

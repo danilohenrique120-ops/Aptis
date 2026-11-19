@@ -23,7 +23,8 @@ export async function GET() {
       email: session.email,
       role: session.role,
       tenantId: session.tenantId,
-      department: session.department
+      department: session.department,
+      allowedSectorIds: session.allowedSectorIds
     }
   });
 }
