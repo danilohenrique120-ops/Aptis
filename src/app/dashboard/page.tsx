@@ -205,8 +205,7 @@ export default function DashboardHomePage() {
     const scoreBreakdown = calculateDynamicAptisScore({
       trainings,
       stations,
-      employees,
-      tasks
+      employees
     });
 
     return {
@@ -225,11 +224,10 @@ export default function DashboardHomePage() {
     totalKaizens: telemetry.totalKaizens
   };
 
-  // The Aptis Score calculation 100% dinâmico em tempo real
+  // The Aptis Score calculation 100% dinâmico em tempo real (Compliance + Skills)
   const aptisScore = telemetry.aptisScore;
   const aptisCompliance = telemetry.aptisCompliance; // Aptidão Legal (NRs e POPs vigentes)
   const aptisSkills = telemetry.aptisSkills; // Aptidão Técnica (Postos Críticos ILUO U/O)
-  const aptisRoutine = telemetry.aptisRoutine; // Aptidão de Rotina (Tarefas & Kamishibai em dia)
 
   // Configuração das abas do Seletor Meniscus (Inspirado no Vídeo 2 - Meniscus)
   const meniscusTabs: Array<{
@@ -599,7 +597,7 @@ export default function DashboardHomePage() {
               </div>
             </div>
 
-            <div className="flex-1 space-y-2 text-xs">
+            <div className="flex-1 space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
                   Aptidão Legal
@@ -611,12 +609,6 @@ export default function DashboardHomePage() {
                   Polivalência ILUO
                 </span>
                 <span className="font-mono font-bold text-emerald-400">{aptisSkills}%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={tintedGlass ? 'text-slate-400' : 'text-slate-500'}>
-                  Rituais de Turno
-                </span>
-                <span className="font-mono font-bold text-cyan-400">{aptisRoutine}%</span>
               </div>
             </div>
           </div>
@@ -653,9 +645,9 @@ export default function DashboardHomePage() {
       </div>
 
       {/* =====================================================================
-          2. OS 3 PILARES DO APTIS SCORE COM BARRAS LUMINOSAS (Estilo Halvo Vídeo 4)
+          2. OS 2 PILARES DO APTIS SCORE COM BARRAS LUMINOSAS (Compliance & Skills)
          ===================================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Pilar 1: Aptidão Legal */}
         <Link
           href="/dashboard/tools/training-matrix"
@@ -817,88 +809,6 @@ export default function DashboardHomePage() {
                 : 'Flexibilidade de Linha'}
             </span>
             <span className="text-emerald-400 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
-              Verificar <ChevronRight className="w-3.5 h-3.5" />
-            </span>
-          </div>
-        </Link>
-
-        {/* Pilar 3: Aptidão de Rotina */}
-        <Link
-          href="/dashboard/tools/manager-tasks"
-          className={`p-5 rounded-3xl block group relative overflow-hidden ${
-            tintedGlass
-              ? 'aptis-glass-dark aptis-glass-dark-interactive text-white'
-              : 'aptis-glass-light hover:shadow-lg transition-all text-slate-900'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center text-base border border-cyan-400/35"
-                style={{
-                  background:
-                    'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(37, 99, 235, 0.1) 100%)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 0 18px rgba(6, 182, 212, 0.2)'
-                }}
-              >
-                📋
-              </div>
-              <div>
-                <h3 className="text-sm font-bold group-hover:text-cyan-300 transition-colors">
-                  3. Aptidão de Rotina
-                </h3>
-                <span
-                  className={`text-[11px] ${
-                    tintedGlass ? 'text-slate-400' : 'text-slate-500'
-                  }`}
-                >
-                  Aptis Routine
-                </span>
-              </div>
-            </div>
-            <span
-              className={`text-xl font-black font-mono ${
-                tintedGlass ? 'text-cyan-300' : 'text-cyan-700'
-              }`}
-            >
-              {aptisRoutine}%
-            </span>
-          </div>
-
-          <p
-            className={`text-xs leading-relaxed mb-4 ${
-              tintedGlass ? 'text-slate-300' : 'text-slate-600'
-            }`}
-          >
-            Adesão aos <strong>rituais Kamishibai de turno</strong> e passagens de bastão formalizadas sem ruído de comunicação.
-          </p>
-
-          <div
-            className={`w-full h-2 rounded-full overflow-hidden ${
-              tintedGlass ? 'bg-white/[0.08]' : 'bg-slate-200'
-            }`}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${aptisRoutine}%`,
-                background: 'linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)',
-                boxShadow: '0 0 12px rgba(6, 182, 212, 0.7)'
-              }}
-            />
-          </div>
-
-          <div
-            className={`flex items-center justify-between text-[11px] mt-3 font-medium ${
-              tintedGlass ? 'text-slate-400' : 'text-slate-500'
-            }`}
-          >
-            <span>
-              {telemetry.totalTasksCount > 0
-                ? `${telemetry.onTrackTasksCount}/${telemetry.totalTasksCount} rotinas em dia`
-                : 'Governança do Líder'}
-            </span>
-            <span className="text-cyan-400 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               Verificar <ChevronRight className="w-3.5 h-3.5" />
             </span>
           </div>

@@ -1,6 +1,5 @@
 import type { SkillStation, EmployeeSkillRecord } from '../modules/skills-matrix/types';
 import type { TrainingRecord } from '../modules/training-matrix/types';
-import type { ManagerTask } from '../modules/manager-tasks/types';
 
 function isCriticalSkillStation(station: SkillStation): boolean {
   if (typeof station.isCriticalForLineStop === 'boolean') {
@@ -13,13 +12,10 @@ export interface AptisScoreBreakdown {
   aptisScore: number;
   aptisCompliance: number;
   aptisSkills: number;
-  aptisRoutine: number;
   validTrainingsCount: number;
   totalTrainingsCount: number;
   coveredStationsCount: number;
   totalCriticalStationsCount: number;
-  onTrackTasksCount: number;
-  totalTasksCount: number;
   readinessLabel: 'Planta Apta' | 'Atenção Operacional' | 'Risco de Bloqueio';
   readinessTone: 'emerald' | 'amber' | 'rose';
 }
@@ -28,14 +24,12 @@ export function calculateDynamicAptisScore(params: {
   trainings: TrainingRecord[];
   stations: SkillStation[];
   employees: EmployeeSkillRecord[];
-  tasks: ManagerTask[];
   todayIso?: string;
 }): AptisScoreBreakdown {
   const todayIso = params.todayIso || new Date().toISOString().split('T')[0];
   const trainings = Array.isArray(params.trainings) ? params.trainings : [];
   const stations = Array.isArray(params.stations) ? params.stations : [];
   const employees = Array.isArray(params.employees) ? params.employees : [];
-  const tasks = Array.isArray(params.tasks) ? params.tasks : [];
 
   // 1. Aptidão Legal (Aptis Compliance / training-matrix): % de NRs/POPs vigentes (não vencidos)
   let aptisCompliance = 100;
@@ -79,30 +73,8 @@ export function calculateDynamicAptisScore(params: {
     aptisSkills = Math.round((totalCoverageRatio / totalCriticalStationsCount) * 100);
   }
 
-  // 3. Aptidão de Rotina (Aptis Routine / manager-tasks): % de tarefas e auditorias concluídas ou em dia
-  let aptisRoutine = 100;
-  let onTrackTasksCount = 0;
-  const totalTasksCount = tasks.length;
-
-  if (totalTasksCount > 0) {
-    let weightedSum = 0;
-    for (const task of tasks) {
-      const isDone = task.status === 'done';
-      const isOverdue = !isDone && Boolean(task.dueDate && task.dueDate < todayIso);
-
-      if (isDone) {
-        onTrackTasksCount += 1;
-        weightedSum += 1.0;
-      } else if (!isOverdue) {
-        onTrackTasksCount += 1;
-        weightedSum += 0.92;
-      }
-    }
-    aptisRoutine = Math.round((weightedSum / totalTasksCount) * 100);
-  }
-
-  // 4. Índice Global (The Aptis Score)
-  const aptisScore = Math.round((aptisCompliance + aptisSkills + aptisRoutine) / 3);
+  // 3. Índice Global (The Aptis Score): Composto exclusivamente por Aptis Compliance e Aptis Skills
+  const aptisScore = Math.round((aptisCompliance + aptisSkills) / 2);
 
   const readinessLabel: AptisScoreBreakdown['readinessLabel'] =
     aptisScore >= 85
@@ -118,13 +90,10 @@ export function calculateDynamicAptisScore(params: {
     aptisScore,
     aptisCompliance,
     aptisSkills,
-    aptisRoutine,
     validTrainingsCount,
     totalTrainingsCount,
     coveredStationsCount,
     totalCriticalStationsCount,
-    onTrackTasksCount,
-    totalTasksCount,
     readinessLabel,
     readinessTone
   };
