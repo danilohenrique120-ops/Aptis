@@ -1,51 +1,58 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { KaizenProject, KaizenLevel, KaizenStage } from '../types';
+import { KaizenProject } from '../types';
+import type { PlantSector } from '@/types/sectors';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
-import { KAIZEN_LEVEL_CONFIG } from '../mock-data';
+import { kaizenBelongsToSector } from '../kaizen-helpers';
 import { KaizenLevelBadge } from './KaizenLevelBadge';
 import { 
   Building2, 
-  Layers, 
-  TrendingUp, 
-  DollarSign, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  Sparkles,
-  ArrowRight,
-  Filter
+  Layers
 } from 'lucide-react';
 
 interface KaizenSectorMatrixProps {
   projects: KaizenProject[];
+  allowedSectors?: PlantSector[];
+  canViewAllSectors?: boolean;
   onOpenA3: (project: KaizenProject) => void;
   tintedGlass?: boolean;
 }
 
 export function KaizenSectorMatrix({
   projects,
+  allowedSectors,
+  canViewAllSectors = true,
   onOpenA3,
   tintedGlass = false
 }: KaizenSectorMatrixProps) {
   const { sectors: plantSectors } = usePlantSectors();
   const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('all');
 
-  // Setores identificados a partir da planta e dos projetos existentes
-  const safePlantSectors = Array.isArray(plantSectors) ? plantSectors : [];
-  const safeProjects = Array.isArray(projects) ? projects : [];
+  const safePlantSectors = useMemo(() => {
+    if (Array.isArray(allowedSectors)) return allowedSectors;
+    return Array.isArray(plantSectors) ? plantSectors : [];
+  }, [allowedSectors, plantSectors]);
+
+  const safeProjects = useMemo(() => (Array.isArray(projects) ? projects : []), [projects]);
 
   const allSectors = useMemo(() => {
-    const set = new Set<string>(safePlantSectors.map(s => s.name));
-    safeProjects.forEach(p => { if (p && p.sector) set.add(p.sector); });
-    return Array.from(set);
-  }, [safePlantSectors, safeProjects]);
+    const map = new Map<string, PlantSector | { id: string; code: string; name: string }>();
+    safePlantSectors.forEach(s => map.set(s.name, s));
+    if (canViewAllSectors) {
+      safeProjects.forEach(p => {
+        if (p?.sector && !Array.from(map.values()).some(s => kaizenBelongsToSector(p, s))) {
+          map.set(p.sector, { id: p.sectorId || p.sector, code: p.sector.slice(0, 3).toUpperCase(), name: p.sector });
+        }
+      });
+    }
+    return Array.from(map.values());
+  }, [safePlantSectors, safeProjects, canViewAllSectors]);
 
-  // Estatísticas por Setor
+  // Estatísticas por Setor (isoladas ao escopo permitido)
   const sectorStats = useMemo(() => {
-    return allSectors.map(sector => {
-      const sectorProjects = safeProjects.filter(p => p && p.sector === sector);
+    return allSectors.map(sectorObj => {
+      const sectorProjects = safeProjects.filter(p => p && kaizenBelongsToSector(p, sectorObj));
       const total = sectorProjects.length;
 
       const quickCount = sectorProjects.filter(p => p.level === 'quick').length;
@@ -60,11 +67,10 @@ export function KaizenSectorMatrix({
       const totalSavings = sectorProjects.reduce((acc, p) => acc + (p.estimatedSavingsAnnual || 0), 0);
       const totalHours = sectorProjects.reduce((acc, p) => acc + (p.hoursSavedMonthly || 0), 0);
 
-      // Taxa de conclusão
       const completionRate = total > 0 ? Math.round((standardizedCount / total) * 100) : 0;
 
       return {
-        sector,
+        sector: sectorObj.name,
         total,
         quickCount,
         standardCount,
@@ -79,11 +85,16 @@ export function KaizenSectorMatrix({
         projects: sectorProjects
       };
     }).sort((a, b) => b.total - a.total);
-  }, [allSectors, projects]);
+  }, [allSectors, safeProjects]);
 
-  const activeSectorData = selectedSectorFilter === 'all' 
-    ? null 
-    : sectorStats.find(s => s.sector === selectedSectorFilter) || null;
+  const effectiveSectorFilter =
+    selectedSectorFilter !== 'all' && !sectorStats.some(s => s.sector === selectedSectorFilter)
+      ? 'all'
+      : selectedSectorFilter;
+
+  const activeSectorData = effectiveSectorFilter === 'all'
+    ? null
+    : sectorStats.find(s => s.sector === effectiveSectorFilter) || null;
 
   return (
     <div className="space-y-6 w-full">
@@ -105,7 +116,7 @@ export function KaizenSectorMatrix({
           <div className="flex items-center gap-2 text-xs">
             <span className={`font-semibold ${tintedGlass ? 'text-slate-300' : 'text-slate-500'}`}>Filtrar Setor:</span>
             <select
-              value={selectedSectorFilter}
+              value={effectiveSectorFilter}
               onChange={(e) => setSelectedSectorFilter(e.target.value)}
               className={`px-3 py-1.5 rounded-xl font-bold focus:outline-none ${
                 tintedGlass
@@ -113,9 +124,11 @@ export function KaizenSectorMatrix({
                   : 'bg-slate-50 border border-slate-200 text-slate-700 focus:border-purple-500'
               }`}
             >
-              <option value="all" className="bg-slate-900 text-white">Visão Consolidada (Todos os Setores)</option>
+              <option value="all" className="bg-slate-900 text-white">
+                {canViewAllSectors ? 'Visão Consolidada (Todos os Setores)' : 'Visão Consolidada (Minhas Áreas)'}
+              </option>
               {allSectors.map(s => (
-                <option key={s} value={s} className="bg-slate-900 text-white">{s}</option>
+                <option key={s.id} value={s.name} className="bg-slate-900 text-white">{s.name}</option>
               ))}
             </select>
           </div>

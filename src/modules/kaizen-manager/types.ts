@@ -4,6 +4,8 @@ export type KaizenCategory = 'segurança' | 'qualidade' | 'custo' | 'produtivida
 
 export type KaizenStage = 'ideation' | 'analysis' | 'implementation' | 'standardized';
 
+export type KaizenViewTab = 'kanban' | 'feed' | 'ranking' | 'sectors' | 'a3_central';
+
 export interface FiveWhys {
   why1: string;
   why2: string;
@@ -45,6 +47,15 @@ export interface KaizenA3Data {
   lessonsLearned: string; // 9. Lições aprendidas e próximos passos
 }
 
+export interface KaizenFeedComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorDepartment?: string;
+  text: string;
+  createdAt: string; // ISO string ou YYYY-MM-DD
+}
+
 export interface KaizenProject {
   id: string;
   tenantId: string;
@@ -52,7 +63,8 @@ export interface KaizenProject {
   level: KaizenLevel; // Quick, Standard, Major, Advanced
   category: KaizenCategory;
   stage: KaizenStage;
-  sector: string; // Ex: 'Usinagem CNC', 'Estamparia & Prensas', 'Montagem', 'Logística'
+  sectorId?: string; // Vinculo estrutural ao PlantSector.id para isolamento estrito
+  sector: string; // Nome exibido do setor
   area: string; // Ex: 'Célula 01', 'Linha de Prensas', 'Almoxarifado'
   leaderName: string; // Líder do Kaizen
   leaderRole: string;
@@ -62,15 +74,59 @@ export interface KaizenProject {
   a3: KaizenA3Data;
   createdAt: string; // YYYY-MM-DD
   completedAt?: string;
+
+  // Camada Social & Plataforma Inova (exclusivo para projetos concluídos/padronizados)
+  isPublishedToFeed?: boolean;
+  publishedAt?: string;
+  publishedBy?: string;
+  feedSummary?: string;
+  likes?: string[]; // IDs dos usuários que curtiram no Feed
+  comments?: KaizenFeedComment[];
+  replicationCount?: number; // Quantidade de replicações Yokoten em outras áreas
+  replicatedFromId?: string;
+  replicatedFromTitle?: string;
+  replicatedFromSector?: string;
+}
+
+export type KaizenBadgeId =
+  | 'first_delivery'
+  | 'kaizen_master'
+  | 'plant_favorite'
+  | 'yokoten_multiplier'
+  | 'waste_hunter';
+
+export interface KaizenBadge {
+  id: KaizenBadgeId;
+  label: string;
+  icon: string;
+  description: string;
+  darkClass: string;
+  lightClass: string;
 }
 
 export interface ContributorRanking {
   name: string;
   role: string;
   department: string;
-  ledCount: number; // Quantos liderou
-  participatedCount: number; // Em quantos participou como membro
+  ledCount: number; // Quantos projetos concluídos liderou
+  participatedCount: number; // Quantos projetos concluídos participou como membro
   totalKaizens: number;
-  totalPoints: number; // Quick = 10pts, Standard = 25pts, Major = 50pts, Advanced = 100pts
+  publishedCount: number;
+  likesReceived: number;
+  replicationsReceived: number;
+  totalPoints: number; // XP Inova (Entregas + Curtidas + Yokoten)
   totalSavingsGenerated: number;
+  totalHoursSaved: number;
+  badges: KaizenBadge[];
+  completedProjects: KaizenProject[];
+}
+
+export interface SectorCompletedRanking {
+  sector: string;
+  completedCount: number;
+  publishedCount: number;
+  totalLikes: number;
+  totalReplications: number;
+  totalSavings: number;
+  totalHoursSaved: number;
 }

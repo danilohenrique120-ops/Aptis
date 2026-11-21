@@ -17,7 +17,9 @@ import {
   Clock,
   DollarSign,
   Building2,
-  Users
+  Users,
+  Globe,
+  Lock
 } from 'lucide-react';
 
 interface KaizenA3ModalProps {
@@ -25,6 +27,8 @@ interface KaizenA3ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (updatedProject: KaizenProject) => void;
+  onTogglePublishFeed?: (project: KaizenProject, publish: boolean) => void;
+  readOnly?: boolean;
   tintedGlass?: boolean;
 }
 
@@ -33,9 +37,11 @@ export function KaizenA3Modal({
   isOpen,
   onClose,
   onSave,
+  onTogglePublishFeed,
+  readOnly = false,
   tintedGlass = false
 }: KaizenA3ModalProps) {
-  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>(readOnly ? 'preview' : 'edit');
   const [activePdcaTab, setActivePdcaTab] = useState<'plan' | 'do' | 'check' | 'act'>('plan');
 
   // Dados do A3
@@ -196,33 +202,46 @@ export function KaizenA3Modal({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Alternador de Modo: Edição vs. Preview Imprimível */}
-            <div className={`inline-flex rounded-xl p-1 border text-xs font-semibold ${
-              tintedGlass ? 'bg-slate-950/70 border-white/10' : 'bg-slate-200 border-slate-300'
-            }`}>
-              <button
-                type="button"
-                onClick={() => setViewMode('edit')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  viewMode === 'edit'
-                    ? (tintedGlass ? 'bg-purple-600 text-white shadow-xs' : 'bg-white text-slate-900 shadow-xs')
-                    : (tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600')
+            {readOnly ? (
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border ${
+                  tintedGlass
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 }`}
               >
-                Formulário PDCA
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('preview')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                  viewMode === 'preview'
-                    ? (tintedGlass ? 'bg-purple-600 text-white shadow-xs' : 'bg-white text-slate-900 shadow-xs')
-                    : (tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600')
-                }`}
-              >
-                Layout A3 Clássico
-              </button>
-            </div>
+                <Lock className="w-3.5 h-3.5" />
+                Somente Leitura (Mural Inova)
+              </span>
+            ) : (
+              /* Alternador de Modo: Edição vs. Preview Imprimível */
+              <div className={`inline-flex rounded-xl p-1 border text-xs font-semibold ${
+                tintedGlass ? 'bg-slate-950/70 border-white/10' : 'bg-slate-200 border-slate-300'
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('edit')}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    viewMode === 'edit'
+                      ? (tintedGlass ? 'bg-purple-600 text-white shadow-xs' : 'bg-white text-slate-900 shadow-xs')
+                      : (tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600')
+                  }`}
+                >
+                  Formulário PDCA
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('preview')}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    viewMode === 'preview'
+                      ? (tintedGlass ? 'bg-purple-600 text-white shadow-xs' : 'bg-white text-slate-900 shadow-xs')
+                      : (tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600')
+                  }`}
+                >
+                  Layout A3 Clássico
+                </button>
+              </div>
+            )}
 
             <button
               onClick={() => window.print()}
@@ -816,27 +835,50 @@ export function KaizenA3Modal({
         )}
 
         {/* FOOTER COM BOTÕES */}
-        <div className={`p-4 border-t flex items-center justify-end gap-2 text-xs ${
+        <div className={`p-4 border-t flex flex-wrap items-center justify-between gap-2 text-xs ${
           tintedGlass ? 'border-white/10 bg-white/[0.03]' : 'border-slate-200 bg-slate-50'
         }`}>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`px-4 py-2 cursor-pointer font-semibold ${
-              tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Cancelar
-          </button>
+          <div>
+            {!readOnly && project.stage === 'standardized' && onTogglePublishFeed && (
+              <button
+                type="button"
+                onClick={() => onTogglePublishFeed(project, !project.isPublishedToFeed)}
+                className={`px-3.5 py-2 rounded-xl font-bold inline-flex items-center gap-1.5 border transition cursor-pointer ${
+                  project.isPublishedToFeed
+                    ? tintedGlass
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/35 hover:bg-amber-500/20 hover:text-amber-300'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-amber-50'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                }`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                {project.isPublishedToFeed ? 'Publicado no Feed Inova (Ocultar)' : 'Publicar no Feed Inova'}
+              </button>
+            )}
+          </div>
 
-          <button
-            type="button"
-            onClick={handleSaveAll}
-            className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 cursor-pointer flex items-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            Salvar Relatório A3
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`px-4 py-2 cursor-pointer font-semibold ${
+                tintedGlass ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {readOnly ? 'Fechar' : 'Cancelar'}
+            </button>
+
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-purple-600/20 cursor-pointer flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                Salvar Relatório A3
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

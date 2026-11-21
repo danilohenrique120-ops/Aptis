@@ -1,15 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { KaizenProject, KaizenLevel, KaizenCategory } from '../types';
+import type { PlantSector } from '@/types/sectors';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
-import { X, Sparkles, Plus, Layers, User } from 'lucide-react';
+import { X, Sparkles, Plus } from 'lucide-react';
+
+const createKaizenId = () => `kz-${Date.now()}`;
+const createActionId = () => `act-${Date.now()}-1`;
+const getTodayIso = () => new Date().toISOString().split('T')[0];
+const getFutureIso = (days: number) =>
+  new Date(Date.now() + days * 86400000).toISOString().split('T')[0];
 
 interface NewKaizenModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (project: KaizenProject) => void;
   tenantId: string;
+  allowedSectors?: PlantSector[];
   tintedGlass?: boolean;
 }
 
@@ -18,15 +26,19 @@ export function NewKaizenModal({
   onClose,
   onSave,
   tenantId,
+  allowedSectors,
   tintedGlass = false
 }: NewKaizenModalProps) {
   const { sectors: plantSectors } = usePlantSectors();
-  const safePlantSectors = Array.isArray(plantSectors) && plantSectors.length > 0 ? plantSectors : [];
-  const availableSectors = safePlantSectors.map(s => s.name);
+  const availableSectors = useMemo(() => {
+    if (Array.isArray(allowedSectors) && allowedSectors.length > 0) return allowedSectors;
+    return Array.isArray(plantSectors) && plantSectors.length > 0 ? plantSectors : [];
+  }, [allowedSectors, plantSectors]);
+
   const [title, setTitle] = useState('');
   const [level, setLevel] = useState<KaizenLevel>('quick');
   const [category, setCategory] = useState<KaizenCategory>('produtividade');
-  const [sector, setSector] = useState(availableSectors[0] || 'Usinagem CNC & Precisão');
+  const [selectedSectorId, setSelectedSectorId] = useState(availableSectors[0]?.id || '');
   const [area, setArea] = useState('');
   const [leaderName, setLeaderName] = useState('');
   const [leaderRole, setLeaderRole] = useState('Operador de Célula');
@@ -38,6 +50,11 @@ export function NewKaizenModal({
 
   if (!isOpen) return null;
 
+  const activeSectorObj =
+    availableSectors.find(s => s.id === selectedSectorId) || availableSectors[0];
+  const effectiveSectorName = activeSectorObj?.name || 'Operações Fabris';
+  const effectiveSectorId = activeSectorObj?.id;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !problemDescription.trim()) return;
@@ -48,22 +65,27 @@ export function NewKaizenModal({
       .filter(Boolean);
 
     const newProject: KaizenProject = {
-      id: `kz-${Date.now()}`,
+      id: createKaizenId(),
       tenantId,
       title: title.trim(),
       level,
       category,
       stage: 'ideation',
-      sector,
+      sectorId: effectiveSectorId,
+      sector: effectiveSectorName,
       area: area.trim() || 'Posto de Trabalho',
       leaderName: leaderName.trim() || 'Operador Líder',
       leaderRole: leaderRole.trim(),
       teamMembers: team.length > 0 ? team : [leaderName.trim() || 'Operador'],
       estimatedSavingsAnnual: Number(estimatedSavings) || 0,
       hoursSavedMonthly: Number(hoursSaved) || 0,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: getTodayIso(),
+      isPublishedToFeed: false,
+      likes: [],
+      comments: [],
+      replicationCount: 0,
       a3: {
-        background: `Kaizen do setor ${sector}.`,
+        background: `Kaizen do setor ${effectiveSectorName}.`,
         problemStatement: problemDescription.trim(),
         currentCondition: 'Condição identificada em chão de fábrica.',
         fiveWhys: {
@@ -78,10 +100,10 @@ export function NewKaizenModal({
         targetKpiGoal: 'Meta a definir na análise',
         actionPlan: [
           {
-            id: `act-${Date.now()}-1`,
+            id: createActionId(),
             what: proposedSolution.trim() || 'Implementar melhoria',
             who: leaderName.trim() || 'Líder',
-            when: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+            when: getFutureIso(14),
             status: 'todo'
           }
         ],
@@ -96,6 +118,14 @@ export function NewKaizenModal({
     };
 
     onSave(newProject);
+    setTitle('');
+    setArea('');
+    setLeaderName('');
+    setTeamMembersText('');
+    setProblemDescription('');
+    setProposedSolution('');
+    setEstimatedSavings('');
+    setHoursSaved('');
     onClose();
   };
 
@@ -184,12 +214,14 @@ export function NewKaizenModal({
             <div>
               <label className={labelClass}>Setor Fabril</label>
               <select
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
+                value={effectiveSectorId || ''}
+                onChange={(e) => setSelectedSectorId(e.target.value)}
                 className={inputClass}
               >
                 {availableSectors.map(s => (
-                  <option key={s} value={s} className="bg-slate-900 text-white">{s}</option>
+                  <option key={s.id} value={s.id} className="bg-slate-900 text-white">
+                    {s.name} ({s.code})
+                  </option>
                 ))}
               </select>
             </div>
