@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useTenant } from '@/context/tenant-context';
 import { getAllTools } from '@/config/tools-registry';
@@ -10,10 +10,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Lock,
-  Store,
   Sparkles,
   Zap,
-  TrendingUp,
   Activity,
   ChevronRight,
   Layers,
@@ -24,85 +22,214 @@ import {
 } from 'lucide-react';
 import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
+import { calculateDynamicAptisScore } from '@/lib/aptis-score-calculator';
+import { INITIAL_STATIONS, INITIAL_EMPLOYEES } from '@/modules/skills-matrix/mock-data';
+import { SkillStation, EmployeeSkillRecord } from '@/modules/skills-matrix/types';
+import { TrainingRecord } from '@/modules/training-matrix/types';
+import { ManagerTask } from '@/modules/manager-tasks/types';
+import { supabase } from '@/lib/supabase';
 
 type SuiteFilterTab = 'all' | 'operations' | 'leadership' | 'compliance';
+
+function subscribeGlassMode(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('aptis-glass-mode-change', callback);
+  window.addEventListener('storage', callback);
+  return () => {
+    window.removeEventListener('aptis-glass-mode-change', callback);
+    window.removeEventListener('storage', callback);
+  };
+}
+
+function getGlassModeSnapshot(): boolean {
+  if (typeof window === 'undefined') return true;
+  const saved = localStorage.getItem('aptis_tinted_glass_mode');
+  return saved !== null ? saved === 'true' : true;
+}
+
+function getGlassModeServerSnapshot(): boolean {
+  return true;
+}
+
+function parseJsonArray<T>(raw: string | null, fallback: T[] = []): T[] {
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export default function DashboardHomePage() {
   const { currentTenant, currentUser, hasLicense } = useTenant();
   const allTools = getAllTools();
   const { sectors } = usePlantSectors();
   const [isSectorsModalOpen, setIsSectorsModalOpen] = useState(false);
-  const [tintedGlass, setTintedGlass] = useState(true);
+  const tintedGlass = useSyncExternalStore(
+    subscribeGlassMode,
+    getGlassModeSnapshot,
+    getGlassModeServerSnapshot
+  );
   const [activeSuiteTab, setActiveSuiteTab] = useState<SuiteFilterTab>('all');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('aptis_tinted_glass_mode');
-    if (saved !== null) {
-      setTintedGlass(saved === 'true');
-    }
-
-    const handleModeChange = (e: Event) => {
-      const customEvent = e as CustomEvent<boolean>;
-      setTintedGlass(customEvent.detail);
-    };
-
-    window.addEventListener('aptis-glass-mode-change', handleModeChange);
-    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
-  }, []);
 
   const activeTools = allTools.filter(tool => hasLicense(tool.id));
   const lockedTools = allTools.filter(tool => !hasLicense(tool.id));
 
-  // Dynamic stats from localStorage (100% preservado)
-  const [stats, setStats] = useState({
-    totalTasks: 0,
-    totalEmployees: 0,
-    totalTrainings: 0,
-    totalKaizens: 0,
-    isLoaded: false
-  });
+  const tenantId = currentTenant?.id || 'tenant-dhp';
+  const isDemoTenant = tenantId === 'tenant-dhp' || tenantId === 'dhp-enterprise';
+
+  const [cloudData, setCloudData] = useState<{
+    tenantId: string;
+    tasks?: ManagerTask[];
+    employees?: EmployeeSkillRecord[];
+    stations?: SkillStation[];
+    trainings?: TrainingRecord[];
+    kaizensCount?: number;
+  } | null>(null);
 
   useEffect(() => {
-    try {
-      const tenantId = currentTenant?.id || 'dhp-enterprise';
+    let isCancelled = false;
 
-      const savedTasks =
-        localStorage.getItem(`aptis_${tenantId}_manager-tasks_tasks`) ||
-        localStorage.getItem('aptis_routine_tasks');
-      const savedEmployees =
-        localStorage.getItem(`aptis_${tenantId}_skills-matrix_operators`) ||
-        localStorage.getItem('aptis_skills_employees');
-      const savedTrainings =
-        localStorage.getItem(`aptis_${tenantId}_training-matrix_records`) ||
-        localStorage.getItem('aptis_compliance_trainings');
-      const savedKaizens =
-        localStorage.getItem(`aptis_${tenantId}_kaizen-manager_kaizens`) ||
-        localStorage.getItem('aptis_kaizen_ideas');
+    async function fetchCloudTelemetry() {
+      try {
+        const rowIds = [
+          `${tenantId}:manager-tasks:tasks`,
+          `${tenantId}:skills-matrix:employees`,
+          `${tenantId}:skills-matrix:stations`,
+          `${tenantId}:training-matrix:trainings`,
+          `${tenantId}:kaizen-manager:projects`
+        ];
+        const { data, error } = await supabase
+          .from('tenant_tool_data')
+          .select('id, data')
+          .in('id', rowIds);
 
-      setStats({
-        totalTasks: savedTasks ? JSON.parse(savedTasks).length : 0,
-        totalEmployees: savedEmployees ? JSON.parse(savedEmployees).length : 0,
-        totalTrainings: savedTrainings ? JSON.parse(savedTrainings).length : 0,
-        totalKaizens: savedKaizens ? JSON.parse(savedKaizens).length : 0,
-        isLoaded: true
-      });
-    } catch (e) {
-      console.error(e);
-      setStats(prev => ({ ...prev, isLoaded: true }));
+        if (error || isCancelled || !data) return;
+
+        const nextCloud: {
+          tenantId: string;
+          tasks?: ManagerTask[];
+          employees?: EmployeeSkillRecord[];
+          stations?: SkillStation[];
+          trainings?: TrainingRecord[];
+          kaizensCount?: number;
+        } = { tenantId };
+
+        for (const row of data) {
+          if (!Array.isArray(row.data)) continue;
+          if (row.id.endsWith(':manager-tasks:tasks')) {
+            nextCloud.tasks = row.data as ManagerTask[];
+          } else if (row.id.endsWith(':skills-matrix:employees')) {
+            nextCloud.employees = row.data as EmployeeSkillRecord[];
+          } else if (row.id.endsWith(':skills-matrix:stations')) {
+            nextCloud.stations = row.data as SkillStation[];
+          } else if (row.id.endsWith(':training-matrix:trainings')) {
+            nextCloud.trainings = row.data as TrainingRecord[];
+          } else if (row.id.endsWith(':kaizen-manager:projects')) {
+            nextCloud.kaizensCount = row.data.length;
+          }
+        }
+
+        if (!isCancelled) {
+          setCloudData(nextCloud);
+        }
+      } catch {
+        // Fallback silencioso para cache local
+      }
     }
-  }, [currentTenant?.id]);
 
-  const hasAnyData =
-    stats.totalTasks > 0 ||
-    stats.totalEmployees > 0 ||
-    stats.totalTrainings > 0 ||
-    stats.totalKaizens > 0;
+    fetchCloudTelemetry();
+    return () => {
+      isCancelled = true;
+    };
+  }, [tenantId]);
 
-  // The Aptis Score calculation (Conceito de Ouro)
-  const aptisScore = hasAnyData ? 95 : 100;
-  const aptisCompliance = hasAnyData ? 98 : 100; // Aptidão Legal (NRs e POPs)
-  const aptisSkills = hasAnyData ? 92 : 100; // Aptidão Técnica (ILUO)
-  const aptisRoutine = hasAnyData ? 95 : 100; // Aptidão de Rotina (Kamishibai & Handover)
+  const telemetry = useMemo(() => {
+    const activeCloud = cloudData?.tenantId === tenantId ? cloudData : null;
+
+    const localTasks =
+      typeof window !== 'undefined'
+        ? parseJsonArray<ManagerTask>(
+            localStorage.getItem(`aptis_${tenantId}_manager-tasks_tasks`) ||
+              localStorage.getItem('aptis_routine_tasks')
+          )
+        : [];
+
+    const localEmployees =
+      typeof window !== 'undefined'
+        ? parseJsonArray<EmployeeSkillRecord>(
+            localStorage.getItem(`aptis_${tenantId}_skills-matrix_employees`) ||
+              localStorage.getItem(`aptis_${tenantId}_skills-matrix_operators`) ||
+              localStorage.getItem('aptis_skills_employees'),
+            isDemoTenant ? INITIAL_EMPLOYEES : []
+          )
+        : isDemoTenant
+        ? INITIAL_EMPLOYEES
+        : [];
+
+    const localStations =
+      typeof window !== 'undefined'
+        ? parseJsonArray<SkillStation>(
+            localStorage.getItem(`aptis_${tenantId}_skills-matrix_stations`),
+            isDemoTenant ? INITIAL_STATIONS : []
+          )
+        : isDemoTenant
+        ? INITIAL_STATIONS
+        : [];
+
+    const localTrainings =
+      typeof window !== 'undefined'
+        ? parseJsonArray<TrainingRecord>(
+            localStorage.getItem(`aptis_${tenantId}_training-matrix_trainings`) ||
+              localStorage.getItem(`aptis_${tenantId}_training-matrix_records`) ||
+              localStorage.getItem('aptis_compliance_trainings')
+          )
+        : [];
+
+    const localKaizens =
+      typeof window !== 'undefined'
+        ? parseJsonArray<unknown>(
+            localStorage.getItem(`aptis_${tenantId}_kaizen-manager_projects`) ||
+              localStorage.getItem(`aptis_${tenantId}_kaizen-manager_kaizens`) ||
+              localStorage.getItem('aptis_kaizen_ideas')
+          )
+        : [];
+
+    const tasks = activeCloud?.tasks ?? localTasks;
+    const employees = activeCloud?.employees ?? localEmployees;
+    const stations = activeCloud?.stations ?? localStations;
+    const trainings = activeCloud?.trainings ?? localTrainings;
+    const totalKaizens = activeCloud?.kaizensCount ?? localKaizens.length;
+
+    const scoreBreakdown = calculateDynamicAptisScore({
+      trainings,
+      stations,
+      employees,
+      tasks
+    });
+
+    return {
+      totalTasks: tasks.length,
+      totalEmployees: employees.length,
+      totalTrainings: trainings.length,
+      totalKaizens,
+      ...scoreBreakdown
+    };
+  }, [tenantId, isDemoTenant, cloudData]);
+
+  const stats = {
+    totalTasks: telemetry.totalTasks,
+    totalEmployees: telemetry.totalEmployees,
+    totalTrainings: telemetry.totalTrainings,
+    totalKaizens: telemetry.totalKaizens
+  };
+
+  // The Aptis Score calculation 100% dinâmico em tempo real
+  const aptisScore = telemetry.aptisScore;
+  const aptisCompliance = telemetry.aptisCompliance; // Aptidão Legal (NRs e POPs vigentes)
+  const aptisSkills = telemetry.aptisSkills; // Aptidão Técnica (Postos Críticos ILUO U/O)
+  const aptisRoutine = telemetry.aptisRoutine; // Aptidão de Rotina (Tarefas & Kamishibai em dia)
 
   // Configuração das abas do Seletor Meniscus (Inspirado no Vídeo 2 - Meniscus)
   const meniscusTabs: Array<{
@@ -333,11 +460,29 @@ export default function DashboardHomePage() {
                 </span>
                 <span
                   className={`text-sm font-bold mt-2 flex items-center gap-1.5 ${
-                    tintedGlass ? 'text-emerald-300' : 'text-emerald-700'
+                    telemetry.readinessTone === 'emerald'
+                      ? tintedGlass
+                        ? 'text-emerald-300'
+                        : 'text-emerald-700'
+                      : telemetry.readinessTone === 'amber'
+                      ? tintedGlass
+                        ? 'text-amber-300'
+                        : 'text-amber-700'
+                      : tintedGlass
+                      ? 'text-rose-300'
+                      : 'text-rose-700'
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]" />
-                  Sempre Apta
+                  <span
+                    className={`w-2 h-2 rounded-full animate-pulse ${
+                      telemetry.readinessTone === 'emerald'
+                        ? 'bg-emerald-400 shadow-[0_0_10px_#34d399]'
+                        : telemetry.readinessTone === 'amber'
+                        ? 'bg-amber-400 shadow-[0_0_10px_#fbbf24]'
+                        : 'bg-rose-400 shadow-[0_0_10px_#fb7185]'
+                    }`}
+                  />
+                  {telemetry.readinessLabel}
                 </span>
               </div>
             </div>
@@ -384,12 +529,20 @@ export default function DashboardHomePage() {
 
             <span
               className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border ${
-                tintedGlass
-                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                telemetry.readinessTone === 'emerald'
+                  ? tintedGlass
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : telemetry.readinessTone === 'amber'
+                  ? tintedGlass
+                    ? 'bg-amber-500/15 text-amber-300 border-amber-400/30'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                  : tintedGlass
+                  ? 'bg-rose-500/15 text-rose-300 border-rose-400/30'
+                  : 'bg-rose-50 text-rose-700 border-rose-200'
               }`}
             >
-              Planta Apta
+              {telemetry.readinessLabel}
             </span>
           </div>
 
@@ -575,7 +728,11 @@ export default function DashboardHomePage() {
               tintedGlass ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            <span>Auditoria MTE / ISO</span>
+            <span>
+              {telemetry.totalTrainingsCount > 0
+                ? `${telemetry.validTrainingsCount}/${telemetry.totalTrainingsCount} NRs/POPs vigentes`
+                : 'Auditoria MTE / ISO'}
+            </span>
             <span className="text-amber-400 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               Verificar <ChevronRight className="w-3.5 h-3.5" />
             </span>
@@ -654,7 +811,11 @@ export default function DashboardHomePage() {
               tintedGlass ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            <span>Flexibilidade de Linha</span>
+            <span>
+              {telemetry.totalCriticalStationsCount > 0
+                ? `${telemetry.coveredStationsCount}/${telemetry.totalCriticalStationsCount} postos críticos cobertos`
+                : 'Flexibilidade de Linha'}
+            </span>
             <span className="text-emerald-400 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               Verificar <ChevronRight className="w-3.5 h-3.5" />
             </span>
@@ -732,7 +893,11 @@ export default function DashboardHomePage() {
               tintedGlass ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
-            <span>Governança do Líder</span>
+            <span>
+              {telemetry.totalTasksCount > 0
+                ? `${telemetry.onTrackTasksCount}/${telemetry.totalTasksCount} rotinas em dia`
+                : 'Governança do Líder'}
+            </span>
             <span className="text-cyan-400 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               Verificar <ChevronRight className="w-3.5 h-3.5" />
             </span>

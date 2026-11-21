@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { Sector, SkillStation, EmployeeSkillRecord, SkillLevel } from '../types';
-import { X, UserPlus, User, Briefcase, Clock, Check } from 'lucide-react';
+import { UnifiedPlantEmployee } from '@/lib/unified-employee-directory';
+import { X, UserPlus, User, Briefcase, Clock, Sparkles } from 'lucide-react';
 
 interface AddOperatorModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface AddOperatorModalProps {
   stations: SkillStation[];
   onAddOperator: (operator: EmployeeSkillRecord) => void;
   tintedGlass?: boolean;
+  plantDirectory?: UnifiedPlantEmployee[];
 }
 
 export function AddOperatorModal({
@@ -19,7 +21,8 @@ export function AddOperatorModal({
   sector,
   stations,
   onAddOperator,
-  tintedGlass = false
+  tintedGlass = false,
+  plantDirectory = []
 }: AddOperatorModalProps) {
   const [name, setName] = useState('');
   const [role, setRole] = useState('Operador de Produção');
@@ -97,6 +100,54 @@ export function AddOperatorModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {plantDirectory.length > 0 && (
+            <div
+              className={`p-3 rounded-2xl border space-y-1.5 ${
+                tintedGlass
+                  ? 'bg-cyan-500/10 border-cyan-500/30'
+                  : 'bg-cyan-50/70 border-cyan-200'
+              }`}
+            >
+              <label
+                className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider ${
+                  tintedGlass ? 'text-cyan-300' : 'text-cyan-800'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                Puxar Colaborador da Base Unificada da Planta (Opcional)
+              </label>
+              <select
+                defaultValue=""
+                onChange={e => {
+                  const found = plantDirectory.find(emp => emp.key === e.target.value);
+                  if (found) {
+                    setName(found.name);
+                    setRole(found.role || 'Operador de Produção');
+                    setShift(
+                      found.shift === '2º Turno'
+                        ? 'Turno B'
+                        : found.shift === '3º Turno'
+                        ? 'Turno C'
+                        : 'Turno A'
+                    );
+                  }
+                }}
+                className={`w-full text-xs rounded-xl px-3 py-2 border focus:outline-none cursor-pointer ${
+                  tintedGlass
+                    ? 'bg-slate-950 border-white/15 text-white [&>option]:bg-slate-900'
+                    : 'bg-white border-slate-200 text-slate-900'
+                }`}
+              >
+                <option value="">-- Selecionar colaborador já cadastrado em outro módulo --</option>
+                {plantDirectory.map(emp => (
+                  <option key={emp.key} value={emp.key}>
+                    {emp.name} ({emp.role} • {emp.department})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
               Nome Completo do Colaborador *

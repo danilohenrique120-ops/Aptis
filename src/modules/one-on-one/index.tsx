@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTenant } from '@/context/tenant-context';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
@@ -36,10 +36,28 @@ import {
   Smile,
   AlertCircle,
   MessageSquare,
-  Building2
+  Building2,
+  RefreshCw
 } from 'lucide-react';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
 import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
+import { usePlantEmployees } from '@/hooks/use-plant-employees';
+import { UnifiedEmployeeSyncModal } from '@/components/common/UnifiedEmployeeSyncModal';
+import { UnifiedPlantEmployee } from '@/lib/unified-employee-directory';
+
+function buildSynced1on1Member(emp: UnifiedPlantEmployee, index: number): TeamMember1on1 {
+  return {
+    id: `mem-sync-${Date.now()}-${index}`,
+    name: emp.name,
+    role: emp.role || 'Operador Industrial',
+    department: emp.department || 'Produção',
+    lastMeetingDate: undefined,
+    meetingsCount: 0,
+    averageMood: 4.0,
+    openActionItemsCount: 0,
+    status: 'up_to_date'
+  };
+}
 
 export default function OneOnOneModule() {
   const { currentUser, currentTenant } = useTenant();
@@ -84,6 +102,24 @@ export default function OneOnOneModule() {
   const [editingMeeting, setEditingMeeting] = useState<OneOnOneMeeting | null>(null);
   const [selectedMeetingDetail, setSelectedMeetingDetail] = useState<OneOnOneMeeting | null>(null);
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+  const [isSyncEmployeesModalOpen, setIsSyncEmployeesModalOpen] = useState(false);
+
+  const safeMembers = useMemo(() => (Array.isArray(members) ? members : []), [members]);
+  const existingMemberNames = useMemo(() => safeMembers.map(m => m.name), [safeMembers]);
+  const {
+    directory: plantEmployeeDirectory,
+    missingForModule: missingPlantEmployees
+  } = usePlantEmployees({
+    currentModule: 'one-on-one',
+    existingNamesInModule: existingMemberNames,
+    liveOneOnOneMembers: safeMembers
+  });
+
+  const handleSyncImportToOneOnOne = (selected: UnifiedPlantEmployee[]) => {
+    if (selected.length === 0) return;
+    const created = selected.map((emp, idx) => buildSynced1on1Member(emp, idx));
+    setMembers(prev => [...created, ...(Array.isArray(prev) ? prev : [])]);
+  };
 
   // Modal de Cadastro / Edição de Liderado
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
@@ -813,6 +849,24 @@ export default function OneOnOneModule() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => setIsSyncEmployeesModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border-cyan-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'
+                  : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border-cyan-300'
+              }`}
+              title="Sincronizar colaboradores cadastrados em outros módulos da Suíte Aptis (Skills, Compliance e PDI)"
+            >
+              <RefreshCw className="w-4 h-4 text-cyan-400" />
+              Sincronizar Base
+              {missingPlantEmployees.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-cyan-400 text-slate-950">
+                  +{missingPlantEmployees.length}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setIsExcelImporterOpen(true)}
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
@@ -1912,6 +1966,48 @@ export default function OneOnOneModule() {
             </div>
 
             <form onSubmit={handleSaveMember} className="space-y-4 text-xs relative z-10">
+              {!editingMember && missingPlantEmployees.length > 0 && (
+                <div
+                  className={`p-3 rounded-2xl border space-y-1.5 ${
+                    tintedGlass
+                      ? 'bg-cyan-500/10 border-cyan-500/30'
+                      : 'bg-cyan-50/70 border-cyan-200'
+                  }`}
+                >
+                  <label
+                    className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider ${
+                      tintedGlass ? 'text-cyan-300' : 'text-cyan-800'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    Puxar Colaborador da Base Unificada da Planta (Opcional)
+                  </label>
+                  <select
+                    defaultValue=""
+                    onChange={e => {
+                      const found = missingPlantEmployees.find(emp => emp.key === e.target.value);
+                      if (found) {
+                        setMemberName(found.name);
+                        setMemberRole(found.role || 'Operador');
+                        setMemberDepartment(found.department || 'Produção');
+                      }
+                    }}
+                    className={`w-full text-xs rounded-xl px-3 py-2 border focus:outline-none cursor-pointer ${
+                      tintedGlass
+                        ? 'bg-slate-950 border-white/15 text-white [&>option]:bg-slate-900'
+                        : 'bg-white border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    <option value="">-- Selecionar colaborador já cadastrado em outro módulo --</option>
+                    {missingPlantEmployees.map(emp => (
+                      <option key={emp.key} value={emp.key}>
+                        {emp.name} ({emp.role} • {emp.department})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label
                   className={`font-bold uppercase tracking-wider text-[11px] block mb-1 ${
@@ -2189,6 +2285,16 @@ export default function OneOnOneModule() {
         columns={EXCEL_IMPORT_CONFIGS['one-on-one'].columns}
         sampleRows={EXCEL_IMPORT_CONFIGS['one-on-one'].sampleRows}
         onImport={handleImportOneOnOneExcel}
+      />
+
+      <UnifiedEmployeeSyncModal
+        isOpen={isSyncEmployeesModalOpen}
+        onClose={() => setIsSyncEmployeesModalOpen(false)}
+        targetModule="one-on-one"
+        directory={plantEmployeeDirectory}
+        missingEmployees={missingPlantEmployees}
+        onImportEmployees={handleSyncImportToOneOnOne}
+        tintedGlass={tintedGlass}
       />
     </div>
   );

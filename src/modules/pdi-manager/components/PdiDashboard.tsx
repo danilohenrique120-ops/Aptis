@@ -20,7 +20,8 @@ import {
   Building2,
   Sparkles,
   Award,
-  Layers
+  Layers,
+  RefreshCw
 } from 'lucide-react';
 
 interface PdiDashboardProps {
@@ -32,6 +33,8 @@ interface PdiDashboardProps {
   onExportPdiPdf?: (pdi: EmployeePdi) => void;
   onOpenCreateModal: () => void;
   onOpenExcelImporter?: () => void;
+  onOpenSyncEmployees?: () => void;
+  missingSyncCount?: number;
 }
 
 type PdiStatusFilter = 'all' | 'high_readiness' | 'in_progress' | 'needs_attention';
@@ -44,7 +47,9 @@ export function PdiDashboard({
   onDeletePdi,
   onExportPdiPdf,
   onOpenCreateModal,
-  onOpenExcelImporter
+  onOpenExcelImporter,
+  onOpenSyncEmployees,
+  missingSyncCount = 0
 }: PdiDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedShift, setSelectedShift] = useState('all');
@@ -195,6 +200,26 @@ export function PdiDashboard({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {onOpenSyncEmployees && (
+              <button
+                onClick={onOpenSyncEmployees}
+                className={`px-4 py-2.5 font-bold rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0 border ${
+                  tintedGlass
+                    ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border-cyan-400/35 shadow-[0_0_18px_rgba(6,182,212,0.2)]'
+                    : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border-cyan-300 shadow-2xs'
+                }`}
+                title="Sincronizar colaboradores cadastrados em outros módulos da Suíte Aptis (Skills, Compliance e 1:1)"
+              >
+                <RefreshCw className="w-4 h-4 text-cyan-400" />
+                Sincronizar Base
+                {missingSyncCount > 0 && (
+                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-cyan-400 text-slate-950">
+                    +{missingSyncCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {onOpenExcelImporter && (
               <button
                 onClick={onOpenExcelImporter}

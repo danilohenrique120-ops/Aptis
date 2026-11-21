@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTenant } from '@/context/tenant-context';
 import { useTenantStorage } from '@/hooks/use-tenant-storage';
 import { 
@@ -40,6 +40,48 @@ import { EmployeeDossierModal } from './components/EmployeeDossierModal';
 import { usePlantSectors } from '@/hooks/use-plant-sectors';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
 import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
+import { usePlantEmployees } from '@/hooks/use-plant-employees';
+import {
+  UnifiedEmployeeSyncModal,
+  ComplianceImportConfig
+} from '@/components/common/UnifiedEmployeeSyncModal';
+import { UnifiedPlantEmployee } from '@/lib/unified-employee-directory';
+
+function buildSyncedTrainingRecord(
+  emp: UnifiedPlantEmployee,
+  index: number,
+  tenantId: string,
+  config?: ComplianceImportConfig
+): TrainingRecord {
+  const now = new Date();
+  const completedDate = now.toISOString().split('T')[0];
+  const validityMonths = config?.validityMonths || 24;
+  const expiry = new Date(now);
+  expiry.setMonth(expiry.getMonth() + validityMonths);
+  const expiryDate = expiry.toISOString().split('T')[0];
+  const trainingName = config?.trainingName || 'NR-12 Segurança em Máquinas e Equipamentos';
+  const isPop = config?.trainingType === 'POP' || trainingName.toUpperCase().startsWith('POP');
+  const codeMatch = trainingName.match(/^(NR-\d+|POP-\d+)/i);
+  const code = codeMatch ? codeMatch[1].toUpperCase() : isPop ? 'POP-001' : 'NR-12';
+
+  return {
+    id: `tr-sync-${Date.now()}-${index}`,
+    tenantId,
+    type: isPop ? 'POP' : 'NR',
+    code,
+    employeeName: emp.name,
+    employeeRole: emp.role || 'Operador Industrial',
+    department: emp.department || 'Usinagem CNC',
+    courseName: trainingName,
+    completedDate,
+    expiryDate,
+    certificateCode: `SYNC-${code}-${(1000 + index).toString()}`,
+    validityMonths,
+    instructorOrEntity: 'Sincronizado da Base da Planta',
+    version: isPop ? 'v1.0' : undefined,
+    attachments: []
+  };
+}
 
 const INITIAL_DOCUMENTS: DocumentAttachment[] = [
   {
@@ -291,7 +333,33 @@ export default function TrainingMatrixModule() {
   const [dossierEmployee, setDossierEmployee] = useState<string | null>(null);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
+  const [isSyncEmployeesModalOpen, setIsSyncEmployeesModalOpen] = useState(false);
   const [tintedGlass, setTintedGlass] = useState<boolean>(true);
+
+  const safeTrainings = useMemo(() => (Array.isArray(trainings) ? trainings : []), [trainings]);
+  const existingTrainingEmployeeNames = useMemo(
+    () => safeTrainings.map(t => t.employeeName),
+    [safeTrainings]
+  );
+  const {
+    directory: plantEmployeeDirectory,
+    missingForModule: missingPlantEmployees
+  } = usePlantEmployees({
+    currentModule: 'training-matrix',
+    existingNamesInModule: existingTrainingEmployeeNames,
+    liveTrainingRecords: safeTrainings
+  });
+
+  const handleSyncImportToCompliance = (
+    selected: UnifiedPlantEmployee[],
+    complianceConfig?: ComplianceImportConfig
+  ) => {
+    if (selected.length === 0) return;
+    const created = selected.map((emp, idx) =>
+      buildSyncedTrainingRecord(emp, idx, currentTenant.id, complianceConfig)
+    );
+    setTrainings(prev => [...created, ...(Array.isArray(prev) ? prev : [])]);
+  };
 
   useEffect(() => {
     const syncGlassMode = () => {
@@ -571,6 +639,24 @@ export default function TrainingMatrixModule() {
                 Limpar Registros
               </button>
             )}
+
+            <button
+              onClick={() => setIsSyncEmployeesModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border-cyan-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'
+                  : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border-cyan-300'
+              }`}
+              title="Sincronizar colaboradores cadastrados em outros módulos da Suíte Aptis (Skills, 1:1 e PDI)"
+            >
+              <RefreshCw className="w-4 h-4 text-cyan-400" />
+              Sincronizar Base
+              {missingPlantEmployees.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-cyan-400 text-slate-950">
+                  +{missingPlantEmployees.length}
+                </span>
+              )}
+            </button>
 
             <button
               onClick={() => setIsExcelImporterOpen(true)}
@@ -1242,6 +1328,50 @@ export default function TrainingMatrixModule() {
                 />
               </div>
 
+              {plantEmployeeDirectory.length > 0 && (
+                <div
+                  className={`p-3 rounded-2xl border space-y-1.5 ${
+                    tintedGlass
+                      ? 'bg-cyan-500/10 border-cyan-500/30'
+                      : 'bg-cyan-50/70 border-cyan-200'
+                  }`}
+                >
+                  <label
+                    className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider ${
+                      tintedGlass ? 'text-cyan-300' : 'text-cyan-800'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    Puxar Colaborador da Base Unificada da Planta (Opcional)
+                  </label>
+                  <select
+                    defaultValue=""
+                    onChange={e => {
+                      const found = plantEmployeeDirectory.find(emp => emp.key === e.target.value);
+                      if (found) {
+                        setNewEmployee(found.name);
+                        setNewEmployeeRole(found.role || 'Operador Especialista');
+                        if (found.department) {
+                          setNewDepartment(found.department);
+                        }
+                      }
+                    }}
+                    className={`w-full text-xs rounded-xl px-3 py-2 border focus:outline-none cursor-pointer ${
+                      tintedGlass
+                        ? 'bg-slate-950 border-white/15 text-white [&>option]:bg-slate-900'
+                        : 'bg-white border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    <option value="">-- Selecionar colaborador já cadastrado na planta --</option>
+                    {plantEmployeeDirectory.map(emp => (
+                      <option key={emp.key} value={emp.key}>
+                        {emp.name} ({emp.role} • {emp.department})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={`block text-xs font-semibold mb-1 ${tintedGlass ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -1396,6 +1526,16 @@ export default function TrainingMatrixModule() {
         columns={EXCEL_IMPORT_CONFIGS['training-matrix'].columns}
         sampleRows={EXCEL_IMPORT_CONFIGS['training-matrix'].sampleRows}
         onImport={handleImportTrainingExcel}
+      />
+
+      <UnifiedEmployeeSyncModal
+        isOpen={isSyncEmployeesModalOpen}
+        onClose={() => setIsSyncEmployeesModalOpen(false)}
+        targetModule="training-matrix"
+        directory={plantEmployeeDirectory}
+        missingEmployees={missingPlantEmployees}
+        onImportEmployees={handleSyncImportToCompliance}
+        tintedGlass={tintedGlass}
       />
     </div>
   );

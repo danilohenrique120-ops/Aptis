@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { EmployeePdi, PdiActionItem } from '../types';
 import { PDI_TEMPLATES } from '../mock-data';
+import { UnifiedPlantEmployee } from '@/lib/unified-employee-directory';
 import { 
   X, 
   Compass, 
@@ -21,38 +22,49 @@ interface PdiModalFormProps {
   onClose: () => void;
   onSave: (pdi: EmployeePdi) => void;
   existingPdi?: EmployeePdi | null;
+  plantDirectory?: UnifiedPlantEmployee[];
 }
 
 export function PdiModalForm({
   isOpen,
   onClose,
   onSave,
-  existingPdi
+  existingPdi,
+  plantDirectory = []
 }: PdiModalFormProps) {
-  const [employeeName, setEmployeeName] = useState('');
-  const [employeeRole, setEmployeeRole] = useState('');
-  const [currentLevel, setCurrentLevel] = useState('Pleno / N2');
-  const [department, setDepartment] = useState('Usinagem CNC');
-  const [shift, setShift] = useState('Turno A');
-  const [targetRole, setTargetRole] = useState('');
-  const [targetLevel, setTargetLevel] = useState('Nível 3 (Autônomo / Multi-posto)');
-  const [cycleYear, setCycleYear] = useState('2026 - 1º Ciclo');
-  const [careerGoal, setCareerGoal] = useState('');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [employeeName, setEmployeeName] = useState(existingPdi?.employeeName || '');
+  const [employeeRole, setEmployeeRole] = useState(existingPdi?.employeeRole || '');
+  const [currentLevel, setCurrentLevel] = useState(existingPdi?.currentLevel || 'Operador I');
+  const [department, setDepartment] = useState(existingPdi?.department || 'Usinagem CNC');
+  const [shift, setShift] = useState(existingPdi?.shift || 'Turno A');
+  const [targetRole, setTargetRole] = useState(existingPdi?.targetRole || '');
+  const [targetLevel, setTargetLevel] = useState(
+    existingPdi?.targetLevel || 'Nível 3 (Autônomo / Multi-posto)'
+  );
+  const [cycleYear, setCycleYear] = useState(existingPdi?.cycleYear || '2026 - 1º Ciclo');
+  const [careerGoal, setCareerGoal] = useState(existingPdi?.careerGoal || '');
+  const [startDate, setStartDate] = useState(
+    existingPdi?.startDate || new Date().toISOString().split('T')[0]
+  );
   const [targetEndDate, setTargetEndDate] = useState(() => {
+    if (existingPdi?.targetEndDate) return existingPdi.targetEndDate;
     const d = new Date();
     d.setMonth(d.getMonth() + 6);
     return d.toISOString().split('T')[0];
   });
 
-  const [strengths, setStrengths] = useState<string[]>([
-    'Pontualidade e comprometimento',
-    'Bom relacionamento interpessoal'
-  ]);
-  const [growthGaps, setGrowthGaps] = useState<string[]>([
-    'Autonomia em resolução de problemas técnicos',
-    'Postura de liderança na passagem de turno'
-  ]);
+  const [strengths, setStrengths] = useState<string[]>(
+    existingPdi?.strengths || [
+      'Pontualidade e comprometimento',
+      'Bom relacionamento interpessoal'
+    ]
+  );
+  const [growthGaps, setGrowthGaps] = useState<string[]>(
+    existingPdi?.growthGaps || [
+      'Autonomia em resolução de problemas técnicos',
+      'Postura de liderança na passagem de turno'
+    ]
+  );
   const [strengthInput, setStrengthInput] = useState('');
   const [gapInput, setGapInput] = useState('');
   const [editingStrengthIdx, setEditingStrengthIdx] = useState<number | null>(null);
@@ -61,51 +73,6 @@ export function PdiModalForm({
   const [editingGapText, setEditingGapText] = useState('');
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-
-  // Sincroniza os campos sempre que o modal abre ou quando muda o PDI em edição
-  useEffect(() => {
-    if (!isOpen) return;
-    if (existingPdi) {
-      setEmployeeName(existingPdi.employeeName || '');
-      setEmployeeRole(existingPdi.employeeRole || '');
-      setCurrentLevel(existingPdi.currentLevel || 'Pleno / N2');
-      setDepartment(existingPdi.department || 'Usinagem CNC');
-      setShift(existingPdi.shift || 'Turno A');
-      setTargetRole(existingPdi.targetRole || '');
-      setTargetLevel(existingPdi.targetLevel || 'Nível 3 (Autônomo / Multi-posto)');
-      setCycleYear(existingPdi.cycleYear || '2026 - 1º Ciclo');
-      setCareerGoal(existingPdi.careerGoal || '');
-      setStartDate(existingPdi.startDate || new Date().toISOString().split('T')[0]);
-      setTargetEndDate(existingPdi.targetEndDate || new Date().toISOString().split('T')[0]);
-      setStrengths(existingPdi.strengths || []);
-      setGrowthGaps(existingPdi.growthGaps || []);
-      setSelectedTemplateId('');
-    } else {
-      setEmployeeName('');
-      setEmployeeRole('');
-      setCurrentLevel('Operador I');
-      setDepartment('Usinagem CNC');
-      setShift('Turno A');
-      setTargetRole('');
-      setTargetLevel('Nível 3 (Autônomo / Multi-posto)');
-      setCycleYear('2026 - 1º Ciclo');
-      setCareerGoal('');
-      setStartDate(new Date().toISOString().split('T')[0]);
-      const d = new Date();
-      d.setMonth(d.getMonth() + 6);
-      setTargetEndDate(d.toISOString().split('T')[0]);
-      setStrengths(['Pontualidade e comprometimento', 'Bom relacionamento interpessoal']);
-      setGrowthGaps([
-        'Autonomia em resolução de problemas técnicos',
-        'Postura de liderança na passagem de turno'
-      ]);
-      setSelectedTemplateId('');
-    }
-    setStrengthInput('');
-    setGapInput('');
-    setEditingStrengthIdx(null);
-    setEditingGapIdx(null);
-  }, [isOpen, existingPdi]);
 
   if (!isOpen) return null;
 
@@ -282,6 +249,42 @@ export function PdiModalForm({
             <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] border-b border-white/10 pb-1.5">
               1. Identificação do Colaborador
             </h4>
+
+            {!existingPdi && plantDirectory.length > 0 && (
+              <div className="p-3 rounded-2xl border bg-cyan-500/10 border-cyan-500/30 space-y-1.5">
+                <label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  Puxar Colaborador da Base Unificada da Planta (Opcional)
+                </label>
+                <select
+                  defaultValue=""
+                  onChange={e => {
+                    const found = plantDirectory.find(emp => emp.key === e.target.value);
+                    if (found) {
+                      setEmployeeName(found.name);
+                      setEmployeeRole(found.role || 'Operador Industrial');
+                      setDepartment(found.department || 'Usinagem CNC');
+                      setShift(
+                        found.shift === '2º Turno'
+                          ? 'Turno B'
+                          : found.shift === '3º Turno'
+                          ? 'Turno C'
+                          : 'Turno A'
+                      );
+                    }
+                  }}
+                  className="w-full text-xs rounded-xl px-3 py-2 border bg-slate-950 border-white/15 text-white focus:outline-none cursor-pointer [&>option]:bg-slate-900"
+                >
+                  <option value="">-- Selecionar colaborador já cadastrado em outro módulo --</option>
+                  {plantDirectory.map(emp => (
+                    <option key={emp.key} value={emp.key}>
+                      {emp.name} ({emp.role} • {emp.department})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Nome Completo do Colaborador *</label>

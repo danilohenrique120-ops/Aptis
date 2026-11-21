@@ -241,7 +241,7 @@ export default function HomePage() {
                   <div>
                     <h3 className="text-sm font-bold text-slate-100">Aptidão Técnica (Skills ILUO)</h3>
                     <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                      Postos críticos cobertos com operadores autônomos níveis 'U' (autônomo) ou 'O' (multiplicador/tutor).
+                      Postos críticos cobertos com operadores autônomos níveis &apos;U&apos; (autônomo) ou &apos;O&apos; (multiplicador/tutor).
                     </p>
                   </div>
                   <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -478,7 +478,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Ambiente exclusivo e isolado da sua empresa (Multi-Tenant seguro)</span>
+                    <span>Ambiente corporativo 100% exclusivo e isolado com criptografia</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
@@ -493,7 +493,7 @@ export default function HomePage() {
 
               <div className="pt-8">
                 <button
-                  onClick={() => handleOpenDemoModal(undefined, 'Licença Modular Direcionada (Sob Medida)')}
+                  onClick={() => handleOpenDemoModal(undefined, 'Escopo 01: Licença Modular Direcionada')}
                   className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:border-cyan-500/40 hover:text-white flex items-center justify-center gap-2"
                 >
                   <span>Solicitar Proposta Modular</span>
@@ -556,7 +556,7 @@ export default function HomePage() {
 
               <div className="pt-8">
                 <button
-                  onClick={() => handleOpenDemoModal(undefined, 'Suíte Aptis 360º - Planta Integrada')}
+                  onClick={() => handleOpenDemoModal(undefined, 'Escopo 02: Suíte Aptis 360º')}
                   className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/25 cursor-pointer flex items-center justify-center gap-2"
                 >
                   <span>Agendar Demonstração & Proposta</span>
@@ -615,7 +615,7 @@ export default function HomePage() {
 
               <div className="pt-8">
                 <button
-                  onClick={() => handleOpenDemoModal(undefined, 'Enterprise & Multi-Plantas (Projeto Executivo)')}
+                  onClick={() => handleOpenDemoModal(undefined, 'Escopo 03: Enterprise & Multi-Plantas')}
                   className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-slate-700/80 hover:border-amber-500/40 hover:text-white flex items-center justify-center gap-2"
                 >
                   <span>Falar com Diretor de Contas</span>

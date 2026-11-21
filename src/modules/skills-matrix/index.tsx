@@ -53,10 +53,18 @@ import {
   LayoutDashboard,
   UserCheck,
   FileSpreadsheet,
-  Globe
+  Globe,
+  RefreshCw
 } from 'lucide-react';
 import { SmartExcelImporterModal } from '@/components/common/SmartExcelImporterModal';
 import { EXCEL_IMPORT_CONFIGS } from '@/config/excel-templates-config';
+import { usePlantEmployees } from '@/hooks/use-plant-employees';
+import { UnifiedEmployeeSyncModal } from '@/components/common/UnifiedEmployeeSyncModal';
+import { UnifiedPlantEmployee } from '@/lib/unified-employee-directory';
+
+function createSyncedSkillEmployeeId(index: number): string {
+  return `emp-sync-${Date.now()}-${index}`;
+}
 
 export const SKILL_LEVEL_DEFINITIONS: Record<SkillLevel, SkillLevelInfo> = {
   1: {
@@ -104,7 +112,7 @@ export const SKILL_LEVEL_DEFINITIONS: Record<SkillLevel, SkillLevelInfo> = {
 // ==========================================
 // DADOS INICIAIS MULTI-SETOR ISOLADOS
 // ==========================================
-const INITIAL_STATIONS: SkillStation[] = [
+export const INITIAL_STATIONS: SkillStation[] = [
   // Usinagem
   { id: 'st-cnc-4e', sectorId: 'sec-usinagem', name: 'Torno CNC 4 Eixos', category: 'Torneamento', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
   { id: 'st-cnc-cent', sectorId: 'sec-usinagem', name: 'Centro de Usinagem Vertical', category: 'Fresamento', skillType: 'hard_station', isCriticalForLineStop: true, minOperatorsRequired: 2, targetLevel: 3 },
@@ -127,7 +135,7 @@ const INITIAL_STATIONS: SkillStation[] = [
   { id: 'st-mon-comunicacao', sectorId: 'sec-montagem', name: 'Comunicação Assertiva entre Turnos', category: 'Comportamental & Liderança', skillType: 'soft_skill', isCriticalForLineStop: false, minOperatorsRequired: 2, targetLevel: 3 }
 ];
 
-const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
+export const INITIAL_EMPLOYEES: EmployeeSkillRecord[] = [
   // Usinagem
   {
     employeeId: 'emp-1',
@@ -440,6 +448,7 @@ export default function SkillsMatrixModule() {
   const [isStationModalOpen, setIsStationModalOpen] = useState(false);
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
   const [isSuccessionModalOpen, setIsSuccessionModalOpen] = useState(false);
+  const [isSyncEmployeesModalOpen, setIsSyncEmployeesModalOpen] = useState(false);
 
   // Importação de Excel Inteligente
   const handleImportSkillsExcel = (rows: Record<string, unknown>[]) => {
@@ -540,6 +549,65 @@ export default function SkillsMatrixModule() {
       ? sectorStations
       : sectorStations.filter(s => getEffectiveSkillType(s) === stationTypeFilter);
   const sectorEmployees = safeEmployees.filter(e => e && e.sectorId === activeSector.id);
+
+  // Base Unificada de Colaboradores da Planta (Skills <-> Compliance <-> 1:1 <-> PDI)
+  const existingEmployeeNamesInSkills = useMemo(
+    () => safeEmployees.map(e => e.employeeName),
+    [safeEmployees]
+  );
+  const accessibleSectorIdsList = useMemo(
+    () => accessibleSectors.map(s => s.id),
+    [accessibleSectors]
+  );
+  const allowedSectorIdsForSync = isPlantAdmin ? undefined : accessibleSectorIdsList;
+  const {
+    directory: plantEmployeeDirectory,
+    missingForModule: missingPlantEmployees
+  } = usePlantEmployees({
+    currentModule: 'skills-matrix',
+    existingNamesInModule: existingEmployeeNamesInSkills,
+    allowedSectorIds: allowedSectorIdsForSync,
+    liveSkillsEmployees: safeEmployees
+  });
+
+  const handleSyncImportToSkills = (selected: UnifiedPlantEmployee[]) => {
+    if (selected.length === 0) return;
+
+    setEmployees(prev => {
+      const current = Array.isArray(prev) ? prev : [];
+      const existingLower = new Set(current.map(e => e.employeeName.trim().toLowerCase()));
+      const additions: EmployeeSkillRecord[] = [];
+
+      selected.forEach((emp, idx) => {
+        if (existingLower.has(emp.name.trim().toLowerCase())) return;
+        const targetSectorId =
+          emp.sectorId && accessibleSectorIdSet.has(emp.sectorId)
+            ? emp.sectorId
+            : activeSector.id;
+        const targetStations = safeStations.filter(st => st.sectorId === targetSectorId);
+        const defaultSkills: Record<string, SkillLevel> = {};
+        targetStations.forEach(st => {
+          defaultSkills[st.id] = 1;
+        });
+
+        additions.push({
+          employeeId: createSyncedSkillEmployeeId(idx),
+          sectorId: targetSectorId,
+          employeeName: emp.name,
+          role: emp.role || 'Operador de Produção',
+          shift:
+            emp.shift === '2º Turno'
+              ? 'Turno B'
+              : emp.shift === '3º Turno'
+              ? 'Turno C'
+              : 'Turno A',
+          skills: defaultSkills
+        });
+      });
+
+      return [...current, ...additions];
+    });
+  };
 
   // Catálogo sanitizado da fábrica inteira (para sugestão anti-duplicidade ao criar skill)
   const plantSkillCatalog = useMemo(
@@ -908,6 +976,24 @@ export default function SkillsMatrixModule() {
                 {isPlantAdmin ? 'Limpar Matriz' : `Limpar ${activeSector.code}`}
               </button>
             )}
+
+            <button
+              onClick={() => setIsSyncEmployeesModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                tintedGlass
+                  ? 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border-cyan-400/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]'
+                  : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border-cyan-300'
+              }`}
+              title="Sincronizar colaboradores cadastrados em outros módulos da Suíte Aptis (Compliance, 1:1 e PDI)"
+            >
+              <RefreshCw className="w-4 h-4 text-cyan-400" />
+              Sincronizar Base
+              {missingPlantEmployees.length > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-cyan-400 text-slate-950">
+                  +{missingPlantEmployees.length}
+                </span>
+              )}
+            </button>
 
             <button
               onClick={() => setIsExcelImporterOpen(true)}
@@ -1765,6 +1851,17 @@ export default function SkillsMatrixModule() {
         sector={activeSector}
         stations={sectorStations}
         onAddOperator={handleAddOperator}
+        tintedGlass={tintedGlass}
+        plantDirectory={missingPlantEmployees}
+      />
+
+      <UnifiedEmployeeSyncModal
+        isOpen={isSyncEmployeesModalOpen}
+        onClose={() => setIsSyncEmployeesModalOpen(false)}
+        targetModule="skills-matrix"
+        directory={plantEmployeeDirectory}
+        missingEmployees={missingPlantEmployees}
+        onImportEmployees={handleSyncImportToSkills}
         tintedGlass={tintedGlass}
       />
 
