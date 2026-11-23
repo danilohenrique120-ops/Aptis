@@ -5,7 +5,6 @@ import {
   Wrench,
   Calendar,
   Building2,
-  QrCode,
   Sparkles,
   Smartphone,
   Layers,
@@ -52,7 +51,6 @@ import {
 } from './mock-data';
 
 import { SmartDocumentImporterModal } from './components/SmartDocumentImporterModal';
-import { QRCodeManagerModal } from './components/QRCodeManagerModal';
 import { DigitalOSMobileModal, PreventiveCycleOptions } from './components/DigitalOSMobileModal';
 import { WorkOrderModal } from './components/WorkOrderModal';
 import { ScheduleCalendarView } from './components/ScheduleCalendarView';
@@ -127,7 +125,6 @@ export const ServiceProModule: React.FC = () => {
   // Modals state
   const [isImporterOpen, setIsImporterOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
-  const [qrCodeModalEquipment, setQRCodeModalEquipment] = useState<Equipment | null>(null);
   const [mobileOSModalOrder, setMobileOSModalOrder] = useState<MaintenanceWorkOrder | null>(null);
   const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
   const [editingWorkOrder, setEditingWorkOrder] = useState<MaintenanceWorkOrder | null>(null);
@@ -1092,7 +1089,7 @@ export const ServiceProModule: React.FC = () => {
                 tintedGlass ? 'text-slate-400' : 'text-slate-500'
               }`}
             >
-              Com TAGs QR Code ativas
+              Com planos preventivos ativos
             </span>
           </div>
 
@@ -1667,22 +1664,6 @@ export const ServiceProModule: React.FC = () => {
                             )}
                           </p>
                         </div>
-
-                        <button
-                          onClick={() => setQRCodeModalEquipment(eq)}
-                          className={`p-2 rounded-xl transition cursor-pointer shrink-0 ${
-                            tintedGlass
-                              ? 'aptis-glass-subcard text-cyan-300 hover:text-white hover:border-cyan-400/40'
-                              : 'bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 shadow-2xs'
-                          }`}
-                          title="Ver Etiqueta QR Code"
-                        >
-                          <QrCode
-                            className={`w-4 h-4 ${
-                              tintedGlass ? 'text-cyan-400' : 'text-blue-600'
-                            }`}
-                          />
-                        </button>
                       </div>
                     );
                   })}
@@ -2159,22 +2140,6 @@ export const ServiceProModule: React.FC = () => {
                     }`}
                   >
                     <button
-                      onClick={() => setQRCodeModalEquipment(eq)}
-                      className={`flex-1 py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 text-xs transition cursor-pointer ${
-                        tintedGlass
-                          ? 'aptis-glass-subcard text-slate-200 hover:text-white hover:border-cyan-400/40'
-                          : 'bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 shadow-2xs'
-                      }`}
-                    >
-                      <QrCode
-                        className={`w-3.5 h-3.5 ${
-                          tintedGlass ? 'text-cyan-400' : 'text-blue-600'
-                        }`}
-                      />
-                      Etiqueta QR
-                    </button>
-
-                    <button
                       onClick={() => {
                         const newOrder: MaintenanceWorkOrder = {
                           id: `wo-${Date.now()}`,
@@ -2506,13 +2471,6 @@ export const ServiceProModule: React.FC = () => {
         onImportEquipment={handleImportEquipment}
         onSaveCatalogItem={handleSaveCatalogItem}
         editingEquipment={editingEquipment}
-      />
-
-      <QRCodeManagerModal
-        tintedGlass={tintedGlass}
-        isOpen={!!qrCodeModalEquipment}
-        onClose={() => setQRCodeModalEquipment(null)}
-        equipment={qrCodeModalEquipment}
       />
 
       <DigitalOSMobileModal

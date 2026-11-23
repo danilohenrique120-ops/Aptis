@@ -207,7 +207,7 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
     id: 'service-pro',
     name: 'Aptis Service Pro',
     shortDescription: 'Gestão para empresas de manutenção industrial e contratos B2B: multi-clientes, catálogo mestre, controle automático de vencimentos preventivos e laudos de OS.',
-    fullDescription: 'O sistema operacional definitivo para o gestor e prestador de serviços de manutenção industrial e predial. Controle múltiplos clientes B2B, inventário de máquinas com QR Code, cálculo automático de vencimentos preventivos, inteligência cruzada de diagnósticos de falhas (Waze da Manutenção) e baixa de OS com laudo assinado.',
+    fullDescription: 'O sistema operacional definitivo para o gestor e prestador de serviços de manutenção industrial e predial. Controle múltiplos clientes B2B, inventário de máquinas com planos por subconjunto, cálculo automático de vencimentos preventivos, inteligência cruzada de diagnósticos de falhas (Waze da Manutenção) e baixa de OS com laudo assinado.',
     category: 'Manutenção & Serviços',
     route: '/dashboard/tools/service-pro',
     iconName: 'Wrench',
@@ -221,7 +221,7 @@ export const TOOLS_REGISTRY: ToolDefinition[] = [
       'Inteligência Cruzada de Diagnóstico entre clientes (Waze da Manutenção)',
       'Radar Preventivo com recálculo automático da próxima manutenção e alertas via WhatsApp',
       'Ficha de Execução & Baixa de OS com fotos Antes & Depois e Assinatura de Conformidade',
-      'Gerador de etiquetas industriais com QR Code dinâmico por equipamento'
+      'Controle de revisões por peça e subconjunto com status interativo por equipamento'
     ],
     colorTheme: {
       bg: 'bg-teal-600',
