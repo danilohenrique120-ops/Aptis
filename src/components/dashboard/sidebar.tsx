@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTenant } from '@/context/tenant-context';
@@ -20,6 +20,26 @@ import {
 } from 'lucide-react';
 import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
 
+function subscribeGlassMode(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('aptis-glass-mode-change', callback);
+  window.addEventListener('storage', callback);
+  return () => {
+    window.removeEventListener('aptis-glass-mode-change', callback);
+    window.removeEventListener('storage', callback);
+  };
+}
+
+function getGlassModeSnapshot(): boolean {
+  if (typeof window === 'undefined') return true;
+  const saved = localStorage.getItem('aptis_tinted_glass_mode');
+  return saved !== null ? saved === 'true' : true;
+}
+
+function getGlassModeServerSnapshot(): boolean {
+  return true;
+}
+
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { currentTenant, effectiveUser, hasLicense } = useTenant();
@@ -29,20 +49,194 @@ export function DashboardSidebar() {
   const licensedTools = allTools.filter(t => hasLicense(t.id));
   const availableTools = allTools.filter(t => !hasLicense(t.id));
 
-  const isCurrentRoute = (route: string) => pathname === route;
-  const [isSectorsModalOpen, setIsSectorsModalOpen] = useState(false);
-  const [tintedGlass, setTintedGlass] = useState(true);
+  const [pendingClick, setPendingClick] = useState<{ fromPath: string; toPath: string } | null>(
+    null
+  );
+  const activeRoute =
+    pendingClick && pendingClick.fromPath === pathname ? pendingClick.toPath : pathname;
 
-  useEffect(() => {
-    const saved = localStorage.getItem('aptis_tinted_glass_mode');
-    if (saved !== null) {
-      setTintedGlass(saved === 'true');
-    }
-  }, []);
+  const isCurrentRoute = (route: string) => activeRoute === route;
+  const [isSectorsModalOpen, setIsSectorsModalOpen] = useState(false);
+  const tintedGlass = useSyncExternalStore(
+    subscribeGlassMode,
+    getGlassModeSnapshot,
+    getGlassModeServerSnapshot
+  );
+
+  // Refs para o Motor de Mitose / Célula Líquida da Sidebar
+  const navContainerRef = useRef<HTMLDivElement | null>(null);
+  const gooLayerRef = useRef<HTMLDivElement | null>(null);
+  const leadCellRef = useRef<HTMLDivElement | null>(null);
+  const trailCellRef = useRef<HTMLDivElement | null>(null);
+  const budCellRef = useRef<HTMLDivElement | null>(null);
+  const rimCellRef = useRef<HTMLDivElement | null>(null);
+  const prevRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const animTimersRef = useRef<number[]>([]);
+
+  useLayoutEffect(() => {
+    const container = navContainerRef.current;
+    const gooLayer = gooLayerRef.current;
+    const lead = leadCellRef.current;
+    const trail = trailCellRef.current;
+    const bud = budCellRef.current;
+    const rim = rimCellRef.current;
+    if (!container || !gooLayer || !lead || !trail || !bud || !rim) return;
+
+    const clearTimers = () => {
+      animTimersRef.current.forEach(t => window.clearTimeout(t));
+      animTimersRef.current = [];
+    };
+
+    const positionCell = (animate: boolean) => {
+      gooLayer.style.height = `${Math.max(container.scrollHeight, container.clientHeight)}px`;
+      const targetEl = container.querySelector<HTMLElement>(
+        `[data-sidebar-route="${CSS.escape(activeRoute)}"]`
+      );
+      if (!targetEl) {
+        lead.style.opacity = '0';
+        trail.style.opacity = '0';
+        bud.style.opacity = '0';
+        rim.style.opacity = '0';
+        return;
+      }
+
+      const cRect = container.getBoundingClientRect();
+      const tRect = targetEl.getBoundingClientRect();
+      const next = {
+        x: tRect.left - cRect.left + container.scrollLeft,
+        y: tRect.top - cRect.top + container.scrollTop,
+        w: tRect.width,
+        h: tRect.height
+      };
+
+      const prev = prevRectRef.current;
+      const shouldAnimate =
+        animate &&
+        prev !== null &&
+        Math.hypot(next.x - prev.x, next.y - prev.y) > 4 &&
+        !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      clearTimers();
+
+      if (!shouldAnimate || !prev) {
+        const instant = 'none';
+        lead.style.transition = instant;
+        trail.style.transition = instant;
+        bud.style.transition = instant;
+        rim.style.transition = instant;
+
+        lead.style.opacity = '1';
+        lead.style.width = `${next.w}px`;
+        lead.style.height = `${next.h}px`;
+        lead.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+
+        trail.style.opacity = '0.92';
+        trail.style.width = `${next.w * 0.9}px`;
+        trail.style.height = `${next.h * 0.88}px`;
+        trail.style.transform = `translate3d(${next.x + next.w * 0.05}px, ${
+          next.y + next.h * 0.06
+        }px, 0) scale(1, 1)`;
+
+        bud.style.opacity = '0';
+        bud.style.width = `${next.w * 0.48}px`;
+        bud.style.height = `${next.h * 0.65}px`;
+        bud.style.transform = `translate3d(${next.x + next.w * 0.26}px, ${
+          next.y + next.h * 0.18
+        }px, 0) scale(0.7)`;
+
+        rim.style.opacity = '1';
+        rim.style.width = `${next.w}px`;
+        rim.style.height = `${next.h}px`;
+        rim.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+
+        prevRectRef.current = next;
+        return;
+      }
+
+      // Fase 1: Descolamento e Mitose Vertical (Lead se descola enquanto Trail estica a membrana!)
+      const midY = prev.y + (next.y - prev.y) * 0.52;
+      const budW = next.w * 0.56;
+      const budH = Math.max(22, next.h * 0.72);
+
+      // Posiciona a gota satélite no ponto de origem antes de disparar
+      bud.style.transition = 'none';
+      bud.style.opacity = '0.95';
+      bud.style.width = `${budW}px`;
+      bud.style.height = `${budH}px`;
+      bud.style.transform = `translate3d(${prev.x + (prev.w - budW) / 2}px, ${
+        prev.y + (prev.h - budH) / 2
+      }px, 0) scale(0.85)`;
+      void bud.offsetWidth;
+
+      lead.style.opacity = '1';
+      lead.style.transition =
+        'transform 400ms cubic-bezier(0.22, 1.16, 0.36, 1), width 380ms ease, height 380ms ease';
+      lead.style.width = `${next.w}px`;
+      lead.style.height = `${next.h}px`;
+      lead.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(0.91, 1.09)`;
+
+      rim.style.opacity = '1';
+      rim.style.transition =
+        'transform 400ms cubic-bezier(0.22, 1.16, 0.36, 1), width 380ms ease, height 380ms ease';
+      rim.style.width = `${next.w}px`;
+      rim.style.height = `${next.h}px`;
+      rim.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(0.95, 1.04)`;
+
+      // Gota filha se desprende no meio do caminho (efeito divisão celular / mitose)
+      bud.style.transition = 'transform 260ms cubic-bezier(0.18, 0.9, 0.32, 1.1), opacity 240ms ease';
+      bud.style.transform = `translate3d(${next.x + (next.w - budW) / 2}px, ${
+        midY + (next.h - budH) / 2
+      }px, 0) scale(0.76, 1.24)`;
+
+      // Trail segura 65ms na origem e depois puxa atrás do Lead, formando a ponte líquida pelo filtro SVG goo
+      trail.style.opacity = '0.96';
+      trail.style.transition =
+        'transform 520ms cubic-bezier(0.42, 0, 0.2, 1) 65ms, width 460ms ease 65ms, height 460ms ease 65ms';
+      trail.style.width = `${next.w * 0.9}px`;
+      trail.style.height = `${next.h * 0.88}px`;
+      trail.style.transform = `translate3d(${next.x + next.w * 0.05}px, ${
+        next.y + next.h * 0.06
+      }px, 0) scale(0.84, 1.14)`;
+
+      // Fase 2: Reabsorção orgânica e acomodação elástica no item de destino
+      const t1 = window.setTimeout(() => {
+        lead.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+        lead.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+
+        rim.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+        rim.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+
+        bud.style.transition = 'transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease';
+        bud.style.transform = `translate3d(${next.x + (next.w - budW) / 2}px, ${
+          next.y + (next.h - budH) / 2
+        }px, 0) scale(0.7)`;
+        bud.style.opacity = '0';
+      }, 240);
+
+      const t2 = window.setTimeout(() => {
+        trail.style.transition = 'transform 200ms ease-out';
+        trail.style.transform = `translate3d(${next.x + next.w * 0.05}px, ${
+          next.y + next.h * 0.06
+        }px, 0) scale(1, 1)`;
+      }, 480);
+
+      animTimersRef.current = [t1, t2];
+      prevRectRef.current = next;
+    };
+
+    positionCell(true);
+
+    const handleResize = () => positionCell(false);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimers();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [activeRoute, licensedTools.length, availableTools.length, isPlantAdmin]);
 
   const handleToggleTintedGlass = () => {
     const next = !tintedGlass;
-    setTintedGlass(next);
     localStorage.setItem('aptis_tinted_glass_mode', String(next));
     window.dispatchEvent(new CustomEvent('aptis-glass-mode-change', { detail: next }));
   };
@@ -115,32 +309,75 @@ export function DashboardSidebar() {
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-5 relative z-10">
+      {/* Navigation com Motor de Mitose / Célula Líquida */}
+      <div
+        ref={navContainerRef}
+        className="flex-1 overflow-y-auto py-4 px-3 space-y-5 relative z-10"
+      >
+        {/* Camada Gooey de Mitose Celular (atrás dos links) */}
+        <div
+          ref={gooLayerRef}
+          aria-hidden="true"
+          className="absolute top-0 left-0 right-0 pointer-events-none z-0"
+          style={{ filter: 'url(#aptis-sidebar-goo)' }}
+        >
+          <div
+            ref={trailCellRef}
+            className="absolute top-0 left-0 rounded-xl opacity-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(90deg, rgba(37, 99, 235, 0.85) 0%, rgba(6, 182, 212, 0.7) 100%)',
+              willChange: 'transform, width, height'
+            }}
+          />
+          <div
+            ref={budCellRef}
+            className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(56, 189, 248, 0.9) 0%, rgba(37, 99, 235, 0.85) 100%)',
+              willChange: 'transform, opacity'
+            }}
+          />
+          <div
+            ref={leadCellRef}
+            className="absolute top-0 left-0 rounded-xl opacity-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(90deg, rgba(37, 99, 235, 0.88) 0%, rgba(6, 182, 212, 0.72) 100%)',
+              willChange: 'transform, width, height'
+            }}
+          />
+        </div>
+
+        {/* Camada Especular Nítida (Borda e Brilho de Vidro acima do filtro goo) */}
+        <div
+          ref={rimCellRef}
+          aria-hidden="true"
+          className="absolute top-0 left-0 rounded-xl opacity-0 pointer-events-none z-[1]"
+          style={{
+            border: '1px solid rgba(56, 189, 248, 0.45)',
+            borderTopColor: 'rgba(186, 230, 253, 0.65)',
+            boxShadow:
+              'inset 0 1px 0 0 rgba(255, 255, 255, 0.3), 0 8px 22px -4px rgba(37, 99, 235, 0.45)',
+            willChange: 'transform, width, height'
+          }}
+        />
+
         {/* Menu Principal */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 relative z-10">
           <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
             Governança da Planta
           </div>
           <Link
             href="/dashboard"
-            className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
+            data-sidebar-route="/dashboard"
+            onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard' })}
+            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors duration-300 ${
               isCurrentRoute('/dashboard')
                 ? 'text-white font-bold'
                 : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
             }`}
-            style={
-              isCurrentRoute('/dashboard')
-                ? {
-                    background:
-                      'linear-gradient(90deg, rgba(37, 99, 235, 0.55) 0%, rgba(6, 182, 212, 0.28) 100%)',
-                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                    borderTopColor: 'rgba(186, 230, 253, 0.55)',
-                    boxShadow:
-                      'inset 0 1px 0 0 rgba(255, 255, 255, 0.28), 0 8px 20px -4px rgba(37, 99, 235, 0.45)'
-                  }
-                : undefined
-            }
           >
             <LayoutDashboard className="w-4 h-4 text-cyan-300" />
             Visão Geral & Aptis Score
@@ -148,23 +385,13 @@ export function DashboardSidebar() {
 
           <Link
             href="/dashboard/marketplace"
-            className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
+            data-sidebar-route="/dashboard/marketplace"
+            onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard/marketplace' })}
+            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors duration-300 ${
               isCurrentRoute('/dashboard/marketplace')
                 ? 'text-white font-bold'
                 : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
             }`}
-            style={
-              isCurrentRoute('/dashboard/marketplace')
-                ? {
-                    background:
-                      'linear-gradient(90deg, rgba(37, 99, 235, 0.55) 0%, rgba(6, 182, 212, 0.28) 100%)',
-                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                    borderTopColor: 'rgba(186, 230, 253, 0.55)',
-                    boxShadow:
-                      'inset 0 1px 0 0 rgba(255, 255, 255, 0.28), 0 8px 20px -4px rgba(37, 99, 235, 0.45)'
-                  }
-                : undefined
-            }
           >
             <Store className="w-4 h-4 text-slate-400" />
             Suíte Aptis & Licenças
@@ -173,7 +400,7 @@ export function DashboardSidebar() {
           {isPlantAdmin && (
             <button
               onClick={() => setIsSectorsModalOpen(true)}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.05] hover:text-white transition-all cursor-pointer group text-left"
+              className="w-full relative z-10 flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.05] hover:text-white transition-all cursor-pointer group text-left"
               title="Gerenciar áreas, setores fabris e gestores com permissão por área"
             >
               <div className="flex items-center gap-2.5">
@@ -188,7 +415,7 @@ export function DashboardSidebar() {
         </div>
 
         {/* Módulos Licenciados (Ativos) */}
-        <div className="space-y-1">
+        <div className="space-y-1 relative z-10">
           <div className="px-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
             <span>Suíte Aptis (Ativos)</span>
             <span className="text-cyan-400 font-mono font-bold">({licensedTools.length})</span>
@@ -205,34 +432,26 @@ export function DashboardSidebar() {
                 <Link
                   key={tool.id}
                   href={tool.route}
-                  className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-300 ${
+                  data-sidebar-route={tool.route}
+                  onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
+                  className={`relative z-10 flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-colors duration-300 ${
                     active
                       ? 'text-white font-bold'
                       : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
                   }`}
-                  style={
-                    active
-                      ? {
-                          background:
-                            'linear-gradient(90deg, rgba(37, 99, 235, 0.55) 0%, rgba(6, 182, 212, 0.25) 100%)',
-                          border: '1px solid rgba(56, 189, 248, 0.4)',
-                          borderTopColor: 'rgba(186, 230, 253, 0.55)',
-                          boxShadow:
-                            'inset 0 1px 0 0 rgba(255, 255, 255, 0.25), 0 6px 18px -4px rgba(37, 99, 235, 0.4)'
-                        }
-                      : undefined
-                  }
                 >
                   <div className="flex items-center gap-2.5 truncate">
                     <ToolIcon
                       name={tool.iconName}
-                      className={`w-4 h-4 shrink-0 ${active ? 'text-cyan-300' : 'text-slate-400'}`}
+                      className={`w-4 h-4 shrink-0 transition-colors duration-300 ${
+                        active ? 'text-cyan-300' : 'text-slate-400'
+                      }`}
                     />
                     <span className="truncate">{tool.name}</span>
                   </div>
                   <ChevronRight
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      active ? 'text-cyan-200' : 'text-slate-600'
+                    className={`w-3.5 h-3.5 shrink-0 transition-transform duration-300 ${
+                      active ? 'text-cyan-200 translate-x-0.5' : 'text-slate-600'
                     }`}
                   />
                 </Link>
@@ -243,7 +462,7 @@ export function DashboardSidebar() {
 
         {/* Módulos Não Licenciados */}
         {availableTools.length > 0 && (
-          <div className="space-y-1">
+          <div className="space-y-1 relative z-10">
             <div className="px-3 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
               <span>Módulos Disponíveis</span>
               <Lock className="w-3 h-3 text-slate-500" />
@@ -255,9 +474,11 @@ export function DashboardSidebar() {
                 <Link
                   key={tool.id}
                   href={tool.route}
-                  className={`flex items-center justify-between px-3.5 py-1.5 rounded-xl text-xs transition-colors group ${
+                  data-sidebar-route={tool.route}
+                  onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
+                  className={`relative z-10 flex items-center justify-between px-3.5 py-1.5 rounded-xl text-xs transition-colors group ${
                     active
-                      ? 'bg-white/[0.08] text-amber-300 font-semibold'
+                      ? 'text-amber-200 font-semibold'
                       : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-300'
                   }`}
                   title="Módulo não contratado. Clique para solicitar ativação."

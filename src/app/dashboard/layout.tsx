@@ -1,9 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { DashboardHeader } from '@/components/dashboard/header';
+import { LiquidCellNavigationEngine } from '@/components/ui/LiquidCellNavigationEngine';
+
+function subscribeGlassMode(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('aptis-glass-mode-change', callback);
+  window.addEventListener('storage', callback);
+  return () => {
+    window.removeEventListener('aptis-glass-mode-change', callback);
+    window.removeEventListener('storage', callback);
+  };
+}
+
+function getGlassModeSnapshot(): boolean {
+  if (typeof window === 'undefined') return true;
+  const saved = localStorage.getItem('aptis_tinted_glass_mode');
+  return saved !== null ? saved === 'true' : true;
+}
+
+function getGlassModeServerSnapshot(): boolean {
+  return true;
+}
 
 export default function DashboardLayout({
   children,
@@ -11,22 +32,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [tintedGlass, setTintedGlass] = useState(true);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('aptis_tinted_glass_mode');
-    if (saved !== null) {
-      setTintedGlass(saved === 'true');
-    }
-
-    const handleModeChange = (e: Event) => {
-      const customEvent = e as CustomEvent<boolean>;
-      setTintedGlass(customEvent.detail);
-    };
-
-    window.addEventListener('aptis-glass-mode-change', handleModeChange);
-    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
-  }, []);
+  const tintedGlass = useSyncExternalStore(
+    subscribeGlassMode,
+    getGlassModeSnapshot,
+    getGlassModeServerSnapshot
+  );
 
   // Todas as rotas do Dashboard operam sob o motor óptico Dual-Mode (Tinted Glass / Light Crystal)
   const isGlassEnabledRoute = pathname.startsWith('/dashboard');
@@ -85,6 +95,9 @@ export default function DashboardLayout({
         </div>
       )}
 
+      {/* Motor Global de Animação de Mitose / Célula Líquida para Abas e Menus */}
+      <LiquidCellNavigationEngine />
+
       {/* Sidebar Lateral em Vidro Flutuante */}
       <DashboardSidebar />
 
@@ -92,7 +105,9 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <DashboardHeader />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-[1920px] mx-auto">
-          {children}
+          <div key={pathname} className="aptis-page-cell-enter">
+            {children}
+          </div>
         </main>
       </div>
     </div>

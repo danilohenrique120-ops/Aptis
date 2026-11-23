@@ -158,8 +158,10 @@ body {
   color: #f8fafc;
 }
 
-/* 3. Meniscus Concave Pill Track (Video 2 - Meniscus style) */
+/* 3. Meniscus Concave Pill Track (Video 2 - Meniscus style + Liquid Cell Mitosis) */
 .aptis-meniscus-track {
+  position: relative;
+  isolation: isolate;
   background: linear-gradient(
     180deg,
     rgba(9, 13, 24, 0.78) 0%,
@@ -173,6 +175,12 @@ body {
     inset 0 3px 8px rgba(0, 0, 0, 0.65),
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 16px 36px -8px rgba(0, 0, 0, 0.5);
+}
+
+.aptis-meniscus-track > button,
+.aptis-meniscus-track > a {
+  position: relative;
+  z-index: 3;
 }
 
 /* 4. Frosted Crystal Light Glass (For Light/Crystal mode toggle) */
@@ -372,4 +380,83 @@ textarea.bg-slate-50::placeholder {
 .aptis-mode-dark #advisory-root .fixed select option {
   background-color: #0f172a !important;
   color: #f8fafc !important;
+}
+
+/* ============================================================================
+   7. LIQUID CELL MITOSIS NAVIGATION ENGINE (Detachment, Stretching & Merging)
+   ============================================================================ */
+.aptis-cell-goo-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  filter: url(#aptis-cell-goo);
+  will-change: contents;
+}
+
+.aptis-cell-sheen-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.aptis-cell-blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  will-change: transform, width, height, opacity;
+}
+
+.aptis-cell-in-flight {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transition: color 0.18s ease !important;
+}
+
+@keyframes aptisCellLandBounce {
+  0% {
+    transform: scale(1.045, 0.94);
+  }
+  55% {
+    transform: scale(0.985, 1.03);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+
+.aptis-cell-landed {
+  animation: aptisCellLandBounce 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes aptisPageCellEnter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.992);
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.aptis-page-cell-enter {
+  animation: aptisPageCellEnter 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aptis-cell-goo-stage,
+  .aptis-cell-sheen-stage {
+    display: none !important;
+  }
+  .aptis-page-cell-enter,
+  .aptis-cell-landed {
+    animation: none !important;
+  }
 }
