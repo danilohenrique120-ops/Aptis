@@ -383,80 +383,77 @@ textarea.bg-slate-50::placeholder {
 }
 
 /* ============================================================================
-   7. LIQUID CELL MITOSIS NAVIGATION ENGINE (Detachment, Stretching & Merging)
+   7. MOLECULAR DROPLET SEPARATION ENGINE (Small Luminous Bubble Mitosis)
    ============================================================================ */
-.aptis-cell-goo-stage {
+.aptis-molecule-goo-stage {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   pointer-events: none;
-  z-index: 1;
-  filter: url(#aptis-cell-goo);
+  z-index: 6;
+  filter: url(#aptis-molecule-goo);
   will-change: contents;
 }
 
-.aptis-cell-sheen-stage {
+.aptis-molecule-glow-stage {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 7;
 }
 
-.aptis-cell-blob {
+.aptis-molecule-orb {
   position: absolute;
   top: 0;
   left: 0;
   border-radius: 9999px;
   pointer-events: none;
-  will-change: transform, width, height, opacity;
+  will-change: transform, opacity;
 }
 
-.aptis-cell-in-flight {
-  background: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  transition: color 0.18s ease !important;
-}
-
-@keyframes aptisCellLandBounce {
+@keyframes aptisMoleculeRipple {
   0% {
-    transform: scale(1.045, 0.94);
-  }
-  55% {
-    transform: scale(0.985, 1.03);
+    transform: translate3d(var(--mx), var(--my), 0) scale(0.6);
+    opacity: 0.85;
   }
   100% {
-    transform: scale(1, 1);
+    transform: translate3d(var(--mx), var(--my), 0) scale(2.5);
+    opacity: 0;
   }
 }
 
-.aptis-cell-landed {
-  animation: aptisCellLandBounce 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.aptis-molecule-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  border: 1.5px solid rgba(125, 211, 252, 0.85);
+  animation: aptisMoleculeRipple 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes aptisPageCellEnter {
   0% {
     opacity: 0;
-    transform: translate3d(0, 10px, 0) scale(0.992);
-    filter: blur(2px);
+    transform: translate3d(0, 8px, 0) scale(0.994);
   }
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0px);
   }
 }
 
 .aptis-page-cell-enter {
-  animation: aptisPageCellEnter 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: aptisPageCellEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aptis-cell-goo-stage,
-  .aptis-cell-sheen-stage {
+  .aptis-molecule-goo-stage,
+  .aptis-molecule-glow-stage {
     display: none !important;
   }
-  .aptis-page-cell-enter,
-  .aptis-cell-landed {
+  .aptis-page-cell-enter {
     animation: none !important;
   }
 }

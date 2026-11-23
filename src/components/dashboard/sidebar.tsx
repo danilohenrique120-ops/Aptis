@@ -63,170 +63,144 @@ export function DashboardSidebar() {
     getGlassModeServerSnapshot
   );
 
-  // Refs para o Motor de Mitose / Célula Líquida da Sidebar
+  // Refs para a Bolinha Molecular da Sidebar (pequena esfera luminosa que se separa e se move)
   const navContainerRef = useRef<HTMLDivElement | null>(null);
   const gooLayerRef = useRef<HTMLDivElement | null>(null);
-  const leadCellRef = useRef<HTMLDivElement | null>(null);
-  const trailCellRef = useRef<HTMLDivElement | null>(null);
-  const budCellRef = useRef<HTMLDivElement | null>(null);
-  const rimCellRef = useRef<HTMLDivElement | null>(null);
-  const prevRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const daughterOrbRef = useRef<HTMLDivElement | null>(null);
+  const motherOrbRef = useRef<HTMLDivElement | null>(null);
+  const microOrbRef = useRef<HTMLDivElement | null>(null);
+  const coreGlowRef = useRef<HTMLDivElement | null>(null);
+  const prevAnchorRef = useRef<{ x: number; y: number } | null>(null);
   const animTimersRef = useRef<number[]>([]);
 
   useLayoutEffect(() => {
     const container = navContainerRef.current;
     const gooLayer = gooLayerRef.current;
-    const lead = leadCellRef.current;
-    const trail = trailCellRef.current;
-    const bud = budCellRef.current;
-    const rim = rimCellRef.current;
-    if (!container || !gooLayer || !lead || !trail || !bud || !rim) return;
+    const daughter = daughterOrbRef.current;
+    const mother = motherOrbRef.current;
+    const micro = microOrbRef.current;
+    const coreGlow = coreGlowRef.current;
+    if (!container || !gooLayer || !daughter || !mother || !micro || !coreGlow) return;
+
+    const ORB = 11;
+    const MOTHER = 10;
+    const MICRO = 6;
 
     const clearTimers = () => {
       animTimersRef.current.forEach(t => window.clearTimeout(t));
       animTimersRef.current = [];
     };
 
-    const positionCell = (animate: boolean) => {
+    const positionMolecule = (animate: boolean) => {
       gooLayer.style.height = `${Math.max(container.scrollHeight, container.clientHeight)}px`;
       const targetEl = container.querySelector<HTMLElement>(
         `[data-sidebar-route="${CSS.escape(activeRoute)}"]`
       );
       if (!targetEl) {
-        lead.style.opacity = '0';
-        trail.style.opacity = '0';
-        bud.style.opacity = '0';
-        rim.style.opacity = '0';
+        daughter.style.opacity = '0';
+        mother.style.opacity = '0';
+        micro.style.opacity = '0';
+        coreGlow.style.opacity = '0';
         return;
       }
 
       const cRect = container.getBoundingClientRect();
       const tRect = targetEl.getBoundingClientRect();
+      // Pequena bolha/molécula posicionada na borda esquerda, centralizada na altura do item ativo
       const next = {
-        x: tRect.left - cRect.left + container.scrollLeft,
-        y: tRect.top - cRect.top + container.scrollTop,
-        w: tRect.width,
-        h: tRect.height
+        x: tRect.left - cRect.left + container.scrollLeft + 3,
+        y: tRect.top - cRect.top + container.scrollTop + tRect.height / 2
       };
 
-      const prev = prevRectRef.current;
+      const prev = prevAnchorRef.current;
+      const dist = prev ? Math.hypot(next.x - prev.x, next.y - prev.y) : 0;
       const shouldAnimate =
         animate &&
         prev !== null &&
-        Math.hypot(next.x - prev.x, next.y - prev.y) > 4 &&
+        dist > 4 &&
         !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       clearTimers();
 
       if (!shouldAnimate || !prev) {
-        const instant = 'none';
-        lead.style.transition = instant;
-        trail.style.transition = instant;
-        bud.style.transition = instant;
-        rim.style.transition = instant;
+        daughter.style.transition = 'none';
+        mother.style.transition = 'none';
+        micro.style.transition = 'none';
+        coreGlow.style.transition = 'none';
 
-        lead.style.opacity = '1';
-        lead.style.width = `${next.w}px`;
-        lead.style.height = `${next.h}px`;
-        lead.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+        daughter.style.opacity = '1';
+        daughter.style.transform = `translate3d(${next.x - ORB / 2}px, ${next.y - ORB / 2}px, 0) scale(1)`;
 
-        trail.style.opacity = '0.92';
-        trail.style.width = `${next.w * 0.9}px`;
-        trail.style.height = `${next.h * 0.88}px`;
-        trail.style.transform = `translate3d(${next.x + next.w * 0.05}px, ${
-          next.y + next.h * 0.06
-        }px, 0) scale(1, 1)`;
+        mother.style.opacity = '0.9';
+        mother.style.transform = `translate3d(${next.x - MOTHER / 2}px, ${next.y - MOTHER / 2}px, 0) scale(0.9)`;
 
-        bud.style.opacity = '0';
-        bud.style.width = `${next.w * 0.48}px`;
-        bud.style.height = `${next.h * 0.65}px`;
-        bud.style.transform = `translate3d(${next.x + next.w * 0.26}px, ${
-          next.y + next.h * 0.18
-        }px, 0) scale(0.7)`;
+        micro.style.opacity = '0';
+        micro.style.transform = `translate3d(${next.x - MICRO / 2}px, ${next.y - MICRO / 2}px, 0) scale(0.6)`;
 
-        rim.style.opacity = '1';
-        rim.style.width = `${next.w}px`;
-        rim.style.height = `${next.h}px`;
-        rim.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+        coreGlow.style.opacity = '1';
+        coreGlow.style.transform = `translate3d(${next.x - 2.5}px, ${next.y - 2.5}px, 0) scale(1)`;
 
-        prevRectRef.current = next;
+        prevAnchorRef.current = next;
         return;
       }
 
-      // Fase 1: Descolamento e Mitose Vertical (Lead se descola enquanto Trail estica a membrana!)
-      const midY = prev.y + (next.y - prev.y) * 0.52;
-      const budW = next.w * 0.56;
-      const budH = Math.max(22, next.h * 0.72);
+      // Fase 1 (0ms → 130ms): Separação molecular — a bolinha-filha brota 15px em direção ao novo menu
+      // enquanto a bolha-mãe segura na origem, formando a ponte líquida de separação!
+      const dirY = (next.y - prev.y) / dist;
+      const budOffset = Math.min(16, dist * 0.32);
 
-      // Posiciona a gota satélite no ponto de origem antes de disparar
-      bud.style.transition = 'none';
-      bud.style.opacity = '0.95';
-      bud.style.width = `${budW}px`;
-      bud.style.height = `${budH}px`;
-      bud.style.transform = `translate3d(${prev.x + (prev.w - budW) / 2}px, ${
-        prev.y + (prev.h - budH) / 2
-      }px, 0) scale(0.85)`;
-      void bud.offsetWidth;
+      micro.style.transition = 'none';
+      micro.style.opacity = '0.95';
+      micro.style.transform = `translate3d(${prev.x - MICRO / 2}px, ${prev.y - MICRO / 2}px, 0) scale(0.8)`;
+      void micro.offsetWidth;
 
-      lead.style.opacity = '1';
-      lead.style.transition =
-        'transform 400ms cubic-bezier(0.22, 1.16, 0.36, 1), width 380ms ease, height 380ms ease';
-      lead.style.width = `${next.w}px`;
-      lead.style.height = `${next.h}px`;
-      lead.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(0.91, 1.09)`;
+      daughter.style.opacity = '1';
+      daughter.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
+      daughter.style.transform = `translate3d(${prev.x - ORB / 2}px, ${
+        prev.y + dirY * budOffset - ORB / 2
+      }px, 0) scale(1.12)`;
 
-      rim.style.opacity = '1';
-      rim.style.transition =
-        'transform 400ms cubic-bezier(0.22, 1.16, 0.36, 1), width 380ms ease, height 380ms ease';
-      rim.style.width = `${next.w}px`;
-      rim.style.height = `${next.h}px`;
-      rim.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(0.95, 1.04)`;
+      coreGlow.style.opacity = '1';
+      coreGlow.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
+      coreGlow.style.transform = `translate3d(${prev.x - 2.5}px, ${
+        prev.y + dirY * budOffset - 2.5
+      }px, 0) scale(1.1)`;
 
-      // Gota filha se desprende no meio do caminho (efeito divisão celular / mitose)
-      bud.style.transition = 'transform 260ms cubic-bezier(0.18, 0.9, 0.32, 1.1), opacity 240ms ease';
-      bud.style.transform = `translate3d(${next.x + (next.w - budW) / 2}px, ${
-        midY + (next.h - budH) / 2
-      }px, 0) scale(0.76, 1.24)`;
+      micro.style.transition = 'transform 130ms ease-out';
+      micro.style.transform = `translate3d(${prev.x - MICRO / 2}px, ${
+        prev.y + dirY * (budOffset * 0.5) - MICRO / 2
+      }px, 0) scale(1)`;
 
-      // Trail segura 65ms na origem e depois puxa atrás do Lead, formando a ponte líquida pelo filtro SVG goo
-      trail.style.opacity = '0.96';
-      trail.style.transition =
-        'transform 520ms cubic-bezier(0.42, 0, 0.2, 1) 65ms, width 460ms ease 65ms, height 460ms ease 65ms';
-      trail.style.width = `${next.w * 0.9}px`;
-      trail.style.height = `${next.h * 0.88}px`;
-      trail.style.transform = `translate3d(${next.x + next.w * 0.05}px, ${
-        next.y + next.h * 0.06
-      }px, 0) scale(0.84, 1.14)`;
-
-      // Fase 2: Reabsorção orgânica e acomodação elástica no item de destino
+      // Fase 2 (125ms): A bolinha se descola por completo e desliza suavemente até o novo item
       const t1 = window.setTimeout(() => {
-        lead.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
-        lead.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+        daughter.style.transition = 'transform 380ms cubic-bezier(0.22, 1.18, 0.36, 1)';
+        daughter.style.transform = `translate3d(${next.x - ORB / 2}px, ${
+          next.y - ORB / 2
+        }px, 0) scale(1)`;
 
-        rim.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
-        rim.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(1, 1)`;
+        coreGlow.style.transition = 'transform 380ms cubic-bezier(0.22, 1.18, 0.36, 1)';
+        coreGlow.style.transform = `translate3d(${next.x - 2.5}px, ${next.y - 2.5}px, 0) scale(1)`;
 
-        bud.style.transition = 'transform 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease';
-        bud.style.transform = `translate3d(${next.x + (next.w - budW) / 2}px, ${
-          next.y + (next.h - budH) / 2
-        }px, 0) scale(0.7)`;
-        bud.style.opacity = '0';
-      }, 240);
+        micro.style.transition =
+          'transform 420ms cubic-bezier(0.35, 0, 0.2, 1) 30ms, opacity 200ms ease 290ms';
+        micro.style.transform = `translate3d(${next.x - MICRO / 2}px, ${
+          next.y - MICRO / 2
+        }px, 0) scale(0.6)`;
+        micro.style.opacity = '0';
 
-      const t2 = window.setTimeout(() => {
-        trail.style.transition = 'transform 200ms ease-out';
-        trail.style.transform = `translate3d(${next.x + next.w * 0.05}px, ${
-          next.y + next.h * 0.06
-        }px, 0) scale(1, 1)`;
-      }, 480);
+        mother.style.transition = 'transform 440ms cubic-bezier(0.42, 0, 0.2, 1) 55ms';
+        mother.style.transform = `translate3d(${next.x - MOTHER / 2}px, ${
+          next.y - MOTHER / 2
+        }px, 0) scale(0.9)`;
+      }, 125);
 
-      animTimersRef.current = [t1, t2];
-      prevRectRef.current = next;
+      animTimersRef.current = [t1];
+      prevAnchorRef.current = next;
     };
 
-    positionCell(true);
+    positionMolecule(true);
 
-    const handleResize = () => positionCell(false);
+    const handleResize = () => positionMolecule(false);
     window.addEventListener('resize', handleResize);
 
     return () => {
@@ -309,58 +283,61 @@ export function DashboardSidebar() {
         </div>
       </div>
 
-      {/* Navigation com Motor de Mitose / Célula Líquida */}
+      {/* Navigation com Bolinha Molecular que se Separa e Desliza */}
       <div
         ref={navContainerRef}
         className="flex-1 overflow-y-auto py-4 px-3 space-y-5 relative z-10"
       >
-        {/* Camada Gooey de Mitose Celular (atrás dos links) */}
+        {/* Camada Gooey de Separação Molecular (pequenas bolhas na borda esquerda) */}
         <div
           ref={gooLayerRef}
           aria-hidden="true"
-          className="absolute top-0 left-0 right-0 pointer-events-none z-0"
-          style={{ filter: 'url(#aptis-sidebar-goo)' }}
+          className="absolute top-0 left-0 right-0 pointer-events-none z-20"
+          style={{ filter: 'url(#aptis-molecule-goo)' }}
         >
           <div
-            ref={trailCellRef}
-            className="absolute top-0 left-0 rounded-xl opacity-0 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(90deg, rgba(37, 99, 235, 0.85) 0%, rgba(6, 182, 212, 0.7) 100%)',
-              willChange: 'transform, width, height'
-            }}
-          />
-          <div
-            ref={budCellRef}
+            ref={motherOrbRef}
             className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none"
             style={{
-              background:
-                'linear-gradient(135deg, rgba(56, 189, 248, 0.9) 0%, rgba(37, 99, 235, 0.85) 100%)',
+              width: '10px',
+              height: '10px',
+              backgroundColor: '#06b6d4',
               willChange: 'transform, opacity'
             }}
           />
           <div
-            ref={leadCellRef}
-            className="absolute top-0 left-0 rounded-xl opacity-0 pointer-events-none"
+            ref={microOrbRef}
+            className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none"
             style={{
-              background:
-                'linear-gradient(90deg, rgba(37, 99, 235, 0.88) 0%, rgba(6, 182, 212, 0.72) 100%)',
-              willChange: 'transform, width, height'
+              width: '6px',
+              height: '6px',
+              backgroundColor: '#bae6fd',
+              willChange: 'transform, opacity'
+            }}
+          />
+          <div
+            ref={daughterOrbRef}
+            className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none"
+            style={{
+              width: '11px',
+              height: '11px',
+              backgroundColor: '#22d3ee',
+              willChange: 'transform, opacity'
             }}
           />
         </div>
 
-        {/* Camada Especular Nítida (Borda e Brilho de Vidro acima do filtro goo) */}
+        {/* Núcleo luminoso cristalino da bolinha (nítido, acima do filtro goo) */}
         <div
-          ref={rimCellRef}
+          ref={coreGlowRef}
           aria-hidden="true"
-          className="absolute top-0 left-0 rounded-xl opacity-0 pointer-events-none z-[1]"
+          className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none z-30"
           style={{
-            border: '1px solid rgba(56, 189, 248, 0.45)',
-            borderTopColor: 'rgba(186, 230, 253, 0.65)',
-            boxShadow:
-              'inset 0 1px 0 0 rgba(255, 255, 255, 0.3), 0 8px 22px -4px rgba(37, 99, 235, 0.45)',
-            willChange: 'transform, width, height'
+            width: '5px',
+            height: '5px',
+            backgroundColor: '#ffffff',
+            boxShadow: '0 0 12px 3px rgba(34, 211, 238, 0.85)',
+            willChange: 'transform, opacity'
           }}
         />
 
@@ -373,11 +350,23 @@ export function DashboardSidebar() {
             href="/dashboard"
             data-sidebar-route="/dashboard"
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard' })}
-            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors duration-300 ${
+            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
               isCurrentRoute('/dashboard')
                 ? 'text-white font-bold'
                 : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
             }`}
+            style={
+              isCurrentRoute('/dashboard')
+                ? {
+                    background:
+                      'linear-gradient(90deg, rgba(37, 99, 235, 0.45) 0%, rgba(6, 182, 212, 0.2) 100%)',
+                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    borderTopColor: 'rgba(186, 230, 253, 0.5)',
+                    boxShadow:
+                      'inset 0 1px 0 0 rgba(255, 255, 255, 0.24), 0 8px 20px -4px rgba(37, 99, 235, 0.35)'
+                  }
+                : undefined
+            }
           >
             <LayoutDashboard className="w-4 h-4 text-cyan-300" />
             Visão Geral & Aptis Score
@@ -387,11 +376,23 @@ export function DashboardSidebar() {
             href="/dashboard/marketplace"
             data-sidebar-route="/dashboard/marketplace"
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard/marketplace' })}
-            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors duration-300 ${
+            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
               isCurrentRoute('/dashboard/marketplace')
                 ? 'text-white font-bold'
                 : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
             }`}
+            style={
+              isCurrentRoute('/dashboard/marketplace')
+                ? {
+                    background:
+                      'linear-gradient(90deg, rgba(37, 99, 235, 0.45) 0%, rgba(6, 182, 212, 0.2) 100%)',
+                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    borderTopColor: 'rgba(186, 230, 253, 0.5)',
+                    boxShadow:
+                      'inset 0 1px 0 0 rgba(255, 255, 255, 0.24), 0 8px 20px -4px rgba(37, 99, 235, 0.35)'
+                  }
+                : undefined
+            }
           >
             <Store className="w-4 h-4 text-slate-400" />
             Suíte Aptis & Licenças
@@ -434,11 +435,23 @@ export function DashboardSidebar() {
                   href={tool.route}
                   data-sidebar-route={tool.route}
                   onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
-                  className={`relative z-10 flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-colors duration-300 ${
+                  className={`relative z-10 flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-300 ${
                     active
                       ? 'text-white font-bold'
                       : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
                   }`}
+                  style={
+                    active
+                      ? {
+                          background:
+                            'linear-gradient(90deg, rgba(37, 99, 235, 0.45) 0%, rgba(6, 182, 212, 0.2) 100%)',
+                          border: '1px solid rgba(56, 189, 248, 0.35)',
+                          borderTopColor: 'rgba(186, 230, 253, 0.5)',
+                          boxShadow:
+                            'inset 0 1px 0 0 rgba(255, 255, 255, 0.24), 0 6px 18px -4px rgba(37, 99, 235, 0.35)'
+                        }
+                      : undefined
+                  }
                 >
                   <div className="flex items-center gap-2.5 truncate">
                     <ToolIcon

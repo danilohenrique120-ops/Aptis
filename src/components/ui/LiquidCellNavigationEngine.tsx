@@ -2,27 +2,20 @@
 
 import React, { useEffect } from 'react';
 
-interface RectBox {
+interface Point2D {
   x: number;
   y: number;
-  width: number;
-  height: number;
-  borderRadius: string;
 }
 
-interface ActiveTrackAnimation {
+interface ActiveMoleculeAnimation {
   gooStage: HTMLDivElement;
-  sheenStage: HTMLDivElement;
-  lead: HTMLDivElement;
-  trail: HTMLDivElement;
-  bud: HTMLDivElement;
-  sheen: HTMLDivElement;
-  targetButton: HTMLElement;
+  glowStage: HTMLDivElement;
+  daughter: HTMLDivElement;
   cleanupTimer: number | null;
-  midFlightTimer: number | null;
+  timers: number[];
 }
 
-const DEFAULT_CELL_GRADIENT = 'linear-gradient(135deg, #22d3ee 0%, #2563eb 100%)';
+const DEFAULT_MOLECULE_COLOR = '#38bdf8';
 
 function isButtonVisuallyActive(btn: HTMLElement): boolean {
   const inlineBg = (btn.style.background || btn.style.backgroundImage || '').trim();
@@ -38,7 +31,6 @@ function isButtonVisuallyActive(btn: HTMLElement): boolean {
   }
   const bg = computed.backgroundColor;
   if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-    // Ignore very faint hover/inactive tint (< 0.18 alpha)
     const rgbaMatch = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
     if (rgbaMatch) {
       const alpha = rgbaMatch[4] !== undefined ? parseFloat(rgbaMatch[4]) : 1;
@@ -48,45 +40,30 @@ function isButtonVisuallyActive(btn: HTMLElement): boolean {
   return false;
 }
 
-function getRelativeRect(el: HTMLElement, container: HTMLElement): RectBox {
+function getTabMoleculeAnchor(el: HTMLElement, container: HTMLElement): Point2D {
   const elRect = el.getBoundingClientRect();
   const cRect = container.getBoundingClientRect();
-  const computed = window.getComputedStyle(el);
+  // Posiciona a bolinha molecular na base central do item da aba (sem tampar o texto)
   return {
-    x: elRect.left - cRect.left + container.scrollLeft,
-    y: elRect.top - cRect.top + container.scrollTop,
-    width: elRect.width,
-    height: elRect.height,
-    borderRadius: computed.borderRadius || '9999px'
+    x: elRect.left - cRect.left + container.scrollLeft + elRect.width / 2,
+    y: elRect.top - cRect.top + container.scrollTop + elRect.height - 4
   };
 }
 
-function extractVisualFill(btn: HTMLElement): { background: string; boxShadow: string } {
+function extractAccentColor(btn: HTMLElement): string {
   const inlineBg = (btn.style.background || btn.style.backgroundImage || '').trim();
+  const hexMatch = inlineBg.match(/#[0-9a-fA-F]{6}/);
+  if (hexMatch) return hexMatch[0];
+
   const inlineShadow = (btn.style.boxShadow || '').trim();
+  const rgbaMatch = inlineShadow.match(/rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+/);
+  if (rgbaMatch) return `${rgbaMatch[0]}, 1)`;
+
   const computed = window.getComputedStyle(btn);
+  const bgImgHex = (computed.backgroundImage || '').match(/rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/);
+  if (bgImgHex) return bgImgHex[0];
 
-  let background = DEFAULT_CELL_GRADIENT;
-  if (inlineBg && inlineBg !== 'none' && inlineBg !== 'transparent') {
-    background = inlineBg;
-  } else if (computed.backgroundImage && computed.backgroundImage !== 'none') {
-    background = computed.backgroundImage;
-  } else if (
-    computed.backgroundColor &&
-    computed.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
-    computed.backgroundColor !== 'transparent'
-  ) {
-    background = computed.backgroundColor;
-  }
-
-  const boxShadow =
-    inlineShadow && inlineShadow !== 'none'
-      ? inlineShadow
-      : computed.boxShadow && computed.boxShadow !== 'none'
-      ? computed.boxShadow
-      : '0 0 22px rgba(34, 211, 238, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.55)';
-
-  return { background, boxShadow };
+  return DEFAULT_MOLECULE_COLOR;
 }
 
 function findActiveButtonInTrack(track: HTMLElement, exclude?: HTMLElement): HTMLElement | null {
@@ -107,41 +84,41 @@ export function LiquidCellNavigationEngine() {
 
     const pendingSourceByTrack = new WeakMap<
       HTMLElement,
-      { button: HTMLElement; rect: RectBox; fill: { background: string; boxShadow: string } }
+      { button: HTMLElement; anchor: Point2D; color: string }
     >();
-    const activeAnimByTrack = new WeakMap<HTMLElement, ActiveTrackAnimation>();
+    const activeAnimByTrack = new WeakMap<HTMLElement, ActiveMoleculeAnimation>();
 
     const cleanupTrackAnimation = (track: HTMLElement) => {
       const anim = activeAnimByTrack.get(track);
       if (!anim) return;
       if (anim.cleanupTimer !== null) window.clearTimeout(anim.cleanupTimer);
-      if (anim.midFlightTimer !== null) window.clearTimeout(anim.midFlightTimer);
-      anim.targetButton.classList.remove('aptis-cell-in-flight');
+      anim.timers.forEach(t => window.clearTimeout(t));
       anim.gooStage.remove();
-      anim.sheenStage.remove();
+      anim.glowStage.remove();
       activeAnimByTrack.delete(track);
     };
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target) return;
-      const clickedBtn = target.closest<HTMLElement>('.aptis-meniscus-track > button, .aptis-meniscus-track > a');
+      const clickedBtn = target.closest<HTMLElement>(
+        '.aptis-meniscus-track > button, .aptis-meniscus-track > a'
+      );
       if (!clickedBtn) return;
       const track = clickedBtn.parentElement;
       if (!track || !track.classList.contains('aptis-meniscus-track')) return;
 
-      // If an animation is already mid-flight on this track, capture the live blob rect!
       const existingAnim = activeAnimByTrack.get(track);
       if (existingAnim) {
-        const liveRect = getRelativeRect(existingAnim.lead, track);
-        const liveFill = {
-          background: existingAnim.lead.style.background || DEFAULT_CELL_GRADIENT,
-          boxShadow: existingAnim.sheen.style.boxShadow || ''
-        };
+        const cRect = track.getBoundingClientRect();
+        const dRect = existingAnim.daughter.getBoundingClientRect();
         pendingSourceByTrack.set(track, {
-          button: existingAnim.targetButton,
-          rect: liveRect,
-          fill: liveFill
+          button: clickedBtn,
+          anchor: {
+            x: dRect.left - cRect.left + track.scrollLeft + dRect.width / 2,
+            y: dRect.top - cRect.top + track.scrollTop + dRect.height / 2
+          },
+          color: existingAnim.daughter.style.backgroundColor || DEFAULT_MOLECULE_COLOR
         });
         return;
       }
@@ -151,15 +128,17 @@ export function LiquidCellNavigationEngine() {
 
       pendingSourceByTrack.set(track, {
         button: prevActive,
-        rect: getRelativeRect(prevActive, track),
-        fill: extractVisualFill(prevActive)
+        anchor: getTabMoleculeAnchor(prevActive, track),
+        color: extractAccentColor(prevActive)
       });
     };
 
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target) return;
-      const clickedBtn = target.closest<HTMLElement>('.aptis-meniscus-track > button, .aptis-meniscus-track > a');
+      const clickedBtn = target.closest<HTMLElement>(
+        '.aptis-meniscus-track > button, .aptis-meniscus-track > a'
+      );
       if (!clickedBtn) return;
       const track = clickedBtn.parentElement;
       if (!track || !track.classList.contains('aptis-meniscus-track')) return;
@@ -168,187 +147,176 @@ export function LiquidCellNavigationEngine() {
       pendingSourceByTrack.delete(track);
       if (!source || source.button === clickedBtn) return;
 
-      // Cancel any previous in-flight overlay before launching the new transfer
       cleanupTrackAnimation(track);
 
-      // Wait 1 frame so React renders the newly selected tab's active styles/dimensions
       requestAnimationFrame(() => {
         if (!track.isConnected || !clickedBtn.isConnected) return;
 
-        const fromRect = source.rect;
-        const toRect = getRelativeRect(clickedBtn, track);
-        const dx = toRect.x - fromRect.x;
-        const dy = toRect.y - fromRect.y;
+        const from = source.anchor;
+        const to = getTabMoleculeAnchor(clickedBtn, track);
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
         const dist = Math.hypot(dx, dy);
-        if (dist < 4) return;
+        if (dist < 6) return;
 
-        const targetFill = extractVisualFill(clickedBtn);
-        const activeBg =
-          targetFill.background !== DEFAULT_CELL_GRADIENT
-            ? targetFill.background
-            : source.fill.background;
-
-        // Hide static fill of destination tab while the liquid cell travels to it
-        clickedBtn.classList.add('aptis-cell-in-flight');
-
+        const targetColor = extractAccentColor(clickedBtn) || source.color || DEFAULT_MOLECULE_COLOR;
         const stageWidth = Math.max(track.scrollWidth, track.clientWidth);
-        const stageHeight = Math.max(track.scrollHeight, track.clientHeight);
+        const stageHeight = Math.max(track.scrollHeight, track.clientHeight) + 12;
 
         const gooStage = document.createElement('div');
-        gooStage.className = 'aptis-cell-goo-stage';
+        gooStage.className = 'aptis-molecule-goo-stage';
         gooStage.style.width = `${stageWidth}px`;
         gooStage.style.height = `${stageHeight}px`;
 
-        const sheenStage = document.createElement('div');
-        sheenStage.className = 'aptis-cell-sheen-stage';
-        sheenStage.style.width = `${stageWidth}px`;
-        sheenStage.style.height = `${stageHeight}px`;
+        const glowStage = document.createElement('div');
+        glowStage.className = 'aptis-molecule-glow-stage';
+        glowStage.style.width = `${stageWidth}px`;
+        glowStage.style.height = `${stageHeight}px`;
 
-        // 1. Lead Cell (Núcleo principal que se descola e guia o movimento)
-        const lead = document.createElement('div');
-        lead.className = 'aptis-cell-blob';
-        Object.assign(lead.style, {
-          width: `${fromRect.width}px`,
-          height: `${fromRect.height}px`,
-          borderRadius: fromRect.borderRadius,
-          background: activeBg,
-          transform: `translate3d(${fromRect.x}px, ${fromRect.y}px, 0) scale(1, 1)`,
+        const ORB = 12; // Pequena bolha/molécula principal (12px)
+        const MOTHER = 11; // Bolha-mãe que segura na origem e se desprende (11px)
+        const MICRO = 7; // Micro-bolha satélite que se destaca no meio da separação (7px)
+
+        // 1. Bolha-Mãe (fica ancorada por um instante na origem formando a ponte molecular)
+        const mother = document.createElement('div');
+        mother.className = 'aptis-molecule-orb';
+        Object.assign(mother.style, {
+          width: `${MOTHER}px`,
+          height: `${MOTHER}px`,
+          backgroundColor: source.color || targetColor,
+          transform: `translate3d(${from.x - MOTHER / 2}px, ${from.y - MOTHER / 2}px, 0) scale(1)`,
+          opacity: '0.95',
           transition: 'none'
         });
 
-        // 2. Trail / Mitosis Membrane Cell (Cauda orgânica que estica e se descola como divisão celular)
-        const trail = document.createElement('div');
-        trail.className = 'aptis-cell-blob';
-        Object.assign(trail.style, {
-          width: `${fromRect.width * 0.88}px`,
-          height: `${fromRect.height * 0.88}px`,
-          borderRadius: fromRect.borderRadius,
-          background: source.fill.background || activeBg,
-          opacity: '0.94',
-          transform: `translate3d(${fromRect.x + fromRect.width * 0.06}px, ${
-            fromRect.y + fromRect.height * 0.06
-          }px, 0) scale(1, 1)`,
+        // 2. Bolha-Filha (se descola da mãe, estica o elo molecular e desliza até a nova aba)
+        const daughter = document.createElement('div');
+        daughter.className = 'aptis-molecule-orb';
+        Object.assign(daughter.style, {
+          width: `${ORB}px`,
+          height: `${ORB}px`,
+          backgroundColor: targetColor,
+          transform: `translate3d(${from.x - ORB / 2}px, ${from.y - ORB / 2}px, 0) scale(0.9)`,
+          opacity: '1',
           transition: 'none'
         });
 
-        // 3. Satellite Mitosis Droplet (Gota filha que se desprende no meio do trajeto e se funde no destino)
-        const budWidth = Math.max(24, Math.min(fromRect.width * 0.52, toRect.width * 0.52));
-        const budHeight = Math.max(18, fromRect.height * 0.68);
-        const bud = document.createElement('div');
-        bud.className = 'aptis-cell-blob';
-        Object.assign(bud.style, {
-          width: `${budWidth}px`,
-          height: `${budHeight}px`,
-          borderRadius: '9999px',
-          background: activeBg,
-          opacity: '0.92',
-          transform: `translate3d(${fromRect.x + (fromRect.width - budWidth) / 2}px, ${
-            fromRect.y + (fromRect.height - budHeight) / 2
-          }px, 0) scale(0.85)`,
+        // 3. Micro-molécula satélite (pequena gotinha que se desprende no meio do trajeto)
+        const micro = document.createElement('div');
+        micro.className = 'aptis-molecule-orb';
+        Object.assign(micro.style, {
+          width: `${MICRO}px`,
+          height: `${MICRO}px`,
+          backgroundColor: '#e0f2fe',
+          transform: `translate3d(${from.x - MICRO / 2}px, ${from.y - MICRO / 2}px, 0) scale(0.75)`,
+          opacity: '0.95',
           transition: 'none'
         });
 
-        // 4. Crisp Specular Rim Sheen (reflexo vítreo nítido fora do filtro goo)
-        const sheen = document.createElement('div');
-        sheen.className = 'aptis-cell-blob';
-        Object.assign(sheen.style, {
-          width: `${fromRect.width}px`,
-          height: `${fromRect.height}px`,
-          borderRadius: fromRect.borderRadius,
-          background:
-            'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.03) 55%, transparent 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.35)',
-          boxShadow: targetFill.boxShadow,
-          transform: `translate3d(${fromRect.x}px, ${fromRect.y}px, 0) scale(1, 1)`,
+        // 4. Núcleo brilhante nítido fora do filtro goo (dá brilho de gota cristalina)
+        const coreGlow = document.createElement('div');
+        coreGlow.className = 'aptis-molecule-orb';
+        Object.assign(coreGlow.style, {
+          width: '6px',
+          height: '6px',
+          backgroundColor: '#ffffff',
+          boxShadow: `0 0 12px 3px ${targetColor}`,
+          transform: `translate3d(${from.x - 3}px, ${from.y - 3}px, 0) scale(0.9)`,
+          opacity: '0.95',
           transition: 'none'
         });
 
-        gooStage.appendChild(trail);
-        gooStage.appendChild(bud);
-        gooStage.appendChild(lead);
-        sheenStage.appendChild(sheen);
+        gooStage.appendChild(mother);
+        gooStage.appendChild(micro);
+        gooStage.appendChild(daughter);
+        glowStage.appendChild(coreGlow);
 
         track.appendChild(gooStage);
-        track.appendChild(sheenStage);
+        track.appendChild(glowStage);
 
-        // Force layout reflow so initial position paints before transition triggers
-        void lead.offsetWidth;
+        // Force reflow
+        void daughter.offsetWidth;
 
-        const isHorizontalDominant = Math.abs(dx) >= Math.abs(dy);
-        const stretchScale = isHorizontalDominant ? 'scale(1.06, 0.84)' : 'scale(0.86, 1.08)';
-        const midX = fromRect.x + dx * 0.56;
-        const midY = fromRect.y + dy * 0.56;
+        // Passo 1 (0ms → 130ms): Separação inicial da molécula (a bolha-filha brota 18px em direção ao destino enquanto a mãe segura, formando o pescoço molecular visível!)
+        const dirX = dx / dist;
+        const dirY = dy / dist;
+        const budOffset = Math.min(18, dist * 0.28);
 
-        // Phase 1: Detachment & Mitosis Stretch (Lead launches while Trail holds and stretches!)
-        lead.style.transition =
-          'transform 380ms cubic-bezier(0.22, 1.18, 0.36, 1), width 380ms cubic-bezier(0.22, 1.18, 0.36, 1), height 380ms cubic-bezier(0.22, 1.18, 0.36, 1), border-radius 380ms ease';
-        lead.style.width = `${toRect.width}px`;
-        lead.style.height = `${toRect.height}px`;
-        lead.style.borderRadius = toRect.borderRadius;
-        lead.style.transform = `translate3d(${toRect.x}px, ${toRect.y}px, 0) ${stretchScale}`;
+        daughter.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
+        daughter.style.transform = `translate3d(${from.x + dirX * budOffset - ORB / 2}px, ${
+          from.y + dirY * budOffset - ORB / 2
+        }px, 0) scale(1.12)`;
 
-        sheen.style.transition =
-          'transform 380ms cubic-bezier(0.22, 1.18, 0.36, 1), width 380ms cubic-bezier(0.22, 1.18, 0.36, 1), height 380ms cubic-bezier(0.22, 1.18, 0.36, 1), opacity 220ms ease';
-        sheen.style.width = `${toRect.width}px`;
-        sheen.style.height = `${toRect.height}px`;
-        sheen.style.borderRadius = toRect.borderRadius;
-        sheen.style.transform = `translate3d(${toRect.x}px, ${toRect.y}px, 0) scale(1, 0.94)`;
+        coreGlow.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
+        coreGlow.style.transform = `translate3d(${from.x + dirX * budOffset - 3}px, ${
+          from.y + dirY * budOffset - 3
+        }px, 0) scale(1.05)`;
 
-        // Satellite droplet buds off halfway then snaps into destination
-        bud.style.transition =
-          'transform 250ms cubic-bezier(0.18, 0.9, 0.32, 1.1), opacity 250ms ease';
-        bud.style.transform = `translate3d(${midX + (toRect.width - budWidth) / 2}px, ${
-          midY + (toRect.height - budHeight) / 2
-        }px, 0) scale(1.12, 0.72)`;
+        micro.style.transition = 'transform 130ms ease-out';
+        micro.style.transform = `translate3d(${from.x + dirX * (budOffset * 0.52) - MICRO / 2}px, ${
+          from.y + dirY * (budOffset * 0.52) - MICRO / 2
+        }px, 0) scale(1.05)`;
 
-        // Trail cell stretches & detaches 55ms later for authentic liquid cell mitosis pull!
-        trail.style.transition =
-          'transform 470ms cubic-bezier(0.42, 0, 0.2, 1) 55ms, width 470ms cubic-bezier(0.42, 0, 0.2, 1) 55ms, height 470ms cubic-bezier(0.42, 0, 0.2, 1) 55ms, background 350ms ease 55ms, opacity 260ms ease 250ms';
-        trail.style.width = `${toRect.width * 0.9}px`;
-        trail.style.height = `${toRect.height * 0.9}px`;
-        trail.style.borderRadius = toRect.borderRadius;
-        trail.style.background = activeBg;
-        trail.style.transform = `translate3d(${toRect.x + toRect.width * 0.05}px, ${
-          toRect.y + toRect.height * 0.05
-        }px, 0) scale(0.96, 0.96)`;
+        const timers: number[] = [];
 
-        // Phase 2: Mid-flight relaxation — satellite merges into target & lead plumps back to 100%
-        const midFlightTimer = window.setTimeout(() => {
-          lead.style.transition = 'transform 190ms cubic-bezier(0.22, 1, 0.36, 1)';
-          lead.style.transform = `translate3d(${toRect.x}px, ${toRect.y}px, 0) scale(1, 1)`;
+        // Passo 2 (125ms): Ruptura da ligação molecular — a bolinha se solta e voa suavemente até a nova aba!
+        const t1 = window.setTimeout(() => {
+          daughter.style.transition =
+            'transform 380ms cubic-bezier(0.22, 1.16, 0.36, 1), opacity 220ms ease 320ms';
+          daughter.style.transform = `translate3d(${to.x - ORB / 2}px, ${
+            to.y - ORB / 2
+          }px, 0) scale(1)`;
 
-          sheen.style.transition = 'transform 190ms cubic-bezier(0.22, 1, 0.36, 1)';
-          sheen.style.transform = `translate3d(${toRect.x}px, ${toRect.y}px, 0) scale(1, 1)`;
+          coreGlow.style.transition =
+            'transform 380ms cubic-bezier(0.22, 1.16, 0.36, 1), opacity 220ms ease 320ms';
+          coreGlow.style.transform = `translate3d(${to.x - 3}px, ${to.y - 3}px, 0) scale(1)`;
 
-          bud.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease';
-          bud.style.transform = `translate3d(${toRect.x + (toRect.width - budWidth) / 2}px, ${
-            toRect.y + (toRect.height - budHeight) / 2
-          }px, 0) scale(0.7)`;
-          bud.style.opacity = '0';
-        }, 235);
+          // Micro-bolha acompanha logo atrás num leve arco orgânico
+          micro.style.transition =
+            'transform 430ms cubic-bezier(0.35, 0, 0.2, 1) 35ms, opacity 200ms ease 300ms';
+          micro.style.transform = `translate3d(${to.x - MICRO / 2}px, ${
+            to.y - MICRO / 2
+          }px, 0) scale(0.65)`;
 
-        // Phase 3: Seamless handoff back to static active button + organic settle bounce
+          // Bolha-mãe encolhe ao se desprender e desliza atrás para se fundir novamente na aba de destino
+          mother.style.transition =
+            'transform 450ms cubic-bezier(0.42, 0, 0.2, 1) 60ms, background-color 300ms ease, opacity 220ms ease 340ms';
+          mother.style.backgroundColor = targetColor;
+          mother.style.transform = `translate3d(${to.x - MOTHER / 2}px, ${
+            to.y - MOTHER / 2
+          }px, 0) scale(0.72)`;
+        }, 125);
+        timers.push(t1);
+
+        // Passo 3 (470ms): Pequena ondulação (ripple) ao absorver na aba de destino e dissolve suavemente
+        const t2 = window.setTimeout(() => {
+          const ripple = document.createElement('div');
+          ripple.className = 'aptis-molecule-ripple';
+          ripple.style.width = '12px';
+          ripple.style.height = '12px';
+          ripple.style.setProperty('--mx', `${to.x - 6}px`);
+          ripple.style.setProperty('--my', `${to.y - 6}px`);
+          glowStage.appendChild(ripple);
+
+          daughter.style.opacity = '0';
+          mother.style.opacity = '0';
+          micro.style.opacity = '0';
+          coreGlow.style.opacity = '0';
+        }, 470);
+        timers.push(t2);
+
         const cleanupTimer = window.setTimeout(() => {
-          clickedBtn.classList.remove('aptis-cell-in-flight');
-          clickedBtn.classList.add('aptis-cell-landed');
           gooStage.remove();
-          sheenStage.remove();
+          glowStage.remove();
           activeAnimByTrack.delete(track);
-          window.setTimeout(() => {
-            clickedBtn.classList.remove('aptis-cell-landed');
-          }, 360);
-        }, 520);
+        }, 880);
 
         activeAnimByTrack.set(track, {
           gooStage,
-          sheenStage,
-          lead,
-          trail,
-          bud,
-          sheen,
-          targetButton: clickedBtn,
+          glowStage,
+          daughter,
           cleanupTimer,
-          midFlightTimer
+          timers
         });
       });
     };
@@ -374,9 +342,9 @@ export function LiquidCellNavigationEngine() {
       }}
     >
       <defs>
-        {/* Filtro Gooey Orgânico para barras de abas internas (Efeito Mitose / Célula Líquida) */}
-        <filter id="aptis-cell-goo">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="6.5" result="blur" />
+        {/* Filtro Gooey calibrado especificamente para pequenas bolhas/moléculas (10px-12px) */}
+        <filter id="aptis-molecule-goo">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="blur" />
           <feColorMatrix
             in="blur"
             mode="matrix"
@@ -384,24 +352,7 @@ export function LiquidCellNavigationEngine() {
               1 0 0 0 0
               0 1 0 0 0
               0 0 1 0 0
-              0 0 0 21 -8.5
-            "
-            result="goo"
-          />
-          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-        </filter>
-
-        {/* Filtro Gooey Orgânico para o menu lateral principal entre ferramentas */}
-        <filter id="aptis-sidebar-goo">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
-          <feColorMatrix
-            in="blur"
-            mode="matrix"
-            values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 23 -9.5
+              0 0 0 19 -7.5
             "
             result="goo"
           />
