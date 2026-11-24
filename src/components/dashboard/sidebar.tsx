@@ -22,9 +22,9 @@ import {
 } from 'lucide-react';
 import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
 import {
-  drawWaterSphere,
-  renderWaterDropletTransitionFrame,
-  WATER_DROPLET_PALETTES
+  renderWaterBarTransitionFrame,
+  WATER_DROPLET_PALETTES,
+  RectPill
 } from '@/lib/water-droplet-renderer';
 
 function subscribeGlassMode(callback: () => void) {
@@ -94,11 +94,12 @@ export function DashboardSidebar() {
     getSidebarCollapsedServerSnapshot
   );
 
-  // Refs para a Gota de Água 3D da Sidebar (separa com pescoço líquido e 3 gotinhas o O o)
+  // Refs para a animação de gota d'água 3D diretamente na PRÓPRIA BARRA de seleção (sem bolinha lateral)
   const navContainerRef = useRef<HTMLDivElement | null>(null);
   const dropletCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const prevAnchorRef = useRef<{ x: number; y: number } | null>(null);
+  const prevPillRef = useRef<RectPill | null>(null);
   const prevRouteRef = useRef<string | null>(null);
+  const inFlightElRef = useRef<HTMLElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
@@ -106,13 +107,15 @@ export function DashboardSidebar() {
     const canvas = dropletCanvasRef.current;
     if (!container || !canvas) return;
 
-    const REST_RADIUS = isCollapsed ? 4.8 : 5.5;
-    const TRAVEL_RADIUS = isCollapsed ? 6.8 : 7.5;
-    const DURATION_MS = 780;
+    const DURATION_MS = 740;
 
     if (rafRef.current !== null) {
       window.cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+    }
+    if (inFlightElRef.current) {
+      inFlightElRef.current.classList.remove('aptis-pill-in-flight');
+      inFlightElRef.current = null;
     }
 
     const syncAndRender = (animate: boolean) => {
@@ -139,43 +142,43 @@ export function DashboardSidebar() {
 
       const cRect = container.getBoundingClientRect();
       const tRect = targetEl.getBoundingClientRect();
-      const next = {
-        x: tRect.left - cRect.left + container.scrollLeft + (isCollapsed ? 7.5 : 9),
-        y: tRect.top - cRect.top + container.scrollTop + tRect.height / 2
+      const br = parseFloat(window.getComputedStyle(targetEl).borderRadius || '12');
+      const nextPill: RectPill = {
+        x: tRect.left - cRect.left + container.scrollLeft,
+        y: tRect.top - cRect.top + container.scrollTop,
+        w: tRect.width,
+        h: tRect.height,
+        r: Number.isFinite(br) ? Math.min(br, tRect.height / 2) : 12
       };
 
-      const prev = prevAnchorRef.current;
+      const prevPill = prevPillRef.current;
       const routeChanged = prevRouteRef.current !== null && prevRouteRef.current !== activeRoute;
-      const dist = prev ? Math.hypot(next.x - prev.x, next.y - prev.y) : 0;
+      const dist = prevPill
+        ? Math.hypot(
+            nextPill.x + nextPill.w / 2 - (prevPill.x + prevPill.w / 2),
+            nextPill.y + nextPill.h / 2 - (prevPill.y + prevPill.h / 2)
+          )
+        : 0;
       const shouldAnimate =
         animate &&
         routeChanged &&
-        prev !== null &&
+        prevPill !== null &&
         dist > 4 &&
         !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      prevAnchorRef.current = next;
+      prevPillRef.current = nextPill;
       prevRouteRef.current = activeRoute;
 
-      if (!shouldAnimate || !prev) {
-        if (rafRef.current !== null) {
-          // Keep active travel animation running smoothly if resize happens mid-flight
-          return;
-        }
+      if (!shouldAnimate || !prevPill) {
+        if (rafRef.current !== null) return;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
-        drawWaterSphere(
-          ctx,
-          next.x,
-          next.y,
-          REST_RADIUS,
-          REST_RADIUS,
-          0,
-          WATER_DROPLET_PALETTES.cyan,
-          1
-        );
         return;
       }
+
+      // Oculta temporariamente o fundo estático da barra de destino durante o voo da barra líquida
+      targetEl.classList.add('aptis-pill-in-flight');
+      inFlightElRef.current = targetEl;
 
       const startTime = performance.now();
       const tick = (now: number) => {
@@ -185,29 +188,19 @@ export function DashboardSidebar() {
 
         if (elapsed < DURATION_MS) {
           const p = Math.min(1, elapsed / DURATION_MS);
-          renderWaterDropletTransitionFrame(ctx, {
-            fromX: prev.x,
-            fromY: prev.y,
-            toX: next.x,
-            toY: next.y,
+          renderWaterBarTransitionFrame(ctx, {
+            from: prevPill,
+            to: nextPill,
             progress: p,
-            baseRadius: TRAVEL_RADIUS,
             palette: WATER_DROPLET_PALETTES.cyan
           });
           rafRef.current = window.requestAnimationFrame(tick);
           return;
         }
 
-        drawWaterSphere(
-          ctx,
-          next.x,
-          next.y,
-          REST_RADIUS,
-          REST_RADIUS,
-          0,
-          WATER_DROPLET_PALETTES.cyan,
-          1
-        );
+        // Encerra animação limpa na barra de destino
+        targetEl.classList.remove('aptis-pill-in-flight');
+        inFlightElRef.current = null;
         rafRef.current = null;
       };
 
@@ -231,6 +224,10 @@ export function DashboardSidebar() {
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (inFlightElRef.current) {
+        inFlightElRef.current.classList.remove('aptis-pill-in-flight');
+        inFlightElRef.current = null;
       }
       window.removeEventListener('resize', handleResize);
       observer?.disconnect();
@@ -388,11 +385,11 @@ export function DashboardSidebar() {
           isCollapsed ? 'px-2' : 'px-3'
         } space-y-5 relative z-10`}
       >
-        {/* Canvas 60fps para física de Gota de Água 3D (pescoço líquido + 3 micro-gotinhas) */}
+        {/* Canvas 60fps atrás das labels (z-[1]) animando a própria barra selecionada como água */}
         <canvas
           ref={dropletCanvasRef}
           aria-hidden="true"
-          className="absolute top-0 left-0 pointer-events-none z-30"
+          className="absolute top-0 left-0 pointer-events-none z-[1]"
         />
 
         {/* Menu Principal */}
@@ -408,7 +405,7 @@ export function DashboardSidebar() {
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard' })}
             title="Visão Geral & Aptis Score"
             className={`relative z-10 flex items-center ${
-              isCollapsed ? 'justify-center pl-4 pr-2 py-2.5' : 'gap-2.5 pl-6 pr-3.5 py-2.5'
+              isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3.5 py-2.5'
             } rounded-xl text-xs font-medium transition-all duration-300 ${
               isCurrentRoute('/dashboard')
                 ? 'text-white font-bold'
@@ -437,7 +434,7 @@ export function DashboardSidebar() {
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard/marketplace' })}
             title="Suíte Aptis & Licenças"
             className={`relative z-10 flex items-center ${
-              isCollapsed ? 'justify-center pl-4 pr-2 py-2.5' : 'gap-2.5 pl-6 pr-3.5 py-2.5'
+              isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3.5 py-2.5'
             } rounded-xl text-xs font-medium transition-all duration-300 ${
               isCurrentRoute('/dashboard/marketplace')
                 ? 'text-white font-bold'
@@ -464,7 +461,7 @@ export function DashboardSidebar() {
             <button
               onClick={() => setIsSectorsModalOpen(true)}
               className={`w-full relative z-10 flex items-center ${
-                isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between pl-6 pr-3.5 py-2.5'
+                isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3.5 py-2.5'
               } rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.05] hover:text-white transition-all cursor-pointer group text-left`}
               title="Áreas & Gestores — Gerenciar setores fabris e permissões"
             >
@@ -509,7 +506,7 @@ export function DashboardSidebar() {
                   onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
                   title={tool.name}
                   className={`relative z-10 flex items-center ${
-                    isCollapsed ? 'justify-center pl-4 pr-2 py-2.5' : 'justify-between pl-6 pr-3.5 py-2'
+                    isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3.5 py-2'
                   } rounded-xl text-xs font-medium transition-all duration-300 ${
                     active
                       ? 'text-white font-bold'
@@ -571,7 +568,7 @@ export function DashboardSidebar() {
                   data-sidebar-route={tool.route}
                   onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
                   className={`relative z-10 flex items-center ${
-                    isCollapsed ? 'justify-center pl-4 pr-2 py-2' : 'justify-between pl-6 pr-3.5 py-1.5'
+                    isCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-3.5 py-1.5'
                   } rounded-xl text-xs transition-colors group ${
                     active
                       ? 'text-amber-200 font-semibold'

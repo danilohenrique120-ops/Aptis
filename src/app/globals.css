@@ -383,8 +383,16 @@ textarea.bg-slate-50::placeholder {
 }
 
 /* ============================================================================
-   7. 3D WATER DROPLET SEPARATION ENGINE (Page Enter + Reduced Motion)
+   7. 3D WATER DROPLET BAR SEPARATION ENGINE (Page Enter + In-Flight Pill)
    ============================================================================ */
+.aptis-pill-in-flight {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transition: color 0.16s ease !important;
+}
+
 @keyframes aptisPageCellEnter {
   0% {
     opacity: 0;

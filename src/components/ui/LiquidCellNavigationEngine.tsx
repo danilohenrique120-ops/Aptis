@@ -2,21 +2,16 @@
 
 import { useEffect } from 'react';
 import {
-  renderWaterDropletTransitionFrame,
+  renderWaterBarTransitionFrame,
   resolvePaletteFromColor,
-  drawWaterSphere
+  RectPill
 } from '@/lib/water-droplet-renderer';
-
-interface Point2D {
-  x: number;
-  y: number;
-}
 
 interface ActiveTrackCanvasAnim {
   canvas: HTMLCanvasElement;
   rafId: number;
-  currentPos: Point2D;
-  targetPos: Point2D;
+  targetButton: HTMLElement;
+  currentPill: RectPill;
 }
 
 function isButtonVisuallyActive(btn: HTMLElement): boolean {
@@ -42,12 +37,16 @@ function isButtonVisuallyActive(btn: HTMLElement): boolean {
   return false;
 }
 
-function getTabDropletAnchor(el: HTMLElement, container: HTMLElement): Point2D {
+function getButtonPillRect(el: HTMLElement, container: HTMLElement): RectPill {
   const elRect = el.getBoundingClientRect();
   const cRect = container.getBoundingClientRect();
+  const br = parseFloat(window.getComputedStyle(el).borderRadius || '16');
   return {
-    x: elRect.left - cRect.left + container.scrollLeft + elRect.width / 2,
-    y: elRect.bottom - cRect.top + container.scrollTop - 9
+    x: elRect.left - cRect.left + container.scrollLeft,
+    y: elRect.top - cRect.top + container.scrollTop,
+    w: elRect.width,
+    h: elRect.height,
+    r: Number.isFinite(br) ? Math.min(br, elRect.height / 2) : elRect.height / 2
   };
 }
 
@@ -85,7 +84,7 @@ export function LiquidCellNavigationEngine() {
 
     const pendingSourceByTrack = new WeakMap<
       HTMLElement,
-      { button: HTMLElement; anchor: Point2D; color: string }
+      { button: HTMLElement; pill: RectPill; color: string }
     >();
     const activeAnimByTrack = new WeakMap<HTMLElement, ActiveTrackCanvasAnim>();
 
@@ -93,6 +92,7 @@ export function LiquidCellNavigationEngine() {
       const anim = activeAnimByTrack.get(track);
       if (!anim) return;
       window.cancelAnimationFrame(anim.rafId);
+      anim.targetButton.classList.remove('aptis-pill-in-flight');
       anim.canvas.remove();
       activeAnimByTrack.delete(track);
     };
@@ -110,8 +110,8 @@ export function LiquidCellNavigationEngine() {
       const existingAnim = activeAnimByTrack.get(track);
       if (existingAnim) {
         pendingSourceByTrack.set(track, {
-          button: clickedBtn,
-          anchor: { ...existingAnim.currentPos },
+          button: existingAnim.targetButton,
+          pill: { ...existingAnim.currentPill },
           color: extractAccentColor(clickedBtn)
         });
         return;
@@ -122,7 +122,7 @@ export function LiquidCellNavigationEngine() {
 
       pendingSourceByTrack.set(track, {
         button: prevActive,
-        anchor: getTabDropletAnchor(prevActive, track),
+        pill: getButtonPillRect(prevActive, track),
         color: extractAccentColor(prevActive)
       });
     };
@@ -146,12 +146,18 @@ export function LiquidCellNavigationEngine() {
       requestAnimationFrame(() => {
         if (!track.isConnected || !clickedBtn.isConnected) return;
 
-        const from = source.anchor;
-        const to = getTabDropletAnchor(clickedBtn, track);
-        const dist = Math.hypot(to.x - from.x, to.y - from.y);
-        if (dist < 6) return;
+        const from = source.pill;
+        const to = getButtonPillRect(clickedBtn, track);
+        const dist = Math.hypot(
+          to.x + to.w / 2 - (from.x + from.w / 2),
+          to.y + to.h / 2 - (from.y + from.h / 2)
+        );
+        if (dist < 4) return;
 
         const palette = resolvePaletteFromColor(extractAccentColor(clickedBtn) || source.color);
+
+        // Esconde o fundo estático do botão de destino enquanto a barra líquida viaja até ele
+        clickedBtn.classList.add('aptis-pill-in-flight');
 
         const width = Math.max(track.scrollWidth, track.clientWidth);
         const height = Math.max(track.scrollHeight, track.clientHeight);
@@ -168,25 +174,25 @@ export function LiquidCellNavigationEngine() {
           width: `${width}px`,
           height: `${height}px`,
           pointerEvents: 'none',
-          zIndex: '20'
+          zIndex: '1'
         });
 
         track.appendChild(canvas);
         const ctx = canvas.getContext('2d');
         if (!ctx) {
+          clickedBtn.classList.remove('aptis-pill-in-flight');
           canvas.remove();
           return;
         }
 
-        const DURATION_MS = 820;
-        const FADE_OUT_MS = 180;
+        const DURATION_MS = 740;
         const startTime = performance.now();
 
         const animState: ActiveTrackCanvasAnim = {
           canvas,
           rafId: 0,
-          currentPos: { ...from },
-          targetPos: { ...to }
+          targetButton: clickedBtn,
+          currentPill: { ...from }
         };
 
         const tick = (now: number) => {
@@ -201,29 +207,21 @@ export function LiquidCellNavigationEngine() {
 
           if (elapsed < DURATION_MS) {
             const p = Math.min(1, elapsed / DURATION_MS);
-            animState.currentPos = {
+            animState.currentPill = {
               x: from.x + (to.x - from.x) * p,
-              y: from.y + (to.y - from.y) * p
+              y: from.y + (to.y - from.y) * p,
+              w: from.w + (to.w - from.w) * p,
+              h: from.h + (to.h - from.h) * p,
+              r: from.r + (to.r - from.r) * p
             };
 
-            renderWaterDropletTransitionFrame(ctx, {
-              fromX: from.x,
-              fromY: from.y,
-              toX: to.x,
-              toY: to.y,
+            renderWaterBarTransitionFrame(ctx, {
+              from,
+              to,
               progress: p,
-              baseRadius: 7.2,
               palette
             });
 
-            animState.rafId = window.requestAnimationFrame(tick);
-            return;
-          }
-
-          if (elapsed < DURATION_MS + FADE_OUT_MS) {
-            const fadeP = (elapsed - DURATION_MS) / FADE_OUT_MS;
-            const r = 7.2 * (1 - fadeP * 0.45);
-            drawWaterSphere(ctx, to.x, to.y, r, r, 0, palette, 1 - fadeP);
             animState.rafId = window.requestAnimationFrame(tick);
             return;
           }
