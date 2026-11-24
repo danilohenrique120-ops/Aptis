@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useLayoutEffect, useSyncExternalStore } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTenant } from '@/context/tenant-context';
@@ -21,11 +21,6 @@ import {
   PanelLeftOpen
 } from 'lucide-react';
 import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
-import {
-  renderWaterBarTransitionFrame,
-  WATER_DROPLET_PALETTES,
-  RectPill
-} from '@/lib/water-droplet-renderer';
 
 function subscribeGlassMode(callback: () => void) {
   if (typeof window === 'undefined') return () => {};
@@ -93,146 +88,6 @@ export function DashboardSidebar() {
     getSidebarCollapsedSnapshot,
     getSidebarCollapsedServerSnapshot
   );
-
-  // Refs para a animação de gota d'água 3D diretamente na PRÓPRIA BARRA de seleção (sem bolinha lateral)
-  const navContainerRef = useRef<HTMLDivElement | null>(null);
-  const dropletCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const prevPillRef = useRef<RectPill | null>(null);
-  const prevRouteRef = useRef<string | null>(null);
-  const inFlightElRef = useRef<HTMLElement | null>(null);
-  const rafRef = useRef<number | null>(null);
-
-  useLayoutEffect(() => {
-    const container = navContainerRef.current;
-    const canvas = dropletCanvasRef.current;
-    if (!container || !canvas) return;
-
-    const DURATION_MS = 740;
-
-    if (rafRef.current !== null) {
-      window.cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    if (inFlightElRef.current) {
-      inFlightElRef.current.classList.remove('aptis-pill-in-flight');
-      inFlightElRef.current = null;
-    }
-
-    const syncAndRender = (animate: boolean) => {
-      const width = Math.max(container.clientWidth, 1);
-      const height = Math.max(container.scrollHeight, container.clientHeight, 1);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const targetEl = container.querySelector<HTMLElement>(
-        `[data-sidebar-route="${CSS.escape(activeRoute)}"]`
-      );
-      if (!targetEl) {
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, width, height);
-        return;
-      }
-
-      const cRect = container.getBoundingClientRect();
-      const tRect = targetEl.getBoundingClientRect();
-      const br = parseFloat(window.getComputedStyle(targetEl).borderRadius || '12');
-      const nextPill: RectPill = {
-        x: tRect.left - cRect.left + container.scrollLeft,
-        y: tRect.top - cRect.top + container.scrollTop,
-        w: tRect.width,
-        h: tRect.height,
-        r: Number.isFinite(br) ? Math.min(br, tRect.height / 2) : 12
-      };
-
-      const prevPill = prevPillRef.current;
-      const routeChanged = prevRouteRef.current !== null && prevRouteRef.current !== activeRoute;
-      const dist = prevPill
-        ? Math.hypot(
-            nextPill.x + nextPill.w / 2 - (prevPill.x + prevPill.w / 2),
-            nextPill.y + nextPill.h / 2 - (prevPill.y + prevPill.h / 2)
-          )
-        : 0;
-      const shouldAnimate =
-        animate &&
-        routeChanged &&
-        prevPill !== null &&
-        dist > 4 &&
-        !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      prevPillRef.current = nextPill;
-      prevRouteRef.current = activeRoute;
-
-      if (!shouldAnimate || !prevPill) {
-        if (rafRef.current !== null) return;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, width, height);
-        return;
-      }
-
-      // Oculta temporariamente o fundo estático da barra de destino durante o voo da barra líquida
-      targetEl.classList.add('aptis-pill-in-flight');
-      inFlightElRef.current = targetEl;
-
-      const startTime = performance.now();
-      const tick = (now: number) => {
-        const elapsed = now - startTime;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, width, height);
-
-        if (elapsed < DURATION_MS) {
-          const p = Math.min(1, elapsed / DURATION_MS);
-          renderWaterBarTransitionFrame(ctx, {
-            from: prevPill,
-            to: nextPill,
-            progress: p,
-            palette: WATER_DROPLET_PALETTES.cyan
-          });
-          rafRef.current = window.requestAnimationFrame(tick);
-          return;
-        }
-
-        // Encerra animação limpa na barra de destino
-        targetEl.classList.remove('aptis-pill-in-flight');
-        inFlightElRef.current = null;
-        rafRef.current = null;
-      };
-
-      rafRef.current = window.requestAnimationFrame(tick);
-    };
-
-    syncAndRender(true);
-
-    const handleResize = () => syncAndRender(false);
-    window.addEventListener('resize', handleResize);
-
-    let observer: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(() => {
-        syncAndRender(false);
-      });
-      observer.observe(container);
-    }
-
-    return () => {
-      if (rafRef.current !== null) {
-        window.cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      if (inFlightElRef.current) {
-        inFlightElRef.current.classList.remove('aptis-pill-in-flight');
-        inFlightElRef.current = null;
-      }
-      window.removeEventListener('resize', handleResize);
-      observer?.disconnect();
-    };
-  }, [activeRoute, licensedTools.length, availableTools.length, isPlantAdmin, isCollapsed]);
 
   const handleToggleTintedGlass = () => {
     const next = !tintedGlass;
@@ -378,20 +233,12 @@ export function DashboardSidebar() {
         )}
       </div>
 
-      {/* Navigation com Gota de Água 3D que se Separa e Desliza */}
+      {/* Navigation com Transição Fluida */}
       <div
-        ref={navContainerRef}
         className={`flex-1 overflow-y-auto overflow-x-hidden py-4 ${
           isCollapsed ? 'px-2' : 'px-3'
         } space-y-5 relative z-10`}
       >
-        {/* Canvas 60fps atrás das labels (z-[1]) animando a própria barra selecionada como água */}
-        <canvas
-          ref={dropletCanvasRef}
-          aria-hidden="true"
-          className="absolute top-0 left-0 pointer-events-none z-[1]"
-        />
-
         {/* Menu Principal */}
         <div className="space-y-1.5 relative z-10">
           {!isCollapsed && (
@@ -401,22 +248,21 @@ export function DashboardSidebar() {
           )}
           <Link
             href="/dashboard"
-            data-sidebar-route="/dashboard"
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard' })}
             title="Visão Geral & Aptis Score"
             className={`relative z-10 flex items-center ${
               isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3.5 py-2.5'
-            } rounded-xl text-xs font-medium transition-all duration-300 ${
+            } rounded-xl text-xs font-medium border transition-all duration-200 ease-out ${
               isCurrentRoute('/dashboard')
                 ? 'text-white font-bold'
-                : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
+                : 'border-transparent text-slate-300 hover:bg-white/[0.05] hover:text-white'
             }`}
             style={
               isCurrentRoute('/dashboard')
                 ? {
                     background:
                       'linear-gradient(90deg, rgba(37, 99, 235, 0.45) 0%, rgba(6, 182, 212, 0.2) 100%)',
-                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    borderColor: 'rgba(56, 189, 248, 0.35)',
                     borderTopColor: 'rgba(186, 230, 253, 0.5)',
                     boxShadow:
                       'inset 0 1px 0 0 rgba(255, 255, 255, 0.24), 0 8px 20px -4px rgba(37, 99, 235, 0.35)'
@@ -430,22 +276,21 @@ export function DashboardSidebar() {
 
           <Link
             href="/dashboard/marketplace"
-            data-sidebar-route="/dashboard/marketplace"
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard/marketplace' })}
             title="Suíte Aptis & Licenças"
             className={`relative z-10 flex items-center ${
               isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-3.5 py-2.5'
-            } rounded-xl text-xs font-medium transition-all duration-300 ${
+            } rounded-xl text-xs font-medium border transition-all duration-200 ease-out ${
               isCurrentRoute('/dashboard/marketplace')
                 ? 'text-white font-bold'
-                : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
+                : 'border-transparent text-slate-300 hover:bg-white/[0.05] hover:text-white'
             }`}
             style={
               isCurrentRoute('/dashboard/marketplace')
                 ? {
                     background:
                       'linear-gradient(90deg, rgba(37, 99, 235, 0.45) 0%, rgba(6, 182, 212, 0.2) 100%)',
-                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    borderColor: 'rgba(56, 189, 248, 0.35)',
                     borderTopColor: 'rgba(186, 230, 253, 0.5)',
                     boxShadow:
                       'inset 0 1px 0 0 rgba(255, 255, 255, 0.24), 0 8px 20px -4px rgba(37, 99, 235, 0.35)'
@@ -462,7 +307,7 @@ export function DashboardSidebar() {
               onClick={() => setIsSectorsModalOpen(true)}
               className={`w-full relative z-10 flex items-center ${
                 isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3.5 py-2.5'
-              } rounded-xl text-xs font-medium text-slate-300 hover:bg-white/[0.05] hover:text-white transition-all cursor-pointer group text-left`}
+              } rounded-xl text-xs font-medium border border-transparent text-slate-300 hover:bg-white/[0.05] hover:text-white transition-all duration-200 ease-out cursor-pointer group text-left`}
               title="Áreas & Gestores — Gerenciar setores fabris e permissões"
             >
               <div className="flex items-center gap-2.5">
@@ -502,22 +347,21 @@ export function DashboardSidebar() {
                 <Link
                   key={tool.id}
                   href={tool.route}
-                  data-sidebar-route={tool.route}
                   onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
                   title={tool.name}
                   className={`relative z-10 flex items-center ${
                     isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3.5 py-2'
-                  } rounded-xl text-xs font-medium transition-all duration-300 ${
+                  } rounded-xl text-xs font-medium border transition-all duration-200 ease-out ${
                     active
                       ? 'text-white font-bold'
-                      : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
+                      : 'border-transparent text-slate-300 hover:bg-white/[0.05] hover:text-white'
                   }`}
                   style={
                     active
                       ? {
                           background:
                             'linear-gradient(90deg, rgba(37, 99, 235, 0.45) 0%, rgba(6, 182, 212, 0.2) 100%)',
-                          border: '1px solid rgba(56, 189, 248, 0.35)',
+                          borderColor: 'rgba(56, 189, 248, 0.35)',
                           borderTopColor: 'rgba(186, 230, 253, 0.5)',
                           boxShadow:
                             'inset 0 1px 0 0 rgba(255, 255, 255, 0.24), 0 6px 18px -4px rgba(37, 99, 235, 0.35)'
@@ -528,7 +372,7 @@ export function DashboardSidebar() {
                   <div className="flex items-center gap-2.5 truncate">
                     <ToolIcon
                       name={tool.iconName}
-                      className={`w-4 h-4 shrink-0 transition-colors duration-300 ${
+                      className={`w-4 h-4 shrink-0 transition-colors duration-200 ${
                         active ? 'text-cyan-300' : 'text-slate-400'
                       }`}
                     />
@@ -536,7 +380,7 @@ export function DashboardSidebar() {
                   </div>
                   {!isCollapsed && (
                     <ChevronRight
-                      className={`w-3.5 h-3.5 shrink-0 transition-transform duration-300 ${
+                      className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
                         active ? 'text-cyan-200 translate-x-0.5' : 'text-slate-600'
                       }`}
                     />
@@ -565,14 +409,13 @@ export function DashboardSidebar() {
                 <Link
                   key={tool.id}
                   href={tool.route}
-                  data-sidebar-route={tool.route}
                   onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
                   className={`relative z-10 flex items-center ${
                     isCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-3.5 py-1.5'
-                  } rounded-xl text-xs transition-colors group ${
+                  } rounded-xl text-xs transition-all duration-200 ease-out group ${
                     active
-                      ? 'text-amber-200 font-semibold'
-                      : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-300'
+                      ? 'bg-white/[0.08] text-amber-200 font-semibold border border-amber-400/25'
+                      : 'border border-transparent text-slate-500 hover:bg-white/[0.04] hover:text-slate-300'
                   }`}
                   title={`${tool.name} — Módulo não contratado. Clique para solicitar ativação.`}
                 >

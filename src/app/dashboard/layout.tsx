@@ -4,7 +4,6 @@ import React, { useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { DashboardHeader } from '@/components/dashboard/header';
-import { LiquidCellNavigationEngine } from '@/components/ui/LiquidCellNavigationEngine';
 
 function subscribeGlassMode(callback: () => void) {
   if (typeof window === 'undefined') return () => {};
@@ -95,9 +94,6 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* Motor Global de Animação de Mitose / Célula Líquida para Abas e Menus */}
-      <LiquidCellNavigationEngine />
-
       {/* Sidebar Lateral em Vidro Flutuante */}
       <DashboardSidebar />
 
@@ -105,7 +101,7 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
         <DashboardHeader />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-none mx-auto transition-all duration-300">
-          <div key={pathname} className="aptis-page-cell-enter">
+          <div key={pathname} className="aptis-page-transition">
             {children}
           </div>
         </main>
