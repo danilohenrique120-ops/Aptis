@@ -1,21 +1,23 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
+import {
+  renderWaterDropletTransitionFrame,
+  resolvePaletteFromColor,
+  drawWaterSphere
+} from '@/lib/water-droplet-renderer';
 
 interface Point2D {
   x: number;
   y: number;
 }
 
-interface ActiveMoleculeAnimation {
-  gooStage: HTMLDivElement;
-  glowStage: HTMLDivElement;
-  daughter: HTMLDivElement;
-  cleanupTimer: number | null;
-  timers: number[];
+interface ActiveTrackCanvasAnim {
+  canvas: HTMLCanvasElement;
+  rafId: number;
+  currentPos: Point2D;
+  targetPos: Point2D;
 }
-
-const DEFAULT_MOLECULE_COLOR = '#38bdf8';
 
 function isButtonVisuallyActive(btn: HTMLElement): boolean {
   const inlineBg = (btn.style.background || btn.style.backgroundImage || '').trim();
@@ -40,13 +42,12 @@ function isButtonVisuallyActive(btn: HTMLElement): boolean {
   return false;
 }
 
-function getTabMoleculeAnchor(el: HTMLElement, container: HTMLElement): Point2D {
+function getTabDropletAnchor(el: HTMLElement, container: HTMLElement): Point2D {
   const elRect = el.getBoundingClientRect();
   const cRect = container.getBoundingClientRect();
-  // Posiciona a bolinha molecular na base central do item da aba (sem tampar o texto)
   return {
     x: elRect.left - cRect.left + container.scrollLeft + elRect.width / 2,
-    y: elRect.top - cRect.top + container.scrollTop + elRect.height - 4
+    y: elRect.bottom - cRect.top + container.scrollTop - 9
   };
 }
 
@@ -57,13 +58,13 @@ function extractAccentColor(btn: HTMLElement): string {
 
   const inlineShadow = (btn.style.boxShadow || '').trim();
   const rgbaMatch = inlineShadow.match(/rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+/);
-  if (rgbaMatch) return `${rgbaMatch[0]}, 1)`;
+  if (rgbaMatch) return rgbaMatch[0];
 
   const computed = window.getComputedStyle(btn);
-  const bgImgHex = (computed.backgroundImage || '').match(/rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/);
-  if (bgImgHex) return bgImgHex[0];
+  const bgImgRgb = (computed.backgroundImage || '').match(/rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/);
+  if (bgImgRgb) return bgImgRgb[0];
 
-  return DEFAULT_MOLECULE_COLOR;
+  return '#38bdf8';
 }
 
 function findActiveButtonInTrack(track: HTMLElement, exclude?: HTMLElement): HTMLElement | null {
@@ -86,15 +87,13 @@ export function LiquidCellNavigationEngine() {
       HTMLElement,
       { button: HTMLElement; anchor: Point2D; color: string }
     >();
-    const activeAnimByTrack = new WeakMap<HTMLElement, ActiveMoleculeAnimation>();
+    const activeAnimByTrack = new WeakMap<HTMLElement, ActiveTrackCanvasAnim>();
 
     const cleanupTrackAnimation = (track: HTMLElement) => {
       const anim = activeAnimByTrack.get(track);
       if (!anim) return;
-      if (anim.cleanupTimer !== null) window.clearTimeout(anim.cleanupTimer);
-      anim.timers.forEach(t => window.clearTimeout(t));
-      anim.gooStage.remove();
-      anim.glowStage.remove();
+      window.cancelAnimationFrame(anim.rafId);
+      anim.canvas.remove();
       activeAnimByTrack.delete(track);
     };
 
@@ -110,15 +109,10 @@ export function LiquidCellNavigationEngine() {
 
       const existingAnim = activeAnimByTrack.get(track);
       if (existingAnim) {
-        const cRect = track.getBoundingClientRect();
-        const dRect = existingAnim.daughter.getBoundingClientRect();
         pendingSourceByTrack.set(track, {
           button: clickedBtn,
-          anchor: {
-            x: dRect.left - cRect.left + track.scrollLeft + dRect.width / 2,
-            y: dRect.top - cRect.top + track.scrollTop + dRect.height / 2
-          },
-          color: existingAnim.daughter.style.backgroundColor || DEFAULT_MOLECULE_COLOR
+          anchor: { ...existingAnim.currentPos },
+          color: extractAccentColor(clickedBtn)
         });
         return;
       }
@@ -128,7 +122,7 @@ export function LiquidCellNavigationEngine() {
 
       pendingSourceByTrack.set(track, {
         button: prevActive,
-        anchor: getTabMoleculeAnchor(prevActive, track),
+        anchor: getTabDropletAnchor(prevActive, track),
         color: extractAccentColor(prevActive)
       });
     };
@@ -153,171 +147,92 @@ export function LiquidCellNavigationEngine() {
         if (!track.isConnected || !clickedBtn.isConnected) return;
 
         const from = source.anchor;
-        const to = getTabMoleculeAnchor(clickedBtn, track);
-        const dx = to.x - from.x;
-        const dy = to.y - from.y;
-        const dist = Math.hypot(dx, dy);
+        const to = getTabDropletAnchor(clickedBtn, track);
+        const dist = Math.hypot(to.x - from.x, to.y - from.y);
         if (dist < 6) return;
 
-        const targetColor = extractAccentColor(clickedBtn) || source.color || DEFAULT_MOLECULE_COLOR;
-        const stageWidth = Math.max(track.scrollWidth, track.clientWidth);
-        const stageHeight = Math.max(track.scrollHeight, track.clientHeight) + 12;
+        const palette = resolvePaletteFromColor(extractAccentColor(clickedBtn) || source.color);
 
-        const gooStage = document.createElement('div');
-        gooStage.className = 'aptis-molecule-goo-stage';
-        gooStage.style.width = `${stageWidth}px`;
-        gooStage.style.height = `${stageHeight}px`;
+        const width = Math.max(track.scrollWidth, track.clientWidth);
+        const height = Math.max(track.scrollHeight, track.clientHeight);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-        const glowStage = document.createElement('div');
-        glowStage.className = 'aptis-molecule-glow-stage';
-        glowStage.style.width = `${stageWidth}px`;
-        glowStage.style.height = `${stageHeight}px`;
-
-        const ORB = 12; // Pequena bolha/molécula principal (12px)
-        const MOTHER = 11; // Bolha-mãe que segura na origem e se desprende (11px)
-        const MICRO = 7; // Micro-bolha satélite que se destaca no meio da separação (7px)
-
-        // 1. Bolha-Mãe (fica ancorada por um instante na origem formando a ponte molecular)
-        const mother = document.createElement('div');
-        mother.className = 'aptis-molecule-orb';
-        Object.assign(mother.style, {
-          width: `${MOTHER}px`,
-          height: `${MOTHER}px`,
-          backgroundColor: source.color || targetColor,
-          transform: `translate3d(${from.x - MOTHER / 2}px, ${from.y - MOTHER / 2}px, 0) scale(1)`,
-          opacity: '0.95',
-          transition: 'none'
+        const canvas = document.createElement('canvas');
+        canvas.className = 'aptis-water-canvas-overlay';
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        Object.assign(canvas.style, {
+          position: 'absolute',
+          left: '0px',
+          top: '0px',
+          width: `${width}px`,
+          height: `${height}px`,
+          pointerEvents: 'none',
+          zIndex: '20'
         });
 
-        // 2. Bolha-Filha (se descola da mãe, estica o elo molecular e desliza até a nova aba)
-        const daughter = document.createElement('div');
-        daughter.className = 'aptis-molecule-orb';
-        Object.assign(daughter.style, {
-          width: `${ORB}px`,
-          height: `${ORB}px`,
-          backgroundColor: targetColor,
-          transform: `translate3d(${from.x - ORB / 2}px, ${from.y - ORB / 2}px, 0) scale(0.9)`,
-          opacity: '1',
-          transition: 'none'
-        });
+        track.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          canvas.remove();
+          return;
+        }
 
-        // 3. Micro-molécula satélite (pequena gotinha que se desprende no meio do trajeto)
-        const micro = document.createElement('div');
-        micro.className = 'aptis-molecule-orb';
-        Object.assign(micro.style, {
-          width: `${MICRO}px`,
-          height: `${MICRO}px`,
-          backgroundColor: '#e0f2fe',
-          transform: `translate3d(${from.x - MICRO / 2}px, ${from.y - MICRO / 2}px, 0) scale(0.75)`,
-          opacity: '0.95',
-          transition: 'none'
-        });
+        const DURATION_MS = 820;
+        const FADE_OUT_MS = 180;
+        const startTime = performance.now();
 
-        // 4. Núcleo brilhante nítido fora do filtro goo (dá brilho de gota cristalina)
-        const coreGlow = document.createElement('div');
-        coreGlow.className = 'aptis-molecule-orb';
-        Object.assign(coreGlow.style, {
-          width: '6px',
-          height: '6px',
-          backgroundColor: '#ffffff',
-          boxShadow: `0 0 12px 3px ${targetColor}`,
-          transform: `translate3d(${from.x - 3}px, ${from.y - 3}px, 0) scale(0.9)`,
-          opacity: '0.95',
-          transition: 'none'
-        });
+        const animState: ActiveTrackCanvasAnim = {
+          canvas,
+          rafId: 0,
+          currentPos: { ...from },
+          targetPos: { ...to }
+        };
 
-        gooStage.appendChild(mother);
-        gooStage.appendChild(micro);
-        gooStage.appendChild(daughter);
-        glowStage.appendChild(coreGlow);
+        const tick = (now: number) => {
+          if (!track.isConnected || !canvas.isConnected) {
+            cleanupTrackAnimation(track);
+            return;
+          }
 
-        track.appendChild(gooStage);
-        track.appendChild(glowStage);
+          const elapsed = now - startTime;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, width, height);
 
-        // Force reflow
-        void daughter.offsetWidth;
+          if (elapsed < DURATION_MS) {
+            const p = Math.min(1, elapsed / DURATION_MS);
+            animState.currentPos = {
+              x: from.x + (to.x - from.x) * p,
+              y: from.y + (to.y - from.y) * p
+            };
 
-        // Passo 1 (0ms → 130ms): Separação inicial da molécula (a bolha-filha brota 18px em direção ao destino enquanto a mãe segura, formando o pescoço molecular visível!)
-        const dirX = dx / dist;
-        const dirY = dy / dist;
-        const budOffset = Math.min(18, dist * 0.28);
+            renderWaterDropletTransitionFrame(ctx, {
+              fromX: from.x,
+              fromY: from.y,
+              toX: to.x,
+              toY: to.y,
+              progress: p,
+              baseRadius: 7.2,
+              palette
+            });
 
-        daughter.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
-        daughter.style.transform = `translate3d(${from.x + dirX * budOffset - ORB / 2}px, ${
-          from.y + dirY * budOffset - ORB / 2
-        }px, 0) scale(1.12)`;
+            animState.rafId = window.requestAnimationFrame(tick);
+            return;
+          }
 
-        coreGlow.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
-        coreGlow.style.transform = `translate3d(${from.x + dirX * budOffset - 3}px, ${
-          from.y + dirY * budOffset - 3
-        }px, 0) scale(1.05)`;
+          if (elapsed < DURATION_MS + FADE_OUT_MS) {
+            const fadeP = (elapsed - DURATION_MS) / FADE_OUT_MS;
+            const r = 7.2 * (1 - fadeP * 0.45);
+            drawWaterSphere(ctx, to.x, to.y, r, r, 0, palette, 1 - fadeP);
+            animState.rafId = window.requestAnimationFrame(tick);
+            return;
+          }
 
-        micro.style.transition = 'transform 130ms ease-out';
-        micro.style.transform = `translate3d(${from.x + dirX * (budOffset * 0.52) - MICRO / 2}px, ${
-          from.y + dirY * (budOffset * 0.52) - MICRO / 2
-        }px, 0) scale(1.05)`;
+          cleanupTrackAnimation(track);
+        };
 
-        const timers: number[] = [];
-
-        // Passo 2 (125ms): Ruptura da ligação molecular — a bolinha se solta e voa suavemente até a nova aba!
-        const t1 = window.setTimeout(() => {
-          daughter.style.transition =
-            'transform 380ms cubic-bezier(0.22, 1.16, 0.36, 1), opacity 220ms ease 320ms';
-          daughter.style.transform = `translate3d(${to.x - ORB / 2}px, ${
-            to.y - ORB / 2
-          }px, 0) scale(1)`;
-
-          coreGlow.style.transition =
-            'transform 380ms cubic-bezier(0.22, 1.16, 0.36, 1), opacity 220ms ease 320ms';
-          coreGlow.style.transform = `translate3d(${to.x - 3}px, ${to.y - 3}px, 0) scale(1)`;
-
-          // Micro-bolha acompanha logo atrás num leve arco orgânico
-          micro.style.transition =
-            'transform 430ms cubic-bezier(0.35, 0, 0.2, 1) 35ms, opacity 200ms ease 300ms';
-          micro.style.transform = `translate3d(${to.x - MICRO / 2}px, ${
-            to.y - MICRO / 2
-          }px, 0) scale(0.65)`;
-
-          // Bolha-mãe encolhe ao se desprender e desliza atrás para se fundir novamente na aba de destino
-          mother.style.transition =
-            'transform 450ms cubic-bezier(0.42, 0, 0.2, 1) 60ms, background-color 300ms ease, opacity 220ms ease 340ms';
-          mother.style.backgroundColor = targetColor;
-          mother.style.transform = `translate3d(${to.x - MOTHER / 2}px, ${
-            to.y - MOTHER / 2
-          }px, 0) scale(0.72)`;
-        }, 125);
-        timers.push(t1);
-
-        // Passo 3 (470ms): Pequena ondulação (ripple) ao absorver na aba de destino e dissolve suavemente
-        const t2 = window.setTimeout(() => {
-          const ripple = document.createElement('div');
-          ripple.className = 'aptis-molecule-ripple';
-          ripple.style.width = '12px';
-          ripple.style.height = '12px';
-          ripple.style.setProperty('--mx', `${to.x - 6}px`);
-          ripple.style.setProperty('--my', `${to.y - 6}px`);
-          glowStage.appendChild(ripple);
-
-          daughter.style.opacity = '0';
-          mother.style.opacity = '0';
-          micro.style.opacity = '0';
-          coreGlow.style.opacity = '0';
-        }, 470);
-        timers.push(t2);
-
-        const cleanupTimer = window.setTimeout(() => {
-          gooStage.remove();
-          glowStage.remove();
-          activeAnimByTrack.delete(track);
-        }, 880);
-
-        activeAnimByTrack.set(track, {
-          gooStage,
-          glowStage,
-          daughter,
-          cleanupTimer,
-          timers
-        });
+        animState.rafId = window.requestAnimationFrame(tick);
+        activeAnimByTrack.set(track, animState);
       });
     };
 
@@ -330,35 +245,5 @@ export function LiquidCellNavigationEngine() {
     };
   }, []);
 
-  return (
-    <svg
-      aria-hidden="true"
-      style={{
-        position: 'fixed',
-        width: 0,
-        height: 0,
-        pointerEvents: 'none',
-        overflow: 'hidden'
-      }}
-    >
-      <defs>
-        {/* Filtro Gooey calibrado especificamente para pequenas bolhas/moléculas (10px-12px) */}
-        <filter id="aptis-molecule-goo">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="blur" />
-          <feColorMatrix
-            in="blur"
-            mode="matrix"
-            values="
-              1 0 0 0 0
-              0 1 0 0 0
-              0 0 1 0 0
-              0 0 0 19 -7.5
-            "
-            result="goo"
-          />
-          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-        </filter>
-      </defs>
-    </svg>
-  );
+  return null;
 }

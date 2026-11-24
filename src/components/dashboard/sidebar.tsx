@@ -19,6 +19,11 @@ import {
   Layers
 } from 'lucide-react';
 import { PlantSectorsManagerModal } from '@/components/modals/PlantSectorsManagerModal';
+import {
+  drawWaterSphere,
+  renderWaterDropletTransitionFrame,
+  WATER_DROPLET_PALETTES
+} from '@/lib/water-droplet-renderer';
 
 function subscribeGlassMode(callback: () => void) {
   if (typeof window === 'undefined') return () => {};
@@ -63,52 +68,52 @@ export function DashboardSidebar() {
     getGlassModeServerSnapshot
   );
 
-  // Refs para a Bolinha Molecular da Sidebar (pequena esfera luminosa que se separa e se move)
+  // Refs para a Gota de Água 3D da Sidebar (separa com pescoço líquido e 3 gotinhas o O o)
   const navContainerRef = useRef<HTMLDivElement | null>(null);
-  const gooLayerRef = useRef<HTMLDivElement | null>(null);
-  const daughterOrbRef = useRef<HTMLDivElement | null>(null);
-  const motherOrbRef = useRef<HTMLDivElement | null>(null);
-  const microOrbRef = useRef<HTMLDivElement | null>(null);
-  const coreGlowRef = useRef<HTMLDivElement | null>(null);
+  const dropletCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const prevAnchorRef = useRef<{ x: number; y: number } | null>(null);
-  const animTimersRef = useRef<number[]>([]);
+  const rafRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     const container = navContainerRef.current;
-    const gooLayer = gooLayerRef.current;
-    const daughter = daughterOrbRef.current;
-    const mother = motherOrbRef.current;
-    const micro = microOrbRef.current;
-    const coreGlow = coreGlowRef.current;
-    if (!container || !gooLayer || !daughter || !mother || !micro || !coreGlow) return;
+    const canvas = dropletCanvasRef.current;
+    if (!container || !canvas) return;
 
-    const ORB = 11;
-    const MOTHER = 10;
-    const MICRO = 6;
+    const REST_RADIUS = 5.5;
+    const TRAVEL_RADIUS = 7.5;
+    const DURATION_MS = 780;
 
-    const clearTimers = () => {
-      animTimersRef.current.forEach(t => window.clearTimeout(t));
-      animTimersRef.current = [];
-    };
+    if (rafRef.current !== null) {
+      window.cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
 
-    const positionMolecule = (animate: boolean) => {
-      gooLayer.style.height = `${Math.max(container.scrollHeight, container.clientHeight)}px`;
+    const syncAndRender = (animate: boolean) => {
+      const width = Math.max(container.clientWidth, 1);
+      const height = Math.max(container.scrollHeight, container.clientHeight, 1);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
       const targetEl = container.querySelector<HTMLElement>(
         `[data-sidebar-route="${CSS.escape(activeRoute)}"]`
       );
       if (!targetEl) {
-        daughter.style.opacity = '0';
-        mother.style.opacity = '0';
-        micro.style.opacity = '0';
-        coreGlow.style.opacity = '0';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
         return;
       }
 
       const cRect = container.getBoundingClientRect();
       const tRect = targetEl.getBoundingClientRect();
-      // Pequena bolha/molécula posicionada na borda esquerda, centralizada na altura do item ativo
       const next = {
-        x: tRect.left - cRect.left + container.scrollLeft + 3,
+        x: tRect.left - cRect.left + container.scrollLeft + 9,
         y: tRect.top - cRect.top + container.scrollTop + tRect.height / 2
       };
 
@@ -120,91 +125,72 @@ export function DashboardSidebar() {
         dist > 4 &&
         !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      clearTimers();
+      prevAnchorRef.current = next;
 
       if (!shouldAnimate || !prev) {
-        daughter.style.transition = 'none';
-        mother.style.transition = 'none';
-        micro.style.transition = 'none';
-        coreGlow.style.transition = 'none';
-
-        daughter.style.opacity = '1';
-        daughter.style.transform = `translate3d(${next.x - ORB / 2}px, ${next.y - ORB / 2}px, 0) scale(1)`;
-
-        mother.style.opacity = '0.9';
-        mother.style.transform = `translate3d(${next.x - MOTHER / 2}px, ${next.y - MOTHER / 2}px, 0) scale(0.9)`;
-
-        micro.style.opacity = '0';
-        micro.style.transform = `translate3d(${next.x - MICRO / 2}px, ${next.y - MICRO / 2}px, 0) scale(0.6)`;
-
-        coreGlow.style.opacity = '1';
-        coreGlow.style.transform = `translate3d(${next.x - 2.5}px, ${next.y - 2.5}px, 0) scale(1)`;
-
-        prevAnchorRef.current = next;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        drawWaterSphere(
+          ctx,
+          next.x,
+          next.y,
+          REST_RADIUS,
+          REST_RADIUS,
+          0,
+          WATER_DROPLET_PALETTES.cyan,
+          1
+        );
         return;
       }
 
-      // Fase 1 (0ms → 130ms): Separação molecular — a bolinha-filha brota 15px em direção ao novo menu
-      // enquanto a bolha-mãe segura na origem, formando a ponte líquida de separação!
-      const dirY = (next.y - prev.y) / dist;
-      const budOffset = Math.min(16, dist * 0.32);
+      const startTime = performance.now();
+      const tick = (now: number) => {
+        const elapsed = now - startTime;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
 
-      micro.style.transition = 'none';
-      micro.style.opacity = '0.95';
-      micro.style.transform = `translate3d(${prev.x - MICRO / 2}px, ${prev.y - MICRO / 2}px, 0) scale(0.8)`;
-      void micro.offsetWidth;
+        if (elapsed < DURATION_MS) {
+          const p = Math.min(1, elapsed / DURATION_MS);
+          renderWaterDropletTransitionFrame(ctx, {
+            fromX: prev.x,
+            fromY: prev.y,
+            toX: next.x,
+            toY: next.y,
+            progress: p,
+            baseRadius: TRAVEL_RADIUS,
+            palette: WATER_DROPLET_PALETTES.cyan
+          });
+          rafRef.current = window.requestAnimationFrame(tick);
+          return;
+        }
 
-      daughter.style.opacity = '1';
-      daughter.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
-      daughter.style.transform = `translate3d(${prev.x - ORB / 2}px, ${
-        prev.y + dirY * budOffset - ORB / 2
-      }px, 0) scale(1.12)`;
+        // Volta suavemente ao raio de repouso na nova ferramenta
+        drawWaterSphere(
+          ctx,
+          next.x,
+          next.y,
+          REST_RADIUS,
+          REST_RADIUS,
+          0,
+          WATER_DROPLET_PALETTES.cyan,
+          1
+        );
+        rafRef.current = null;
+      };
 
-      coreGlow.style.opacity = '1';
-      coreGlow.style.transition = 'transform 130ms cubic-bezier(0.3, 0, 0.2, 1)';
-      coreGlow.style.transform = `translate3d(${prev.x - 2.5}px, ${
-        prev.y + dirY * budOffset - 2.5
-      }px, 0) scale(1.1)`;
-
-      micro.style.transition = 'transform 130ms ease-out';
-      micro.style.transform = `translate3d(${prev.x - MICRO / 2}px, ${
-        prev.y + dirY * (budOffset * 0.5) - MICRO / 2
-      }px, 0) scale(1)`;
-
-      // Fase 2 (125ms): A bolinha se descola por completo e desliza suavemente até o novo item
-      const t1 = window.setTimeout(() => {
-        daughter.style.transition = 'transform 380ms cubic-bezier(0.22, 1.18, 0.36, 1)';
-        daughter.style.transform = `translate3d(${next.x - ORB / 2}px, ${
-          next.y - ORB / 2
-        }px, 0) scale(1)`;
-
-        coreGlow.style.transition = 'transform 380ms cubic-bezier(0.22, 1.18, 0.36, 1)';
-        coreGlow.style.transform = `translate3d(${next.x - 2.5}px, ${next.y - 2.5}px, 0) scale(1)`;
-
-        micro.style.transition =
-          'transform 420ms cubic-bezier(0.35, 0, 0.2, 1) 30ms, opacity 200ms ease 290ms';
-        micro.style.transform = `translate3d(${next.x - MICRO / 2}px, ${
-          next.y - MICRO / 2
-        }px, 0) scale(0.6)`;
-        micro.style.opacity = '0';
-
-        mother.style.transition = 'transform 440ms cubic-bezier(0.42, 0, 0.2, 1) 55ms';
-        mother.style.transform = `translate3d(${next.x - MOTHER / 2}px, ${
-          next.y - MOTHER / 2
-        }px, 0) scale(0.9)`;
-      }, 125);
-
-      animTimersRef.current = [t1];
-      prevAnchorRef.current = next;
+      rafRef.current = window.requestAnimationFrame(tick);
     };
 
-    positionMolecule(true);
+    syncAndRender(true);
 
-    const handleResize = () => positionMolecule(false);
+    const handleResize = () => syncAndRender(false);
     window.addEventListener('resize', handleResize);
 
     return () => {
-      clearTimers();
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       window.removeEventListener('resize', handleResize);
     };
   }, [activeRoute, licensedTools.length, availableTools.length, isPlantAdmin]);
@@ -283,62 +269,16 @@ export function DashboardSidebar() {
         </div>
       </div>
 
-      {/* Navigation com Bolinha Molecular que se Separa e Desliza */}
+      {/* Navigation com Gota de Água 3D que se Separa e Desliza */}
       <div
         ref={navContainerRef}
         className="flex-1 overflow-y-auto py-4 px-3 space-y-5 relative z-10"
       >
-        {/* Camada Gooey de Separação Molecular (pequenas bolhas na borda esquerda) */}
-        <div
-          ref={gooLayerRef}
+        {/* Canvas 60fps para física de Gota de Água 3D (pescoço líquido + 3 micro-gotinhas) */}
+        <canvas
+          ref={dropletCanvasRef}
           aria-hidden="true"
-          className="absolute top-0 left-0 right-0 pointer-events-none z-20"
-          style={{ filter: 'url(#aptis-molecule-goo)' }}
-        >
-          <div
-            ref={motherOrbRef}
-            className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none"
-            style={{
-              width: '10px',
-              height: '10px',
-              backgroundColor: '#06b6d4',
-              willChange: 'transform, opacity'
-            }}
-          />
-          <div
-            ref={microOrbRef}
-            className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none"
-            style={{
-              width: '6px',
-              height: '6px',
-              backgroundColor: '#bae6fd',
-              willChange: 'transform, opacity'
-            }}
-          />
-          <div
-            ref={daughterOrbRef}
-            className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none"
-            style={{
-              width: '11px',
-              height: '11px',
-              backgroundColor: '#22d3ee',
-              willChange: 'transform, opacity'
-            }}
-          />
-        </div>
-
-        {/* Núcleo luminoso cristalino da bolinha (nítido, acima do filtro goo) */}
-        <div
-          ref={coreGlowRef}
-          aria-hidden="true"
-          className="absolute top-0 left-0 rounded-full opacity-0 pointer-events-none z-30"
-          style={{
-            width: '5px',
-            height: '5px',
-            backgroundColor: '#ffffff',
-            boxShadow: '0 0 12px 3px rgba(34, 211, 238, 0.85)',
-            willChange: 'transform, opacity'
-          }}
+          className="absolute top-0 left-0 pointer-events-none z-30"
         />
 
         {/* Menu Principal */}
@@ -350,7 +290,7 @@ export function DashboardSidebar() {
             href="/dashboard"
             data-sidebar-route="/dashboard"
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard' })}
-            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
+            className={`relative z-10 flex items-center gap-2.5 pl-6 pr-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
               isCurrentRoute('/dashboard')
                 ? 'text-white font-bold'
                 : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
@@ -376,7 +316,7 @@ export function DashboardSidebar() {
             href="/dashboard/marketplace"
             data-sidebar-route="/dashboard/marketplace"
             onClick={() => setPendingClick({ fromPath: pathname, toPath: '/dashboard/marketplace' })}
-            className={`relative z-10 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
+            className={`relative z-10 flex items-center gap-2.5 pl-6 pr-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-300 ${
               isCurrentRoute('/dashboard/marketplace')
                 ? 'text-white font-bold'
                 : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
@@ -435,7 +375,7 @@ export function DashboardSidebar() {
                   href={tool.route}
                   data-sidebar-route={tool.route}
                   onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
-                  className={`relative z-10 flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-300 ${
+                  className={`relative z-10 flex items-center justify-between pl-6 pr-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-300 ${
                     active
                       ? 'text-white font-bold'
                       : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
@@ -489,7 +429,7 @@ export function DashboardSidebar() {
                   href={tool.route}
                   data-sidebar-route={tool.route}
                   onClick={() => setPendingClick({ fromPath: pathname, toPath: tool.route })}
-                  className={`relative z-10 flex items-center justify-between px-3.5 py-1.5 rounded-xl text-xs transition-colors group ${
+                  className={`relative z-10 flex items-center justify-between pl-6 pr-3.5 py-1.5 rounded-xl text-xs transition-colors group ${
                     active
                       ? 'text-amber-200 font-semibold'
                       : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-300'

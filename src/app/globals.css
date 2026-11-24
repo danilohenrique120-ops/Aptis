@@ -383,56 +383,8 @@ textarea.bg-slate-50::placeholder {
 }
 
 /* ============================================================================
-   7. MOLECULAR DROPLET SEPARATION ENGINE (Small Luminous Bubble Mitosis)
+   7. 3D WATER DROPLET SEPARATION ENGINE (Page Enter + Reduced Motion)
    ============================================================================ */
-.aptis-molecule-goo-stage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 6;
-  filter: url(#aptis-molecule-goo);
-  will-change: contents;
-}
-
-.aptis-molecule-glow-stage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 7;
-}
-
-.aptis-molecule-orb {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 9999px;
-  pointer-events: none;
-  will-change: transform, opacity;
-}
-
-@keyframes aptisMoleculeRipple {
-  0% {
-    transform: translate3d(var(--mx), var(--my), 0) scale(0.6);
-    opacity: 0.85;
-  }
-  100% {
-    transform: translate3d(var(--mx), var(--my), 0) scale(2.5);
-    opacity: 0;
-  }
-}
-
-.aptis-molecule-ripple {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 9999px;
-  pointer-events: none;
-  border: 1.5px solid rgba(125, 211, 252, 0.85);
-  animation: aptisMoleculeRipple 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
 @keyframes aptisPageCellEnter {
   0% {
     opacity: 0;
@@ -449,8 +401,7 @@ textarea.bg-slate-50::placeholder {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aptis-molecule-goo-stage,
-  .aptis-molecule-glow-stage {
+  .aptis-water-canvas-overlay {
     display: none !important;
   }
   .aptis-page-cell-enter {
