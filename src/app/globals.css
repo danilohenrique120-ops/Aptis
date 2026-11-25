@@ -397,7 +397,7 @@ textarea.bg-slate-50::placeholder {
 }
 
 .aptis-page-transition {
-  animation: aptisPageFadeIn 180ms ease-out both;
+  animation: aptisPageFadeIn 180ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

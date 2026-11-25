@@ -16,6 +16,7 @@ import {
   Filter,
   Eye,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import {
   MaintenanceWorkOrder,
@@ -32,6 +33,8 @@ interface ScheduleCalendarViewProps {
   notificationRules: NotificationRule[];
   onOpenOrder: (order: MaintenanceWorkOrder) => void;
   onNewOrder: () => void;
+  onDeleteOrder: (orderId: string, orderNumber: string) => void;
+  onClearSchedule?: (orderIds: string[]) => void;
 }
 
 export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
@@ -42,6 +45,8 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
   notificationRules,
   onOpenOrder,
   onNewOrder,
+  onDeleteOrder,
+  onClearSchedule,
 }) => {
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('agenda');
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
@@ -251,18 +256,37 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
           </select>
         </div>
 
-        <button
-          onClick={onNewOrder}
-          className="px-5 py-2.5 text-xs font-bold text-white rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-cyan-300/35 hover:brightness-110"
-          style={{
-            background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
-            boxShadow:
-              '0 0 18px rgba(6, 182, 212, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45)',
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          Agendar Nova Visita (OS)
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {onClearSchedule && filteredOrders.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onClearSchedule(filteredOrders.map((o) => o.id))}
+              title="Apagar todos os agendamentos exibidos nesta agenda"
+              className={`px-3.5 py-2.5 text-xs font-bold rounded-xl border transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                tintedGlass
+                  ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border-rose-400/30'
+                  : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200 shadow-2xs'
+              }`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Limpar Agenda ({filteredOrders.length})
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onNewOrder}
+            className="px-5 py-2.5 text-xs font-bold text-white rounded-xl transition flex items-center justify-center gap-2 cursor-pointer border border-cyan-300/35 hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
+              boxShadow:
+                '0 0 18px rgba(6, 182, 212, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45)',
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Agendar Nova Visita (OS)
+          </button>
+        </div>
       </div>
 
       {/* Automated Rules Alert Pill */}
@@ -441,6 +465,7 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => onOpenOrder(order)}
                     className="px-4 py-2 text-xs font-bold rounded-xl text-white transition flex items-center gap-1.5 cursor-pointer border border-cyan-300/35 hover:brightness-110"
                     style={{
@@ -450,6 +475,19 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
                   >
                     <Eye className="w-3.5 h-3.5" />
                     {order.status === 'completed' ? 'Ver Laudo' : 'Baixar / Laudo OS'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onDeleteOrder(order.id, order.orderNumber)}
+                    title="Apagar este agendamento"
+                    className={`p-2 text-xs font-bold rounded-xl border transition flex items-center justify-center cursor-pointer ${
+                      tintedGlass
+                        ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border-rose-400/30'
+                        : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200 shadow-2xs'
+                    }`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -514,17 +552,38 @@ export const ScheduleCalendarView: React.FC<ScheduleCalendarViewProps> = ({
                   {dayOrders.length > 0 && (
                     <div className="space-y-1">
                       {dayOrders.map((o) => (
-                        <button
+                        <div
                           key={o.id}
-                          onClick={() => onOpenOrder(o)}
-                          className={`w-full text-left p-1 rounded-lg border text-[9px] font-bold truncate block transition cursor-pointer ${
+                          className={`w-full rounded-lg border text-[9px] font-bold flex items-center justify-between gap-0.5 transition ${
                             tintedGlass
-                              ? 'bg-cyan-500/20 border-cyan-400/35 text-cyan-200 hover:bg-cyan-500/35'
+                              ? 'bg-cyan-500/20 border-cyan-400/35 text-cyan-200 hover:bg-cyan-500/30'
                               : 'bg-white border-blue-200 text-slate-800 hover:border-blue-500 shadow-2xs'
                           }`}
                         >
-                          {o.equipmentTag} ({o.technicianName.split(' ')[0]})
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenOrder(o)}
+                            className="flex-1 min-w-0 text-left p-1 truncate cursor-pointer"
+                            title={`${o.orderNumber} • ${o.equipmentTag} (${o.technicianName})`}
+                          >
+                            {o.equipmentTag} ({o.technicianName.split(' ')[0]})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteOrder(o.id, o.orderNumber);
+                            }}
+                            title="Apagar agendamento"
+                            className={`p-1 rounded-r-lg transition cursor-pointer shrink-0 ${
+                              tintedGlass
+                                ? 'text-slate-300 hover:text-rose-300 hover:bg-rose-500/25'
+                                : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                            }`}
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}

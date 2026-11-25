@@ -16,8 +16,18 @@ import {
   Check,
   Sparkles,
   Calendar,
+  UploadCloud,
+  Paperclip,
+  FileText,
+  Download,
+  ZoomIn,
 } from 'lucide-react';
-import { MaintenanceWorkOrder, ChecklistItemState, SparePartUsed } from '../types';
+import {
+  MaintenanceWorkOrder,
+  ChecklistItemState,
+  SparePartUsed,
+  WorkOrderAttachment,
+} from '../types';
 
 export interface PreventiveCycleOptions {
   nextCycleMonths: number;
@@ -38,6 +48,16 @@ interface DigitalOSMobileModalProps {
   ) => void;
 }
 
+function computeNextDate(months: number): string {
+  if (months < 1) {
+    const days = months === 0.25 ? 7 : 15;
+    return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  }
+  const dt = new Date();
+  dt.setMonth(dt.getMonth() + months);
+  return dt.toISOString().split('T')[0];
+}
+
 export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   tintedGlass = false,
   isOpen,
@@ -46,100 +66,215 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   defaultCycleMonths = 3,
   onSaveWorkOrder,
 }) => {
-  const [checklist, setChecklist] = useState<ChecklistItemState[]>([]);
-  const [spareParts, setSpareParts] = useState<SparePartUsed[]>([]);
-  const [rootCause, setRootCause] = useState<string>('');
-  const [actionsTaken, setActionsTaken] = useState<string>('');
-  const [laborHours, setLaborHours] = useState<number>(2);
+  const initialMonths = defaultCycleMonths || 3;
+  const [checklist, setChecklist] = useState<ChecklistItemState[]>(() =>
+    workOrder && workOrder.checklist.length > 0
+      ? [...workOrder.checklist]
+      : [
+          { id: 'c1', description: 'Inspeção visual de vazamentos e ruídos', status: 'passed' },
+          { id: 'c2', description: 'Verificação de aperto elétrico e bornes', status: 'passed' },
+          { id: 'c3', description: 'Medição de corrente e tensão em carga', status: 'passed' },
+          { id: 'c4', description: 'Limpeza e troca de filtros de ar e óleo', status: 'passed' },
+        ]
+  );
+  const [spareParts, setSpareParts] = useState<SparePartUsed[]>(() =>
+    workOrder?.sparePartsUsed ? [...workOrder.sparePartsUsed] : []
+  );
+  const [rootCause, setRootCause] = useState<string>(() => workOrder?.rootCauseFound || '');
+  const [actionsTaken, setActionsTaken] = useState<string>(() => workOrder?.actionsTaken || '');
+  const [laborHours, setLaborHours] = useState<number>(() => workOrder?.laborHours || 2.5);
   const [laborHourlyRate] = useState<number>(120); // R$ 120/h
-  const [signedByName, setSignedByName] = useState<string>('');
-  const [hasSignature, setHasSignature] = useState(false);
-  const [status, setStatus] = useState<MaintenanceWorkOrder['status']>('in_progress');
-  const [whatsappSent, setWhatsappSent] = useState(false);
+  const [signedByName, setSignedByName] = useState<string>(
+    () => workOrder?.signedByName || 'Eng. Roberto Almeida'
+  );
+  const [hasSignature, setHasSignature] = useState<boolean>(
+    () => !!workOrder?.clientSignatureBase64
+  );
+  const [status, setStatus] = useState<MaintenanceWorkOrder['status']>(
+    () => workOrder?.status || 'in_progress'
+  );
+  const [whatsappSent, setWhatsappSent] = useState<boolean>(
+    () => !!workOrder?.whatsappConfirmationSent
+  );
   const [shareToWaze, setShareToWaze] = useState(true);
 
   // Preventive cycle scheduling state
-  const [nextCycleMonths, setNextCycleMonths] = useState<number>(3);
-  const [nextPreventiveDate, setNextPreventiveDate] = useState<string>('');
+  const [nextCycleMonths, setNextCycleMonths] = useState<number>(() => initialMonths);
+  const [nextPreventiveDate, setNextPreventiveDate] = useState<string>(() =>
+    computeNextDate(initialMonths)
+  );
   const [autoCreateNextOS, setAutoCreateNextOS] = useState<boolean>(false);
 
-  // Photos state
-  const [beforePhotos, setBeforePhotos] = useState<string[]>([]);
-  const [afterPhotos, setAfterPhotos] = useState<string[]>([]);
+  // Photos & Attachments state
+  const [beforePhotos, setBeforePhotos] = useState<string[]>(() =>
+    workOrder?.beforePhotos ? [...workOrder.beforePhotos] : []
+  );
+  const [afterPhotos, setAfterPhotos] = useState<string[]>(() =>
+    workOrder?.afterPhotos ? [...workOrder.afterPhotos] : []
+  );
+  const [attachments, setAttachments] = useState<WorkOrderAttachment[]>(() =>
+    workOrder?.attachments ? [...workOrder.attachments] : []
+  );
+  const [isUploadingMedia, setIsUploadingMedia] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragActiveZone, setDragActiveZone] = useState<'before' | 'after' | 'attachments' | null>(
+    null
+  );
+  const [previewPhoto, setPreviewPhoto] = useState<{ url: string; label: string } | null>(null);
+  const [signatureModified, setSignatureModified] = useState<boolean>(false);
+
+  // File input refs
+  const beforeInputRef = useRef<HTMLInputElement | null>(null);
+  const afterInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   // Canvas ref for digital signature
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
 
-  const computeNextDate = (months: number): string => {
-    if (months < 1) {
-      const days = months === 0.25 ? 7 : 15;
-      return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    }
-    const dt = new Date();
-    dt.setMonth(dt.getMonth() + months);
-    return dt.toISOString().split('T')[0];
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  useEffect(() => {
-    if (workOrder) {
-      setChecklist(
-        workOrder.checklist.length > 0
-          ? [...workOrder.checklist]
-          : [
-              { id: 'c1', description: 'Inspeção visual de vazamentos e ruídos', status: 'passed' },
-              { id: 'c2', description: 'Verificação de aperto elétrico e bornes', status: 'passed' },
-              { id: 'c3', description: 'Medição de corrente e tensão em carga', status: 'passed' },
-              { id: 'c4', description: 'Limpeza e troca de filtros de ar e óleo', status: 'passed' },
-            ]
-      );
-      setSpareParts(workOrder.sparePartsUsed ? [...workOrder.sparePartsUsed] : []);
-      setRootCause(workOrder.rootCauseFound || '');
-      setActionsTaken(workOrder.actionsTaken || '');
-      setLaborHours(workOrder.laborHours || 2.5);
-      setSignedByName(workOrder.signedByName || 'Eng. Roberto Almeida');
-      setBeforePhotos(
-        workOrder.beforePhotos.length > 0
-          ? workOrder.beforePhotos
-          : [
-              'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80',
-            ]
-      );
-      setAfterPhotos(
-        workOrder.afterPhotos.length > 0
-          ? workOrder.afterPhotos
-          : [
-              'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=400&q=80',
-            ]
-      );
-      setStatus(workOrder.status);
-      setHasSignature(!!workOrder.clientSignatureBase64);
-      setWhatsappSent(workOrder.whatsappConfirmationSent);
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error(`Falha ao ler o arquivo ${file.name}`));
+      reader.readAsDataURL(file);
+    });
 
-      const initialMonths = defaultCycleMonths || 3;
-      setNextCycleMonths(initialMonths);
-      setNextPreventiveDate(computeNextDate(initialMonths));
-      setAutoCreateNextOS(false);
+  const compressImageFile = async (file: File): Promise<string> => {
+    const rawDataUrl = await readFileAsDataUrl(file);
+    if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+      return rawDataUrl;
     }
-  }, [workOrder, defaultCycleMonths]);
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1280;
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width >= height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = Math.max(width, 1);
+        offCanvas.height = Math.max(height, 1);
+        const ctx = offCanvas.getContext('2d');
+        if (!ctx) {
+          resolve(rawDataUrl);
+          return;
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+        ctx.drawImage(img, 0, 0, offCanvas.width, offCanvas.height);
+        resolve(offCanvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => resolve(rawDataUrl);
+      img.src = rawDataUrl;
+    });
+  };
 
-  // Set up canvas when opened
+  const handlePhotoFilesUpload = async (
+    files: FileList | File[] | null,
+    target: 'before' | 'after'
+  ) => {
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+    setIsUploadingMedia(true);
+    try {
+      const validFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
+      if (validFiles.length === 0) {
+        setUploadError(
+          'Selecione arquivos de imagem (JPG, PNG, WEBP, HEIC) para as evidências fotográficas, ou use a área de Anexos abaixo para PDFs e documentos.'
+        );
+        return;
+      }
+      const compressedUrls = await Promise.all(validFiles.map((file) => compressImageFile(file)));
+      if (target === 'before') {
+        setBeforePhotos((prev) => [...prev, ...compressedUrls]);
+      } else {
+        setAfterPhotos((prev) => [...prev, ...compressedUrls]);
+      }
+    } catch {
+      setUploadError('Não foi possível processar uma das imagens selecionadas.');
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const handleAttachmentFilesUpload = async (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+    setIsUploadingMedia(true);
+    const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024; // 4 MB por documento para persistência segura
+
+    try {
+      const nextAttachments: WorkOrderAttachment[] = [];
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/') && file.size > MAX_ATTACHMENT_BYTES) {
+          setUploadError(
+            `O arquivo "${file.name}" (${formatFileSize(file.size)}) excede o limite de 4 MB por documento.`
+          );
+          continue;
+        }
+        const dataUrl = file.type.startsWith('image/')
+          ? await compressImageFile(file)
+          : await readFileAsDataUrl(file);
+
+        nextAttachments.push({
+          id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          sizeBytes: file.size,
+          dataUrl,
+          uploadedAt: new Date().toLocaleString('pt-BR'),
+        });
+      }
+      if (nextAttachments.length > 0) {
+        setAttachments((prev) => [...prev, ...nextAttachments]);
+      }
+    } catch {
+      setUploadError('Não foi possível anexar o documento selecionado.');
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  // Set up canvas when opened (and restore saved signature if present)
   useEffect(() => {
     if (isOpen && canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = '#2563eb';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+
+        if (workOrder?.clientSignatureBase64) {
+          const sigImg = new Image();
+          sigImg.onload = () => {
+            ctx.drawImage(sigImg, 0, 0, canvas.width, canvas.height);
+          };
+          sigImg.src = workOrder.clientSignatureBase64;
+        }
       }
     }
-  }, [isOpen]);
+  }, [isOpen, workOrder]);
 
   if (!isOpen || !workOrder) return null;
 
-  // Drawing event handlers
+  // Drawing event handlers (scaled accurately to canvas internal resolution)
   const startDrawing = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -152,12 +287,15 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+    const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
 
     ctx.beginPath();
     ctx.moveTo(x, y);
     setHasSignature(true);
+    setSignatureModified(true);
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -170,8 +308,10 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+    const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
 
     ctx.lineTo(x, y);
     ctx.stroke();
@@ -188,6 +328,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
+    setSignatureModified(true);
   };
 
   const handleChecklistStatusChange = (
@@ -223,7 +364,12 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   };
 
   const handleSave = (markCompleted: boolean = false) => {
-    const signatureBase64 = canvasRef.current ? canvasRef.current.toDataURL() : undefined;
+    const canvasBase64 = canvasRef.current ? canvasRef.current.toDataURL() : undefined;
+    const finalSignature = !hasSignature
+      ? undefined
+      : signatureModified
+      ? canvasBase64
+      : workOrder.clientSignatureBase64 || canvasBase64;
 
     const updated: MaintenanceWorkOrder = {
       ...workOrder,
@@ -240,9 +386,14 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
       totalCost: grandTotal,
       beforePhotos,
       afterPhotos,
-      clientSignatureBase64: hasSignature ? signatureBase64 : workOrder.clientSignatureBase64,
+      attachments,
+      clientSignatureBase64: finalSignature,
       signedByName,
-      signedAt: hasSignature ? new Date().toLocaleTimeString('pt-BR') : workOrder.signedAt,
+      signedAt: hasSignature
+        ? signatureModified
+          ? new Date().toLocaleTimeString('pt-BR')
+          : workOrder.signedAt || new Date().toLocaleTimeString('pt-BR')
+        : undefined,
       whatsappConfirmationSent: whatsappSent,
     };
 
@@ -277,9 +428,9 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
   }`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-3 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
       <div
-        className={`w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden my-4 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200 ${
+        className={`w-[96vw] max-w-5xl rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[93vh] animate-in fade-in zoom-in-95 duration-200 ${
           tintedGlass
             ? 'aptis-glass-modal text-white'
             : 'bg-white text-slate-900 border border-slate-200'
@@ -397,18 +548,18 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
               {checklist.map((item) => (
                 <div
                   key={item.id}
-                  className={`p-3 rounded-2xl space-y-2 ${
+                  className={`p-3 rounded-2xl space-y-2 flex flex-col justify-between ${
                     tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
                   }`}
                 >
                   <p className={`font-bold text-xs ${tintedGlass ? 'text-white' : 'text-slate-900'}`}>
                     {item.description}
                   </p>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleChecklistStatusChange(item.id, 'passed')}
@@ -454,83 +605,481 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Before & After Photos */}
-          <div className="space-y-3">
+          {/* Section 2: Before & After Photos + Document Attachments */}
+          <div className="space-y-4">
             <div
-              className={`flex items-center justify-between border-b pb-2 ${
+              className={`flex flex-wrap items-center justify-between gap-2 border-b pb-2 ${
                 tintedGlass ? 'border-white/10' : 'border-slate-200'
               }`}
             >
               <h3 className={sectionHeaderTitleClass}>
                 <Camera className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`} />
-                2. Evidências Fotográficas (Antes & Depois)
+                2. Evidências Fotográficas (Antes & Depois) e Anexos da OS
               </h3>
+              <span
+                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                  tintedGlass
+                    ? 'bg-cyan-500/15 text-cyan-200 border-cyan-400/30'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}
+              >
+                {beforePhotos.length + afterPhotos.length} foto(s) • {attachments.length} anexo(s)
+              </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Before */}
+            {/* Hidden Native File Inputs */}
+            <input
+              ref={beforeInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              data-testid="upload-before-photos"
+              className="hidden"
+              onChange={(e) => {
+                handlePhotoFilesUpload(e.target.files, 'before');
+                e.target.value = '';
+              }}
+            />
+            <input
+              ref={afterInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              data-testid="upload-after-photos"
+              className="hidden"
+              onChange={(e) => {
+                handlePhotoFilesUpload(e.target.files, 'after');
+                e.target.value = '';
+              }}
+            />
+            <input
+              ref={attachmentInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,image/*"
+              multiple
+              data-testid="upload-os-attachments"
+              className="hidden"
+              onChange={(e) => {
+                handleAttachmentFilesUpload(e.target.files);
+                e.target.value = '';
+              }}
+            />
+
+            {uploadError && (
               <div
-                className={`rounded-2xl p-2.5 space-y-2 ${
-                  tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-2 ${
+                  tintedGlass
+                    ? 'bg-rose-500/15 border-rose-400/35 text-rose-200'
+                    : 'bg-red-50 border-red-200 text-red-800'
                 }`}
               >
-                <span
-                  className={`text-[10px] font-bold uppercase block ${
-                    tintedGlass ? 'text-slate-300' : 'text-slate-600'
-                  }`}
+                <span>{uploadError}</span>
+                <button
+                  type="button"
+                  onClick={() => setUploadError(null)}
+                  className="font-bold cursor-pointer hover:opacity-75"
                 >
-                  Antes do Atendimento
-                </span>
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {isUploadingMedia && (
+              <div
+                className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                  tintedGlass
+                    ? 'bg-cyan-500/15 border-cyan-400/30 text-cyan-200'
+                    : 'bg-blue-50 border-blue-200 text-blue-800'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 animate-spin" />
+                Processando e anexando arquivo(s)...
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Before Photos Card */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragActiveZone('before');
+                }}
+                onDragLeave={() => setDragActiveZone(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragActiveZone(null);
+                  handlePhotoFilesUpload(e.dataTransfer.files, 'before');
+                }}
+                className={`rounded-2xl p-3.5 space-y-3 transition border ${
+                  dragActiveZone === 'before'
+                    ? 'border-cyan-400 bg-cyan-500/10'
+                    : tintedGlass
+                    ? 'aptis-glass-subcard border-white/10'
+                    : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className={`text-[11px] font-black uppercase tracking-wider ${
+                      tintedGlass ? 'text-slate-200' : 'text-slate-700'
+                    }`}
+                  >
+                    Antes do Atendimento ({beforePhotos.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => beforeInputRef.current?.click()}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 border cursor-pointer transition ${
+                      tintedGlass
+                        ? 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border-cyan-400/35'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
+                    }`}
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    Enviar Foto
+                  </button>
+                </div>
+
                 {beforePhotos.length > 0 ? (
-                  <div className="relative rounded-lg overflow-hidden h-28 bg-slate-900 border border-white/15">
-                    <img
-                      src={beforePhotos[0]}
-                      alt="Antes"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-1 left-1 text-[9px] bg-black/75 text-white px-1.5 py-0.5 rounded font-medium">
-                      Evidência de Entrada
-                    </span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {beforePhotos.map((photoUrl, idx) => (
+                      <div
+                        key={`before-${idx}`}
+                        className="relative group rounded-xl overflow-hidden h-36 bg-slate-900 border border-white/15"
+                      >
+                        <img
+                          src={photoUrl}
+                          alt={`Antes ${idx + 1}`}
+                          onClick={() =>
+                            setPreviewPhoto({
+                              url: photoUrl,
+                              label: `Antes do Atendimento — Foto ${idx + 1}`,
+                            })
+                          }
+                          className="w-full h-full object-cover cursor-zoom-in transition duration-200 group-hover:scale-105"
+                        />
+                        <span className="absolute bottom-1.5 left-1.5 text-[9px] bg-black/75 text-white px-2 py-0.5 rounded-md font-semibold">
+                          Antes #{idx + 1}
+                        </span>
+                        <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewPhoto({
+                                url: photoUrl,
+                                label: `Antes do Atendimento — Foto ${idx + 1}`,
+                              })
+                            }
+                            title="Ampliar foto"
+                            className="p-1.5 rounded-lg bg-slate-950/75 hover:bg-slate-900 text-white border border-white/15 cursor-pointer transition"
+                          >
+                            <ZoomIn className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setBeforePhotos((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                            title="Remover foto"
+                            className="p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white cursor-pointer transition"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => beforeInputRef.current?.click()}
+                      className={`h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition ${
+                        tintedGlass
+                          ? 'border-white/20 hover:border-cyan-400/60 text-slate-300 hover:text-cyan-200 bg-white/[0.02] hover:bg-cyan-500/10'
+                          : 'border-slate-300 hover:border-blue-500 text-slate-500 hover:text-blue-600 bg-white hover:bg-blue-50/40'
+                      }`}
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span className="text-[11px] font-bold">Adicionar mais</span>
+                    </button>
                   </div>
                 ) : (
-                  <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white/5">
-                    <Camera className="w-6 h-6 mb-1 opacity-50" />
-                    <span className="text-[10px]">Anexar foto</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => beforeInputRef.current?.click()}
+                    className={`w-full h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition ${
+                      tintedGlass
+                        ? 'border-cyan-400/35 hover:border-cyan-400 text-slate-300 hover:text-cyan-200 bg-cyan-500/[0.04] hover:bg-cyan-500/10'
+                        : 'border-slate-300 hover:border-blue-500 text-slate-500 hover:text-blue-700 bg-white hover:bg-blue-50/50'
+                    }`}
+                  >
+                    <Camera className="w-7 h-7 opacity-75" />
+                    <span className="text-xs font-bold">Clique ou arraste foto(s) do Antes</span>
+                    <span className="text-[10px] opacity-75">JPG, PNG ou câmera do dispositivo</span>
+                  </button>
                 )}
               </div>
 
-              {/* After */}
+              {/* After Photos Card */}
               <div
-                className={`rounded-2xl p-2.5 space-y-2 ${
-                  tintedGlass ? 'aptis-glass-subcard' : 'bg-slate-50 border border-slate-200'
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragActiveZone('after');
+                }}
+                onDragLeave={() => setDragActiveZone(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragActiveZone(null);
+                  handlePhotoFilesUpload(e.dataTransfer.files, 'after');
+                }}
+                className={`rounded-2xl p-3.5 space-y-3 transition border ${
+                  dragActiveZone === 'after'
+                    ? 'border-emerald-400 bg-emerald-500/10'
+                    : tintedGlass
+                    ? 'aptis-glass-subcard border-white/10'
+                    : 'bg-slate-50 border-slate-200'
                 }`}
               >
-                <span
-                  className={`text-[10px] font-bold uppercase block ${
-                    tintedGlass ? 'text-emerald-300' : 'text-emerald-700'
-                  }`}
-                >
-                  Após Manutenção / Limpeza
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className={`text-[11px] font-black uppercase tracking-wider ${
+                      tintedGlass ? 'text-emerald-300' : 'text-emerald-700'
+                    }`}
+                  >
+                    Após Manutenção / Limpeza ({afterPhotos.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => afterInputRef.current?.click()}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 border cursor-pointer transition ${
+                      tintedGlass
+                        ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-400/35'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                    }`}
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    Enviar Foto
+                  </button>
+                </div>
+
                 {afterPhotos.length > 0 ? (
-                  <div className="relative rounded-lg overflow-hidden h-28 bg-slate-900 border border-white/15">
-                    <img
-                      src={afterPhotos[0]}
-                      alt="Depois"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-1 left-1 text-[9px] bg-emerald-900/90 text-emerald-200 px-1.5 py-0.5 rounded font-medium border border-emerald-500/40">
-                      Higienizado & Reparado
-                    </span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {afterPhotos.map((photoUrl, idx) => (
+                      <div
+                        key={`after-${idx}`}
+                        className="relative group rounded-xl overflow-hidden h-36 bg-slate-900 border border-white/15"
+                      >
+                        <img
+                          src={photoUrl}
+                          alt={`Depois ${idx + 1}`}
+                          onClick={() =>
+                            setPreviewPhoto({
+                              url: photoUrl,
+                              label: `Após Manutenção — Foto ${idx + 1}`,
+                            })
+                          }
+                          className="w-full h-full object-cover cursor-zoom-in transition duration-200 group-hover:scale-105"
+                        />
+                        <span className="absolute bottom-1.5 left-1.5 text-[9px] bg-emerald-900/90 text-emerald-200 px-2 py-0.5 rounded-md font-semibold border border-emerald-500/40">
+                          Depois #{idx + 1}
+                        </span>
+                        <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewPhoto({
+                                url: photoUrl,
+                                label: `Após Manutenção — Foto ${idx + 1}`,
+                              })
+                            }
+                            title="Ampliar foto"
+                            className="p-1.5 rounded-lg bg-slate-950/75 hover:bg-slate-900 text-white border border-white/15 cursor-pointer transition"
+                          >
+                            <ZoomIn className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAfterPhotos((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                            title="Remover foto"
+                            className="p-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white cursor-pointer transition"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => afterInputRef.current?.click()}
+                      className={`h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition ${
+                        tintedGlass
+                          ? 'border-white/20 hover:border-emerald-400/60 text-slate-300 hover:text-emerald-200 bg-white/[0.02] hover:bg-emerald-500/10'
+                          : 'border-slate-300 hover:border-emerald-500 text-slate-500 hover:text-emerald-700 bg-white hover:bg-emerald-50/40'
+                      }`}
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span className="text-[11px] font-bold">Adicionar mais</span>
+                    </button>
                   </div>
                 ) : (
-                  <div className="h-28 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-white/5">
-                    <Camera className="w-6 h-6 mb-1 opacity-50" />
-                    <span className="text-[10px]">Anexar foto</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => afterInputRef.current?.click()}
+                    className={`w-full h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition ${
+                      tintedGlass
+                        ? 'border-emerald-400/35 hover:border-emerald-400 text-slate-300 hover:text-emerald-200 bg-emerald-500/[0.04] hover:bg-emerald-500/10'
+                        : 'border-slate-300 hover:border-emerald-500 text-slate-500 hover:text-emerald-700 bg-white hover:bg-emerald-50/50'
+                    }`}
+                  >
+                    <Camera className="w-7 h-7 opacity-75" />
+                    <span className="text-xs font-bold">Clique ou arraste foto(s) do Depois</span>
+                    <span className="text-[10px] opacity-75">JPG, PNG ou câmera do dispositivo</span>
+                  </button>
                 )}
               </div>
+            </div>
+
+            {/* General Document / File Attachments Section */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActiveZone('attachments');
+              }}
+              onDragLeave={() => setDragActiveZone(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragActiveZone(null);
+                handleAttachmentFilesUpload(e.dataTransfer.files);
+              }}
+              className={`rounded-2xl p-3.5 space-y-3 border transition ${
+                dragActiveZone === 'attachments'
+                  ? 'border-cyan-400 bg-cyan-500/10'
+                  : tintedGlass
+                  ? 'aptis-glass-subcard border-white/10'
+                  : 'bg-slate-50 border-slate-200'
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Paperclip
+                    className={`w-4 h-4 ${tintedGlass ? 'text-cyan-400' : 'text-blue-600'}`}
+                  />
+                  <div>
+                    <span
+                      className={`text-xs font-black block ${
+                        tintedGlass ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      Anexos & Documentos Técnicos ({attachments.length})
+                    </span>
+                    <span
+                      className={`text-[10px] ${
+                        tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                      }`}
+                    >
+                      Anexe laudos PDF, certificados de calibração, notas fiscais de peças ou relatórios complementares (até 4 MB/arquivo)
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => attachmentInputRef.current?.click()}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border cursor-pointer transition ${
+                    tintedGlass
+                      ? 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 border-cyan-400/35'
+                      : 'bg-white hover:bg-blue-50 text-blue-700 border-blue-300 shadow-2xs'
+                  }`}
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  Anexar Arquivo / PDF
+                </button>
+              </div>
+
+              {attachments.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => attachmentInputRef.current?.click()}
+                  className={`w-full py-4 px-4 rounded-xl border border-dashed flex items-center justify-center gap-2 text-xs font-semibold cursor-pointer transition ${
+                    tintedGlass
+                      ? 'border-white/15 hover:border-cyan-400/50 text-slate-400 hover:text-cyan-200 bg-white/[0.01] hover:bg-cyan-500/[0.06]'
+                      : 'border-slate-300 hover:border-blue-400 text-slate-500 hover:text-blue-700 bg-white'
+                  }`}
+                >
+                  <UploadCloud className="w-4 h-4" />
+                  Clique aqui ou arraste arquivos (PDF, DOCX, XLSX, Imagens) para vincular a esta OS
+                </button>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 ${
+                        tintedGlass
+                          ? 'bg-slate-950/45 border-white/10'
+                          : 'bg-white border-slate-200 shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
+                            tintedGlass
+                              ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/30'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'
+                          }`}
+                        >
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p
+                            className={`text-xs font-bold truncate ${
+                              tintedGlass ? 'text-white' : 'text-slate-900'
+                            }`}
+                            title={att.name}
+                          >
+                            {att.name}
+                          </p>
+                          <p
+                            className={`text-[10px] font-mono ${
+                              tintedGlass ? 'text-slate-400' : 'text-slate-500'
+                            }`}
+                          >
+                            {formatFileSize(att.sizeBytes)} • {att.uploadedAt}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <a
+                          href={att.dataUrl}
+                          download={att.name}
+                          title="Baixar / Abrir anexo"
+                          className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                            tintedGlass
+                              ? 'bg-white/10 hover:bg-cyan-500/25 text-cyan-300 border-white/15'
+                              : 'bg-slate-100 hover:bg-blue-50 text-blue-700 border-slate-200'
+                          }`}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAttachments((prev) => prev.filter((item) => item.id !== att.id))
+                          }
+                          title="Remover anexo"
+                          className={`p-1.5 rounded-lg transition cursor-pointer ${
+                            tintedGlass
+                              ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/15'
+                              : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                          }`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1007,7 +1556,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
 
         {/* Footer Action Bar */}
         <div
-          className={`p-4 border-t flex flex-col gap-2 ${
+          className={`p-4 border-t flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 ${
             tintedGlass ? 'border-white/10 bg-white/[0.02]' : 'border-slate-200 bg-slate-50/70'
           }`}
         >
@@ -1015,7 +1564,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
           <button
             type="button"
             onClick={handleSendWhatsAppNotification}
-            className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/35 hover:brightness-110"
+            className="py-2.5 px-4 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/35 hover:brightness-110"
             style={{
               background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
               boxShadow: '0 0 18px rgba(16, 185, 129, 0.35)',
@@ -1027,11 +1576,11 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
               : 'Enviar Laudo / Próxima Data por WhatsApp'}
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
             <button
               type="button"
               onClick={() => handleSave(false)}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`flex-1 md:flex-none py-2.5 px-5 rounded-xl text-xs font-bold transition cursor-pointer ${
                 tintedGlass
                   ? 'text-slate-200 aptis-glass-subcard hover:text-white'
                   : 'text-slate-700 bg-white border border-slate-300 hover:bg-slate-100'
@@ -1042,7 +1591,7 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
             <button
               type="button"
               onClick={() => handleSave(true)}
-              className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-1.5 cursor-pointer border border-cyan-300/35 hover:brightness-110"
+              className="flex-1 md:flex-none py-2.5 px-5 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-1.5 cursor-pointer border border-cyan-300/35 hover:brightness-110"
               style={{
                 background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
                 boxShadow:
@@ -1055,6 +1604,44 @@ export const DigitalOSMobileModal: React.FC<DigitalOSMobileModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Lightbox Modal for Full-Screen Photo Inspection */}
+      {previewPhoto && (
+        <div
+          onClick={() => setPreviewPhoto(null)}
+          className="fixed inset-0 z-[95] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-4xl w-full space-y-3 flex flex-col items-center"
+          >
+            <div className="w-full flex items-center justify-between text-white px-2">
+              <span className="text-sm font-bold">{previewPhoto.label}</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewPhoto.url}
+                  download={`${previewPhoto.label.replace(/\s+/g, '_')}.jpg`}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/20 flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" /> Baixar Imagem
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPhoto(null)}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-rose-500/40 text-white cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <img
+              src={previewPhoto.url}
+              alt={previewPhoto.label}
+              className="max-h-[78vh] w-auto max-w-full rounded-2xl border border-white/20 shadow-2xl object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

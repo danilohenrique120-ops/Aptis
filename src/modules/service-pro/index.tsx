@@ -57,7 +57,6 @@ import { ScheduleCalendarView } from './components/ScheduleCalendarView';
 import { CrossClientAiDiagnostics } from './components/CrossClientAiDiagnostics';
 import { MasterCatalogPanel } from './components/MasterCatalogPanel';
 import { ClientManager } from './components/ClientManager';
-import { ClientPortalModal } from './components/ClientPortalModal';
 
 export const ServiceProModule: React.FC = () => {
   const { currentTenant } = useTenant();
@@ -128,9 +127,6 @@ export const ServiceProModule: React.FC = () => {
   const [mobileOSModalOrder, setMobileOSModalOrder] = useState<MaintenanceWorkOrder | null>(null);
   const [isWorkOrderModalOpen, setIsWorkOrderModalOpen] = useState(false);
   const [editingWorkOrder, setEditingWorkOrder] = useState<MaintenanceWorkOrder | null>(null);
-  const [portalSimulationClient, setPortalSimulationClient] = useState<ClientContractor | null>(
-    null
-  );
   const [isExcelImporterOpen, setIsExcelImporterOpen] = useState(false);
   const [expandedServiceTableIds, setExpandedServiceTableIds] = useState<Record<string, boolean>>({
     'eq-maq-01': true,
@@ -236,6 +232,7 @@ export const ServiceProModule: React.FC = () => {
           nextRevisionDate: normalizeImportedDate(row.nextRevisionDate),
           status: normalizeImportedServiceStatus(row.itemStatus),
           intervalDays: Number(row.preventiveIntervalDays) || undefined,
+          notes: (row.itemNotes || row.observacoes || '').trim() || undefined,
         });
       }
     });
@@ -685,8 +682,34 @@ export const ServiceProModule: React.FC = () => {
   };
 
   const handleDeleteWorkOrder = (id: string, orderNumber: string) => {
-    if (window.confirm(`Deseja realmente excluir a Ordem de Serviço "${orderNumber}"?`)) {
+    if (window.confirm(`Deseja realmente apagar o agendamento / Ordem de Serviço "${orderNumber}"?`)) {
       setWorkOrders((prev) => prev.filter((wo) => wo.id !== id));
+      if (mobileOSModalOrder?.id === id) {
+        setMobileOSModalOrder(null);
+      }
+      if (editingWorkOrder?.id === id) {
+        setEditingWorkOrder(null);
+        setIsWorkOrderModalOpen(false);
+      }
+    }
+  };
+
+  const handleClearScheduleOrders = (orderIds: string[]) => {
+    if (orderIds.length === 0) return;
+    if (
+      window.confirm(
+        `Tem certeza que deseja apagar todos os ${orderIds.length} agendamento(s) exibidos nesta agenda?`
+      )
+    ) {
+      const idSet = new Set(orderIds);
+      setWorkOrders((prev) => prev.filter((wo) => !idSet.has(wo.id)));
+      if (mobileOSModalOrder && idSet.has(mobileOSModalOrder.id)) {
+        setMobileOSModalOrder(null);
+      }
+      if (editingWorkOrder && idSet.has(editingWorkOrder.id)) {
+        setEditingWorkOrder(null);
+        setIsWorkOrderModalOpen(false);
+      }
     }
   };
 
@@ -2046,11 +2069,21 @@ export const ServiceProModule: React.FC = () => {
                                       }
                                     >
                                       <td
-                                        className={`py-2 px-3 font-semibold border-r border-slate-300/20 ${
+                                        className={`py-2.5 px-3 font-semibold border-r border-slate-300/20 ${
                                           tintedGlass ? 'text-white' : 'text-slate-900'
                                         }`}
                                       >
-                                        {item.serviceOrPartName}
+                                        <div>{item.serviceOrPartName}</div>
+                                        {item.notes && (
+                                          <div
+                                            className={`mt-1 text-[11px] font-normal leading-relaxed flex items-start gap-1.5 ${
+                                              tintedGlass ? 'text-slate-300/90' : 'text-slate-600'
+                                            }`}
+                                          >
+                                            <FileText className="w-3 h-3 mt-0.5 shrink-0 opacity-75 text-cyan-400" />
+                                            <span className="whitespace-pre-wrap">{item.notes}</span>
+                                          </div>
+                                        )}
                                       </td>
                                       <td
                                         className={`py-2 px-3 text-center font-mono font-bold border-r border-slate-300/20 ${
@@ -2235,6 +2268,8 @@ export const ServiceProModule: React.FC = () => {
             setEditingWorkOrder(null);
             setIsWorkOrderModalOpen(true);
           }}
+          onDeleteOrder={handleDeleteWorkOrder}
+          onClearSchedule={handleClearScheduleOrders}
         />
       )}
 
@@ -2369,7 +2404,32 @@ export const ServiceProModule: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end">
+                <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto justify-end">
+                  {order.beforePhotos.length +
+                    order.afterPhotos.length +
+                    (order.attachments?.length || 0) >
+                    0 && (
+                    <span
+                      className={`text-[10px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full border ${
+                        tintedGlass
+                          ? 'bg-cyan-500/15 text-cyan-200 border-cyan-400/30'
+                          : 'bg-sky-50 text-sky-700 border-sky-200'
+                      }`}
+                    >
+                      <FileText className="w-3 h-3" />
+                      {order.beforePhotos.length + order.afterPhotos.length > 0
+                        ? `${order.beforePhotos.length + order.afterPhotos.length} foto(s)`
+                        : ''}
+                      {order.beforePhotos.length + order.afterPhotos.length > 0 &&
+                      (order.attachments?.length || 0) > 0
+                        ? ' • '
+                        : ''}
+                      {(order.attachments?.length || 0) > 0
+                        ? `${order.attachments!.length} anexo(s)`
+                        : ''}
+                    </span>
+                  )}
+
                   {order.clientSignatureBase64 && (
                     <span
                       className={`text-[10px] font-bold flex items-center gap-1 px-2.5 py-1 rounded-full border ${
@@ -2453,7 +2513,6 @@ export const ServiceProModule: React.FC = () => {
           tintedGlass={tintedGlass}
           clients={clients}
           onAddClient={(newClient) => setClients((prev) => [newClient, ...prev])}
-          onOpenPortalSimulation={(client) => setPortalSimulationClient(client)}
           onDeleteClient={handleDeleteClient}
         />
       )}
@@ -2473,17 +2532,20 @@ export const ServiceProModule: React.FC = () => {
         editingEquipment={editingEquipment}
       />
 
-      <DigitalOSMobileModal
-        tintedGlass={tintedGlass}
-        isOpen={!!mobileOSModalOrder}
-        onClose={() => setMobileOSModalOrder(null)}
-        workOrder={mobileOSModalOrder}
-        defaultCycleMonths={
-          equipments.find((e) => e.id === mobileOSModalOrder?.equipmentId)?.maintenancePlan
-            ?.intervalMonths || 3
-        }
-        onSaveWorkOrder={handleSaveWorkOrder}
-      />
+      {mobileOSModalOrder && (
+        <DigitalOSMobileModal
+          key={mobileOSModalOrder.id}
+          tintedGlass={tintedGlass}
+          isOpen={true}
+          onClose={() => setMobileOSModalOrder(null)}
+          workOrder={mobileOSModalOrder}
+          defaultCycleMonths={
+            equipments.find((e) => e.id === mobileOSModalOrder.equipmentId)?.maintenancePlan
+              ?.intervalMonths || 3
+          }
+          onSaveWorkOrder={handleSaveWorkOrder}
+        />
+      )}
 
       <WorkOrderModal
         tintedGlass={tintedGlass}
@@ -2493,15 +2555,6 @@ export const ServiceProModule: React.FC = () => {
         equipments={equipments}
         onSave={handleSaveWorkOrder}
         editingOrder={editingWorkOrder}
-      />
-
-      <ClientPortalModal
-        tintedGlass={tintedGlass}
-        isOpen={!!portalSimulationClient}
-        onClose={() => setPortalSimulationClient(null)}
-        client={portalSimulationClient}
-        equipments={equipments}
-        workOrders={workOrders}
       />
 
       {/* Modal de Importação de Excel Inteligente */}

@@ -1024,6 +1024,6 @@ export const DEFAULT_NOTIFICATION_RULES: NotificationRule[] = [
     title: 'Conclusão de OS & Envio de Laudo',
     channel: 'both',
     isEnabled: true,
-    templateMessage: 'Atendimento concluído com sucesso! Segue o comprovante da OS {{numero_os}} do equipamento {{equipamento_tag}} assinada por {{assinado_por}}. O laudo técnico e conformidade legal já estão disponíveis no seu Portal do Cliente.'
+    templateMessage: 'Atendimento concluído com sucesso! Segue o comprovante da OS {{numero_os}} do equipamento {{equipamento_tag}} assinada por {{assinado_por}}. O laudo técnico e de conformidade legal já foi emitido.'
   }
 ];

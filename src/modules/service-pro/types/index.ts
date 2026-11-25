@@ -52,6 +52,7 @@ export interface EquipmentServiceItem {
   nextRevisionDate: string; // YYYY-MM-DD ou 'N/A'
   status: ServiceItemStatus;
   intervalDays?: number; // Ex: 7, 15, 30, 90
+  notes?: string; // Observações técnicas específicas desta peça ou serviço
 }
 
 export interface EquipmentMaintenancePlan {
@@ -123,6 +124,15 @@ export interface SparePartUsed {
   unitPrice: number;
 }
 
+export interface WorkOrderAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+  dataUrl: string;
+  uploadedAt: string;
+}
+
 export interface MaintenanceWorkOrder {
   id: string;
   orderNumber: string; // Ex: OS-2026-084
@@ -152,6 +162,7 @@ export interface MaintenanceWorkOrder {
   totalCost: number;
   beforePhotos: string[];
   afterPhotos: string[];
+  attachments?: WorkOrderAttachment[];
   clientSignatureBase64?: string;
   signedByName?: string;
   signedAt?: string;

@@ -10,7 +10,6 @@ import {
   Clock,
   DollarSign,
   ShieldCheck,
-  Eye,
   Search,
   X,
   CheckCircle2,
@@ -23,7 +22,6 @@ interface ClientManagerProps {
   tintedGlass?: boolean;
   clients: ClientContractor[];
   onAddClient: (newClient: ClientContractor) => void;
-  onOpenPortalSimulation: (client: ClientContractor) => void;
   onDeleteClient?: (clientId: string) => void;
 }
 
@@ -31,7 +29,6 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
   tintedGlass = true,
   clients,
   onAddClient,
-  onOpenPortalSimulation,
   onDeleteClient,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -456,22 +453,6 @@ export const ClientManager: React.FC<ClientManagerProps> = ({
               </span>
 
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onOpenPortalSimulation(client)}
-                  className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
-                    tintedGlass
-                      ? 'aptis-glass-subcard text-slate-200 hover:text-white hover:border-cyan-400/40'
-                      : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs'
-                  }`}
-                >
-                  <Eye
-                    className={`w-3.5 h-3.5 ${
-                      tintedGlass ? 'text-cyan-400' : 'text-blue-600'
-                    }`}
-                  />
-                  Simular Portal VIP
-                </button>
-
                 {onDeleteClient && (
                   <button
                     onClick={() => {

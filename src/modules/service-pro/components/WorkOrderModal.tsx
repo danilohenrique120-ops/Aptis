@@ -115,6 +115,7 @@ export const WorkOrderModal: React.FC<WorkOrderModalProps> = ({
       totalCost: editingOrder?.totalCost || 450,
       beforePhotos: editingOrder?.beforePhotos || [],
       afterPhotos: editingOrder?.afterPhotos || [],
+      attachments: editingOrder?.attachments || [],
       whatsappConfirmationSent: editingOrder?.whatsappConfirmationSent || false,
     };
 
