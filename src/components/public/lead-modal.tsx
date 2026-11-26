@@ -15,6 +15,22 @@ interface LeadModalProps {
 
 type PlanScopeType = 'modular' | 'suite_360' | 'enterprise' | 'custom';
 
+const CORE_PLANT_SUITE_TOOL_IDS = [
+  'skills-matrix',
+  'manager-tasks',
+  'training-matrix',
+  'kaizen-manager',
+  'pdi-manager',
+  'one-on-one',
+  'twttp-herca',
+  'service-pro',
+];
+
+const SPECIALIST_NICHE_LABELS: Record<string, string> = {
+  'bacterial-gantt': 'PCP Biológico',
+  advisory: 'Consultorias B2B',
+};
+
 function detectPlanScope(plan?: string, tool?: ToolDefinition | null): PlanScopeType {
   const normalized = (plan || '').toLowerCase();
   if (normalized.includes('escopo 03') || normalized.includes('enterprise') || normalized.includes('multi-planta')) {
@@ -39,18 +55,22 @@ function getInitialToolIdsForScope(
     return [tool.id];
   }
   if (scope === 'suite_360' || scope === 'enterprise') {
-    return allTools.map(t => t.id);
+    return allTools
+      .filter(t => CORE_PLANT_SUITE_TOOL_IDS.includes(t.id))
+      .map(t => t.id);
   }
   if (defaultPlan === 'suite_operacional') {
     return ['manager-tasks', 'skills-matrix', 'training-matrix'];
   }
-  // Escopo 01 (Modular) ou padrão inicia com 1 módulo prioritário
-  return ['manager-tasks'];
+  // Escopo 01 (Modular) e CTAs gerais de Diagnóstico iniciam com 0 pré-selecionados para escolha livre do cliente
+  return [];
 }
 
 export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps) {
   const { submitLead } = useTenant();
   const allAvailableTools = getAllTools().filter(t => t.id !== 'performance-pro');
+  const corePlantTools = allAvailableTools.filter(t => CORE_PLANT_SUITE_TOOL_IDS.includes(t.id));
+  const specialistTools = allAvailableTools.filter(t => !CORE_PLANT_SUITE_TOOL_IDS.includes(t.id));
 
   const contextKey = `${tool?.id || 'none'}::${defaultPlan || 'default'}`;
 
@@ -65,6 +85,7 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
     toolIds: string[];
     planOverride?: string;
   } | null>(null);
+  const [selectionErrorKey, setSelectionErrorKey] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   if (!isOpen) return null;
@@ -81,16 +102,20 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
       ? customSelection.toolIds
       : getInitialToolIdsForScope(planScope, tool, activePlanLabel, allAvailableTools);
 
+  const showSelectionError = selectionErrorKey === contextKey && selectedToolIds.length === 0;
+
   const defaultTeamSizeForScope = planScope === 'enterprise' ? 'Mais de 500' : '50 a 150';
   const teamSize =
     customTeamSize?.key === contextKey ? customTeamSize.value : defaultTeamSizeForScope;
 
   const toggleToolSelection = (id: string) => {
     const nextIds = selectedToolIds.includes(id)
-      ? selectedToolIds.length > 1
-        ? selectedToolIds.filter(t => t !== id)
-        : selectedToolIds
+      ? selectedToolIds.filter(t => t !== id)
       : [...selectedToolIds, id];
+
+    if (nextIds.length > 0 && selectionErrorKey === contextKey) {
+      setSelectionErrorKey(null);
+    }
 
     setCustomSelection({
       key: contextKey,
@@ -100,9 +125,13 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
   };
 
   const handleUpgradeToSuite360 = () => {
+    const mergedCoreIds = Array.from(
+      new Set([...corePlantTools.map(t => t.id), ...selectedToolIds])
+    );
+    setSelectionErrorKey(null);
     setCustomSelection({
       key: contextKey,
-      toolIds: allAvailableTools.map(t => t.id),
+      toolIds: mergedCoreIds,
       planOverride: 'Escopo 02: Suíte Aptis 360º'
     });
   };
@@ -121,6 +150,10 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedToolIds.length === 0) {
+      setSelectionErrorKey(contextKey);
+      return;
+    }
     if (!companyName.trim() || !contactName.trim() || !email.trim() || !phone.trim()) return;
 
     const toolNames = allAvailableTools
@@ -258,30 +291,50 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
               </h3>
 
               <p className="text-xs text-slate-600 mt-1">
-                {planScope === 'suite_360'
-                  ? 'Todos os módulos da Suíte Aptis já estão selecionados abaixo para governança integrada 360º da sua planta operacional.'
+                {tool
+                  ? `O módulo ${tool.name} já está marcado abaixo. Você pode adicionar outras soluções se desejar avaliar em conjunto.`
+                  : planScope === 'suite_360'
+                  ? `Os ${corePlantTools.length} módulos operacionais da planta já estão pré-selecionados para governança integrada 360º.`
                   : planScope === 'enterprise'
-                  ? 'Todos os módulos da Suíte Aptis estão habilitados abaixo para desenho de projeto corporativo e governança multi-plantas.'
+                  ? `Governança corporativa para múltiplas unidades + implantação consultiva, com os ${corePlantTools.length} módulos operacionais já habilitados.`
                   : planScope === 'modular'
-                  ? 'Selecione abaixo de 1 a 3 módulos prioritários para iniciar na sua operação com implantação rápida e foco imediato.'
-                  : 'Informe os dados da sua empresa para agendarmos uma apresentação guiada e desenharmos o formato de licenciamento ideal.'}
+                  ? 'Clique abaixo nos módulos prioritários (de 1 a 3) que deseja implantar primeiro na sua operação.'
+                  : 'Selecione abaixo o(s) módulo(s) que mais fazem sentido para o momento atual da sua operação.'}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
               {/* Seleção de Módulos Desejados */}
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2.5">
+              <div
+                className={`p-3 rounded-2xl border space-y-2.5 transition-colors ${
+                  showSelectionError
+                    ? 'bg-rose-50/70 border-rose-300'
+                    : 'bg-slate-50 border-slate-200'
+                }`}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                    Módulos de Interesse para Avaliação:
+                    Módulos Operacionais da Planta:
                   </label>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono">
-                    {selectedToolIds.length} de {allAvailableTools.length} selecionados
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full font-mono ${
+                      selectedToolIds.length === 0
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-slate-200/80 text-slate-700'
+                    }`}
+                  >
+                    {selectedToolIds.length} selecionado(s)
                   </span>
                 </div>
 
+                {showSelectionError && (
+                  <p className="text-[11px] font-bold text-rose-700 bg-white px-2.5 py-1.5 rounded-lg border border-rose-200">
+                    Selecione pelo menos 1 módulo acima ou abaixo para enviarmos sua proposta sob medida.
+                  </p>
+                )}
+
                 <div className="grid grid-cols-2 gap-1.5">
-                  {allAvailableTools.map(t => {
+                  {corePlantTools.map(t => {
                     const isChecked = selectedToolIds.includes(t.id);
                     return (
                       <button
@@ -305,6 +358,57 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
                   })}
                 </div>
 
+                {/* Módulos Especialistas de Segmento (Opcionais) */}
+                {specialistTools.length > 0 && (
+                  <div className="pt-2 border-t border-slate-200/90 space-y-1.5">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Módulos Especialistas por Segmento (Opcionais):
+                    </span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {specialistTools.map(t => {
+                        const isChecked = selectedToolIds.includes(t.id);
+                        const nicheTag = SPECIALIST_NICHE_LABELS[t.id];
+                        return (
+                          <button
+                            type="button"
+                            key={t.id}
+                            onClick={() => toggleToolSelection(t.id)}
+                            className={`px-2.5 py-1.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                              isChecked
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <div
+                              className={`w-4 h-4 rounded flex items-center justify-center text-[10px] shrink-0 ${
+                                isChecked
+                                  ? 'bg-cyan-400 text-slate-950 font-black'
+                                  : 'border border-slate-300'
+                              }`}
+                            >
+                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-semibold text-[11px] truncate block">
+                                {t.name}
+                              </span>
+                              {nicheTag && (
+                                <span
+                                  className={`text-[9px] font-mono block truncate ${
+                                    isChecked ? 'text-cyan-300' : 'text-slate-400'
+                                  }`}
+                                >
+                                  {nicheTag}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Dica Automática de Upsell no Escopo 01 (Modular) quando 4+ módulos são marcados */}
                 {showModularUpsellTip && (
                   <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 flex flex-col gap-2 animate-in fade-in duration-200">
@@ -320,18 +424,28 @@ export function LeadModal({ tool, isOpen, onClose, defaultPlan }: LeadModalProps
                       className="w-full py-1.5 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-300 font-bold text-[10px] uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                      Ativar Escopo 02: Suíte Aptis 360º (Todos os Módulos)
+                      Ativar Escopo 02: Suíte Aptis 360º ({corePlantTools.length} Módulos Operacionais)
                     </button>
                   </div>
                 )}
 
-                {(planScope === 'suite_360' || planScope === 'enterprise') &&
-                  selectedToolIds.length === allAvailableTools.length && (
-                    <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Todos os {allAvailableTools.length} módulos da Suíte Aptis marcados automaticamente (✓)</span>
-                    </div>
-                  )}
+                {planScope === 'suite_360' && (
+                  <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      Suíte Operacional 360º pré-selecionada ({corePlantTools.length} módulos de planta)
+                    </span>
+                  </div>
+                )}
+
+                {planScope === 'enterprise' && (
+                  <div className="px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>
+                      Base corporativa multi-plantas pré-selecionada + implantação consultiva dedicada
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Dados da Empresa */}

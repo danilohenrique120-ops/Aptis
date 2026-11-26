@@ -537,7 +537,7 @@ export default function HomePage() {
                 <ul className="space-y-3 text-xs text-slate-200 pt-1">
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span><strong>Acesso Integrado à Suíte Aptis</strong> (Routine, Skills, Compliance, Kaizen, 1:1 e Service Pro)</span>
+                    <span><strong>Acesso Integrado aos 8 Módulos Operacionais</strong> (Routine, Skills, Compliance, Kaizen, PDI, 1:1, TWTTP &amp; HERCA e Service Pro)</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
@@ -596,15 +596,15 @@ export default function HomePage() {
                 <ul className="space-y-3 text-xs text-slate-300 pt-1">
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Visão executiva consolidada entre diferentes plantas, filiais ou contratos</span>
+                    <span><strong>Suíte Operacional em Múltiplas Plantas</strong> com visão executiva consolidada entre filiais ou contratos</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Padronização corporativa de checklists, normas e catálogos mestres</span>
+                    <span>Padronização corporativa de checklists, normas, matrizes e catálogos mestres</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                    <span>Acompanhamento consultivo na implantação e revisão de processos</span>
+                    <span>Implantação consultiva dedicada e módulos especialistas sob demanda (PCP Biológico e Advisory)</span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
