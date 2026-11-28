@@ -227,21 +227,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0] || INITIAL_USERS[0];
 
-  // Regra de Ouro de Segurança: Usuários comuns NUNCA podem trocar de empresa/tenant!
-  // Somente o SuperAdmin da plataforma pode visualizar outros tenants.
-  const effectiveTenantId = currentUser.role === 'superadmin' ? currentTenantId : (currentUser.tenantId || INITIAL_TENANTS[0].id);
+  // Regra de Ouro de Isolamento: Toda conta autenticada (inclusive Admin Master) permanece estritamente vinculada ao seu próprio tenantId, evitando acesso ou alteração acidental no painel de clientes.
+  const effectiveTenantId = currentUser.tenantId || INITIAL_TENANTS[0].id;
   const currentTenant = tenants.find(t => t.id === effectiveTenantId) || tenants[0] || INITIAL_TENANTS[0];
 
-  const switchTenant = (tenantId: string) => {
-    if (currentUser.role !== 'superadmin') {
-      console.warn('[BLOQUEIO DE SEGURANÇA] Tentativa de alternância de tenant rejeitada para:', currentUser.name);
-      return;
-    }
-    const exists = tenants.some(t => t.id === tenantId);
-    if (exists) {
-      setSimulatedManager(null);
-      setCurrentTenantId(tenantId);
-    }
+  const switchTenant = (_tenantId: string) => {
+    // Alternância direta entre painéis de clientes desativada por segurança operacional
+    void _tenantId;
   };
 
   const canSimulateManager = currentUser.role === 'superadmin' || currentUser.role === 'tenant_admin';

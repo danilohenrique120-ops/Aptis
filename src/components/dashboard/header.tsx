@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTenant } from '@/context/tenant-context';
@@ -13,37 +13,42 @@ import {
   X
 } from 'lucide-react';
 
+function subscribeGlassMode(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('aptis-glass-mode-change', callback);
+  window.addEventListener('storage', callback);
+  return () => {
+    window.removeEventListener('aptis-glass-mode-change', callback);
+    window.removeEventListener('storage', callback);
+  };
+}
+
+function getGlassModeSnapshot(): boolean {
+  if (typeof window === 'undefined') return true;
+  const saved = localStorage.getItem('aptis_tinted_glass_mode');
+  return saved !== null ? saved === 'true' : true;
+}
+
+function getGlassModeServerSnapshot(): boolean {
+  return true;
+}
+
 export function DashboardHeader() {
   const pathname = usePathname();
   const {
     currentTenant,
-    currentUser,
     effectiveUser,
     isSimulatingManager,
     simulateAreaManager,
-    tenants,
-    switchTenant,
     logout
   } = useTenant();
-  const [tintedGlass, setTintedGlass] = useState(true);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('aptis_tinted_glass_mode');
-    if (saved !== null) {
-      setTintedGlass(saved === 'true');
-    }
-
-    const handleModeChange = (e: Event) => {
-      const customEvent = e as CustomEvent<boolean>;
-      setTintedGlass(customEvent.detail);
-    };
-
-    window.addEventListener('aptis-glass-mode-change', handleModeChange);
-    return () => window.removeEventListener('aptis-glass-mode-change', handleModeChange);
-  }, []);
+  const tintedGlass = useSyncExternalStore(
+    subscribeGlassMode,
+    getGlassModeSnapshot,
+    getGlassModeServerSnapshot
+  );
 
   const isMasterWorkspace = currentTenant.id === 'tenant-dhp';
-  const isSuperAdmin = currentUser.role === 'superadmin';
   const isGlassEnabledRoute = pathname.startsWith('/dashboard');
   const isDarkGlass = isGlassEnabledRoute && tintedGlass;
 
@@ -89,30 +94,13 @@ export function DashboardHeader() {
               {isMasterWorkspace ? 'Administração Central' : 'Unidade Fabril'}
             </span>
             <div className="flex items-center gap-1.5 mt-0.5">
-              {isSuperAdmin && tenants.length > 1 ? (
-                <select
-                  value={currentTenant.id}
-                  onChange={e => switchTenant(e.target.value)}
-                  className={`text-xs font-black bg-transparent outline-none cursor-pointer pr-1 ${
-                    isDarkGlass ? 'text-white' : 'text-slate-900'
-                  }`}
-                  title="Alternar visualização entre seu Ambiente Master e Empresas Clientes"
-                >
-                  {tenants.map(t => (
-                    <option key={t.id} value={t.id} className="bg-slate-900 text-white">
-                      {t.id === 'tenant-dhp' ? 'Aptis Tecnologia (Admin Master)' : t.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <span
-                  className={`text-xs font-black leading-none ${
-                    isDarkGlass ? 'text-white' : 'text-slate-900'
-                  }`}
-                >
-                  {isMasterWorkspace ? 'Aptis Tecnologia (Admin Master)' : currentTenant.name}
-                </span>
-              )}
+              <span
+                className={`text-xs font-black leading-none ${
+                  isDarkGlass ? 'text-white' : 'text-slate-900'
+                }`}
+              >
+                {isMasterWorkspace ? 'Aptis Tecnologia (Admin Master)' : currentTenant.name}
+              </span>
 
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border leading-tight ${
